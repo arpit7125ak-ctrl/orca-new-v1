@@ -63,11 +63,15 @@ def load_contracts() -> int:
         try:
             with open(path, "r", encoding="utf-8") as fh:
                 schema = json.load(fh)
-            # Override the declared $id with the real path, so relative $refs
-            # resolve purely from directory structure rather than trusting
-            # whatever $id each file happens to declare (some are inconsistent).
-            schema["$id"] = key
+            # Strip declared $id so jsonschema doesn't push redundant nested scopes
+            # that break sibling $refs like shared/TimeWindow.json
+            schema.pop("$id", None)
             _SCHEMA_STORE[key] = schema
+            _SCHEMA_STORE[rel] = schema
+            if not rel.startswith("shared/"):
+                _SCHEMA_STORE["/shared/" + rel] = schema
+            else:
+                _SCHEMA_STORE["/shared/" + rel] = schema
         except Exception as exc:  # noqa: BLE001
             log.error("[contracts] failed to load %s: %s", rel, exc)
 

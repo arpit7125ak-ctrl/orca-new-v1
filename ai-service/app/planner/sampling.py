@@ -64,26 +64,26 @@ def _bearing(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 def single_point(lat: float, lon: float) -> List[Dict[str, Any]]:
     """One point. Used for quick information and simple point queries."""
-    return [_point("P1", lat, lon)]
+    return [_point("P0", lat, lon)]
 
 
 def nine_point_grid(lat: float, lon: float, radius_km: float = 5.0) -> List[Dict[str, Any]]:
     """Section 15 - the 3x3 grid: centre plus 8 surrounding points.
 
-    P1 is always the centre so downstream code can rely on that. The rest run
-    N, NE, E, SE, S, SW, W, NW.
+    P0 is always the centre so downstream code can rely on that. The rest run
+    N, NE, E, SE, S, SW, W, NW (P1-P8).
     """
-    points = [_point("P1", lat, lon, center=(lat, lon))]
+    points = [_point("P0", lat, lon, center=(lat, lon))]
 
     directions = [
-        ("P2", radius_km, 0.0),          # N
-        ("P3", radius_km, radius_km),    # NE
-        ("P4", 0.0, radius_km),          # E
-        ("P5", -radius_km, radius_km),   # SE
-        ("P6", -radius_km, 0.0),         # S
-        ("P7", -radius_km, -radius_km),  # SW
-        ("P8", 0.0, -radius_km),         # W
-        ("P9", radius_km, -radius_km),   # NW
+        ("P1", radius_km, 0.0),          # N
+        ("P2", radius_km, radius_km),    # NE
+        ("P3", 0.0, radius_km),          # E
+        ("P4", -radius_km, radius_km),   # SE
+        ("P5", -radius_km, 0.0),         # S
+        ("P6", -radius_km, -radius_km),  # SW
+        ("P7", 0.0, -radius_km),         # W
+        ("P8", radius_km, -radius_km),   # NW
     ]
 
     for pid, north, east in directions:
@@ -110,7 +110,7 @@ def regional_scan(
             if idx > 25:
                 break
             p_lat, p_lon = _offset(lat, lon, i * spacing_km, j * spacing_km)
-            points.append(_point(f"P{idx}", p_lat, p_lon, center=(lat, lon)))
+            points.append(_point(f"R{idx:04d}", p_lat, p_lon, center=(lat, lon)))
             idx += 1
 
     return points
@@ -129,7 +129,7 @@ def route_corridor(
         t = i / (samples - 1) if samples > 1 else 0.0
         lat = origin["lat"] + (destination["lat"] - origin["lat"]) * t
         lon = origin["lon"] + (destination["lon"] - origin["lon"]) * t
-        points.append(_point(f"P{i + 1}", lat, lon))
+        points.append(_point(f"C{i + 1:04d}", lat, lon))
     return points
 
 

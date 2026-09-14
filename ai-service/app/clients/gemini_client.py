@@ -45,7 +45,7 @@ def _get_client():
         _client = ChatGoogleGenerativeAI(
             model=settings.GEMINI_MODEL,
             google_api_key=settings.GEMINI_API_KEY,
-            
+            max_retries=0,
         )
 
         log.info(
@@ -134,12 +134,6 @@ async def generate_json(
                 SystemMessage(content=system_prompt),
                 HumanMessage(content=user_prompt),
             ]
-
-            # If a response schema is supplied, use LangChain's structured
-            # output support. Otherwise preserve the normal JSON response.
-            if response_schema:
-                response_mime_type="application/json"
-                response_schema=response_schema
 
             return client.invoke(messages)
 

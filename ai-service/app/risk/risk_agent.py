@@ -184,10 +184,14 @@ def _clamp_adjustment(
     band = settings.LLM_ADJUSTMENT_BAND
     adjustment = max(-band, min(band, adjustment))
 
-    proposed = baseline_score + adjustment
+    # The LLM cannot lower the score below the constraint floor
+    if constraint_floor is not None and (baseline_score + adjustment) < constraint_floor:
+        if baseline_score >= constraint_floor:
+            adjustment = constraint_floor - baseline_score
+        else:
+            adjustment = max(0, adjustment)
 
-    if constraint_floor is not None and proposed < constraint_floor:
-        adjustment = constraint_floor - baseline_score
+    adjustment = max(-band, min(band, adjustment))
 
     # Downward moves may not cross a level boundary (CAUTION must not become
     # SAFE by LLM opinion alone). Upward moves are unrestricted.
