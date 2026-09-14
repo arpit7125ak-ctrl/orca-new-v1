@@ -1,0 +1,32 @@
+{
+  "$id": "https://orca.sih26176/schemas/User.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "User",
+  "description": "User account + invite-code role. Also the `users` collection document, filling the gap flagged earlier — needed for invite-code roles, missing from §99's collection list. CAUTION: unlike Measurement/RiskAssessment/Decision, the architecture doc gives no worked example or dedicated section for this contract, so this is a heavier reconstruction than the other five locked contracts — built from the stakeholder categories in the problem statement and the invite-code role model referenced in your own notes. Diff this one especially carefully against the actual locked User.json.",
+  "type": "object",
+  "required": ["user_id", "role", "created_at"],
+  "properties": {
+    "user_id": { "type": "string", "description": "Unique index." },
+    "role": {
+      "type": "string",
+      "enum": ["fisherman", "researcher", "coastal_authority", "disaster_management", "maritime_operator", "admin"],
+      "description": "Stakeholder categories from the problem statement, plus admin for invite-code issuance. Closed enum deliberately — role is access-control-relevant, unlike activity/vessel_type which are open config."
+    },
+    "invite_code_used": { "type": ["string", "null"] },
+    "display_name": { "type": ["string", "null"] },
+    "preferred_language": {
+      "type": ["string", "null"],
+      "description": "Default response_language override, applied when a request omits language_override. §7.8, §11"
+    },
+    "default_vessel_type": { "type": ["string", "null"] },
+    "default_activity": { "type": ["string", "null"] },
+    "home_location": { "oneOf": [{ "$ref": "shared/Location.json" }, { "type": "null" }] },
+    "subscriber_id": {
+      "type": ["string", "null"],
+      "description": "Links to alert_subscriptions.subscriber_id, if this user has any alert subscriptions."
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "last_active_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "additionalProperties": false
+}

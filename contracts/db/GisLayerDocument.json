@@ -1,0 +1,31 @@
+{
+  "$id": "https://orca.sih26176/schemas/db/GisLayerDocument.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GisLayerDocument",
+  "description": "MongoDB `gis_layers` collection document — one per named boundary/constraint layer, seeded by scripts/seed-gis-layers.js. Unique index on layer_name; 2dsphere index on geometry_full. §67.1, §99.5. constraint_type enum kept identical to api/MapLayersResponse.json's layers[].constraint_type.",
+  "type": "object",
+  "required": ["layer_name", "constraint_type", "version", "source", "last_updated", "geometry_simplified"],
+  "properties": {
+    "layer_name": {
+      "type": "string",
+      "description": "Unique index, e.g. 'eez', 'mpa', 'restricted_zone', 'ports'. §65, §67"
+    },
+    "constraint_type": {
+      "type": "string",
+      "enum": ["prohibited", "conditional", "warning_only", "none"],
+      "description": "§65.1"
+    },
+    "version": { "type": "string" },
+    "source": { "type": "string" },
+    "last_updated": { "type": "string", "format": "date" },
+    "geometry_full": {
+      "type": ["object", "null"],
+      "description": "Full-resolution GeoJSON, used server-side for $geoIntersects geofence checks. §66.2"
+    },
+    "geometry_simplified": {
+      "type": "object",
+      "description": "Simplified geometry served via GET /api/v1/map/layers for display. §67.1"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,21 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/RouteRequest.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RouteRequest",
+  "description": "POST /api/v1/route request body. §7.9, §71",
+  "type": "object",
+  "required": ["origin", "destination", "vessel_type"],
+  "properties": {
+    "origin": { "$ref": "../AnalysisRequest.json#/definitions/place_or_coordinate" },
+    "destination": { "$ref": "../AnalysisRequest.json#/definitions/place_or_coordinate" },
+    "vessel_type": { "type": "string" },
+    "activity": { "type": ["string", "null"] },
+    "departure_time": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Defaults to current time plus default horizon if omitted. §14.2"
+    },
+    "language_override": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

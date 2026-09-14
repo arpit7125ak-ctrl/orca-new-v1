@@ -1,0 +1,23 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/AnalysisExecutionRequest.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AnalysisExecutionRequest",
+  "description": "Backend → AI Service request body, POSTed to {AI_SERVICE_URL}/v1/analysis/execute (handled by ai-service/api/entry.py). RESOLVED: §103 documents both AI-Service-to-Backend internal paths (/internal/v1/progress, /internal/v1/result) but never names this reverse direction — this path is a project decision, not a doc fact. No /api prefix since ai-service is never Frontend-facing (§102's communication rule). Write this into §103 or a new subsection alongside the internal paths. §99.1, §102",
+  "type": "object",
+  "required": ["analysis_id", "request"],
+  "properties": {
+    "analysis_id": {
+      "type": "string",
+      "pattern": "^req_\\d{8}_\\d{4}_[a-z0-9]{6}$",
+      "description": "RESOLVED: req_{YYYYMMDD}_{HHMM}_{hash6}, matching your locked contract convention (confirmed against your own old worked-example file) rather than the doc's illustrative 'an_7f3c...' (§20.1, §38). YYYYMMDD_HHMM is the request RECEIPT time in UTC, not the target analysis window — the target window is often unresolved at ID-generation time (e.g. 'tomorrow morning' isn't parsed until the Planner runs, which happens after the Backend must already have assigned an id). hash6 = 6 lowercase alphanumeric chars for uniqueness within the same minute."
+    },
+    "conversation_id": { "type": ["string", "null"] },
+    "parent_analysis_id": { "type": ["string", "null"] },
+    "alert_subscription_id": {
+      "type": ["string", "null"],
+      "description": "Present when this analysis was triggered by the alert scheduler. §8, §70.1"
+    },
+    "request": { "$ref": "../AnalysisRequest.json" }
+  },
+  "additionalProperties": false
+}

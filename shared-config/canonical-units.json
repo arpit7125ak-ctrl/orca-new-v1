@@ -1,0 +1,28 @@
+{
+  "_comment": "Section 24.2 - Canonical SI/world-standard units. SINGLE SOURCE OF TRUTH. Adapters MUST convert to these before data enters the pipeline. A unit mismatch is treated as MISSING DATA (never silently converted downstream) - see enforceCanonicalUnit().",
+  "units": {
+    "wind_speed":            "m/s",
+    "wind_gust":             "m/s",
+    "wind_direction":        "deg",
+    "wave_height":           "m",
+    "wave_height_max":       "m",
+    "swell_height":          "m",
+    "wave_period":           "s",
+    "wave_direction":        "deg",
+    "current_speed":         "m/s",
+    "current_direction":     "deg",
+    "sea_surface_temperature": "degC",
+    "air_temperature":       "degC",
+    "salinity":              "PSU",
+    "precipitation":         "mm",
+    "visibility":            "km",
+    "cloud_cover":           "percent",
+    "tide_height":           "m",
+    "chlorophyll":           "mg/m3",
+    "dissolved_oxygen":      "mmol/m3",
+    "nitrate":               "mmol/m3",
+    "water_depth":           "m",
+    "distance":              "km",
+    "bearing":               "deg"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/InternalResultPayload.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "InternalResultPayload",
+  "description": "AI Service → Backend request body for POST /internal/v1/result. §101, §103. Exactly one of decision/route_result/trend_result/report_content/quick_information_result is populated, matching final_stage. Internal endpoint — must sit behind internalAuth middleware. §98",
+  "type": "object",
+  "required": ["analysis_id", "final_stage", "status"],
+  "properties": {
+    "analysis_id": { "type": "string" },
+    "final_stage": {
+      "type": "string",
+      "enum": ["decision", "route", "trend", "report", "quick_information"],
+      "description": "Which intent-specific final stage produced this result. §104"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["completed", "partial", "failed"],
+      "description": "Narrower than the full analysis lifecycle enum (§9) by design — queued/running never apply to a final result post."
+    },
+    "error": { "oneOf": [{ "$ref": "../shared/ErrorInfo.json" }, { "type": "null" }] },
+    "decision": { "oneOf": [{ "$ref": "../Decision.json" }, { "type": "null" }] },
+    "route_result": { "oneOf": [{ "$ref": "../RouteResult.json" }, { "type": "null" }] },
+    "trend_result": { "oneOf": [{ "$ref": "../TrendResult.json" }, { "type": "null" }] },
+    "report_content": { "oneOf": [{ "$ref": "../ReportContent.json" }, { "type": "null" }] },
+    "quick_information_result": {
+      "type": ["object", "null"],
+      "properties": {
+        "point": { "$ref": "../PointObservation.json" },
+        "measurements": { "type": "object", "additionalProperties": { "$ref": "../Measurement.json" } },
+        "answer_text": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

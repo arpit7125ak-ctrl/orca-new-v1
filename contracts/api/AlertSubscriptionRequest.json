@@ -1,0 +1,43 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/AlertSubscriptionRequest.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AlertSubscriptionRequest",
+  "description": "POST /api/v1/alerts/subscriptions request body. §70.3",
+  "type": "object",
+  "required": ["subscriber_id", "location", "alert_types", "minimum_level", "channel"],
+  "properties": {
+    "subscriber_id": { "type": "string", "description": "User/device identifier." },
+    "location": { "$ref": "../AnalysisRequest.json#/definitions/place_or_coordinate" },
+    "activity": { "type": ["string", "null"] },
+    "vessel_type": { "type": ["string", "null"] },
+    "language_override": { "type": ["string", "null"] },
+    "alert_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["cyclone", "strong_wind", "high_wave", "swell_surge", "lightning", "thunderstorm", "poor_visibility", "other_hazard", "official_warning"]
+      },
+      "description": "§70"
+    },
+    "minimum_level": {
+      "type": "string",
+      "enum": ["CAUTION", "UNSAFE", "DANGEROUS"],
+      "description": "Alert sent when the level reaches this threshold. §70.4"
+    },
+    "channel": {
+      "type": "string",
+      "enum": ["web_push", "sms", "whatsapp", "ivr"],
+      "description": "Phase 1/2: web_push. Later phases: sms, whatsapp, ivr. §70.5"
+    },
+    "quiet_hours": {
+      "type": ["object", "null"],
+      "description": "Official DANGEROUS alerts always deliver regardless of quiet hours. §70.3",
+      "properties": {
+        "start": { "type": "string" },
+        "end": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

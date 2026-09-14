@@ -1,0 +1,27 @@
+# ORCA AI Service — Python dependencies
+#
+# Pinned to minor versions so a surprise upstream release cannot break the
+# demo. Bump deliberately, never automatically.
+
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Settings + env loading
+pydantic==2.10.4
+pydantic-settings==2.7.0
+python-dotenv==1.0.1
+
+# Outbound HTTP to the Backend's internal API. httpx (not requests) because
+# the whole service is async and agents run in parallel.
+httpx==0.28.1
+
+# Internal auth tokens shared with the Backend (HS256, same INTERNAL_SECRET).
+PyJWT==2.10.1
+
+# Contract validation. jsonschema is the Python equivalent of the Backend's
+# Ajv setup - same 44 contract files, same rules, both sides enforcing.
+jsonschema==4.23.0
+
+
+# Gemini via LangChain
+langchain-google-genai==2.1.0

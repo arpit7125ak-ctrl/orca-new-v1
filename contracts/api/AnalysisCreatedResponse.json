@@ -1,0 +1,14 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/AnalysisCreatedResponse.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AnalysisCreatedResponse",
+  "description": "202 Accepted response body for POST /api/v1/analysis. §40",
+  "type": "object",
+  "required": ["analysis_id", "status", "status_url"],
+  "properties": {
+    "analysis_id": { "type": "string" },
+    "status": { "type": "string", "enum": ["queued"] },
+    "status_url": { "type": "string", "description": "e.g. /api/v1/analysis/{analysis_id}/status. §39" }
+  },
+  "additionalProperties": false
+}

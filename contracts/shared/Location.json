@@ -1,0 +1,35 @@
+{
+  "$id": "https://orca.sih26176/schemas/Location.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Location",
+  "description": "Original user-supplied location vs validated (possibly offshore-snapped) analysis location. §13.3, §20.1, §99.1",
+  "type": "object",
+  "required": ["original", "validated"],
+  "properties": {
+    "original": {
+      "type": "object",
+      "description": "As supplied by the user — coordinate and/or place name, before validation or snapping.",
+      "required": ["lat", "lon"],
+      "properties": {
+        "name": { "type": ["string", "null"], "description": "Place name if supplied, e.g. 'Chennai'." },
+        "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+        "lon": { "type": "number", "minimum": -180, "maximum": 180 }
+      },
+      "additionalProperties": false
+    },
+    "validated": {
+      "type": "object",
+      "description": "The input coordinate if valid marine, or the snapped offshore coordinate. Centre of the sampling grid. §13.3, §15",
+      "required": ["lat", "lon", "snapped"],
+      "properties": {
+        "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+        "lon": { "type": "number", "minimum": -180, "maximum": 180 },
+        "snapped": { "type": "boolean", "description": "True if this coordinate was moved offshore from a coastal land point. §13.3" },
+        "snap_distance_km": { "type": ["number", "null"], "description": "Distance from original to snapped point, when snapped=true." },
+        "snap_reference": { "type": ["string", "null"], "description": "Human-readable reference used in the snap explanation, e.g. 'east of Marina Beach'." }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

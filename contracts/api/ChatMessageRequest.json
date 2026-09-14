@@ -1,0 +1,21 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/ChatMessageRequest.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ChatMessageRequest",
+  "description": "POST /api/v1/chat/message request body. §86-92",
+  "type": "object",
+  "required": ["message"],
+  "properties": {
+    "conversation_id": {
+      "type": ["string", "null"],
+      "description": "Null starts a new conversation (Chat Case 2). §89"
+    },
+    "analysis_id": {
+      "type": ["string", "null"],
+      "description": "Present when the chat continues from an existing dashboard analysis (Chat Case 1). §87-88"
+    },
+    "message": { "type": "string", "minLength": 1 },
+    "language_override": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

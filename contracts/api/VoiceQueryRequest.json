@@ -1,0 +1,16 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/VoiceQueryRequest.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VoiceQueryRequest",
+  "description": "POST /api/v1/voice/query request body. §76. Modeled as base64 JSON for contract completeness; multipart/form-data with a separate audio part is an equally valid transport choice at implementation time — pick one before coding the endpoint.",
+  "type": "object",
+  "required": ["audio_base64", "audio_mime_type"],
+  "properties": {
+    "audio_base64": { "type": "string" },
+    "audio_mime_type": { "type": "string", "description": "e.g. 'audio/webm', 'audio/wav'." },
+    "conversation_id": { "type": ["string", "null"] },
+    "analysis_id": { "type": ["string", "null"] },
+    "language_override": { "type": ["string", "null"], "description": "Skips Bhashini language detection when supplied. §76" }
+  },
+  "additionalProperties": false
+}

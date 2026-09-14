@@ -1,0 +1,108 @@
+{
+  "$id": "https://orca.sih26176/schemas/RiskAssessment.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RiskAssessment",
+  "description": "Risk Agent output for one applicable point. §46-56, §53 (example). RECONSTRUCTED from the architecture doc — diff against the actual locked RiskAssessment.json before use. Only exists for point_status='applicable' points; not_applicable and prohibited points are never scored (§29, §37.2).",
+  "type": "object",
+  "required": ["point_id", "baseline_score", "final_score", "risk_level", "reasoning", "confidence", "hourly_scores"],
+  "properties": {
+    "point_id": {
+      "type": "string",
+      "pattern": "^(P[0-8]|R\\d{4}|C\\d{4}|W\\d{4})$"
+    },
+    "baseline_score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Deterministic score from §48, before any LLM adjustment."
+    },
+    "llm_adjustment": {
+      "type": ["integer", "null"],
+      "minimum": -10,
+      "maximum": 10,
+      "description": "Bounded adjustment within LLM_ADJUSTMENT_BAND (±10, configurable). §51.2"
+    },
+    "adjustment_reason": {
+      "type": ["string", "null"],
+      "description": "Required whenever llm_adjustment is non-zero; must reference an actual evidence field. §51.2"
+    },
+    "official_warnings": {
+      "type": "array",
+      "description": "Applicable official warnings that set a floor. Empty array if none applied. §49",
+      "items": {
+        "type": "object",
+        "required": ["warning_type", "floor_score", "floor_level", "issuing_authority", "bulletin_id"],
+        "properties": {
+          "warning_type": { "type": "string" },
+          "floor_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "floor_level": { "type": "string", "enum": ["CAUTION", "UNSAFE", "DANGEROUS"] },
+          "issuing_authority": { "type": "string" },
+          "bulletin_id": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "hard_rules_applied": {
+      "type": "array",
+      "description": "Triggered hard safety rules. Empty array if none applied. §50",
+      "items": {
+        "type": "object",
+        "required": ["rule_id", "floor_score"],
+        "properties": {
+          "rule_id": { "type": "string" },
+          "description": { "type": ["string", "null"] },
+          "floor_score": { "type": "integer", "minimum": 0, "maximum": 100 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "constraint_floor": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "maximum": 100,
+      "description": "max(official_warning_floor, hard_rule_floor) — the floor final_score can never go below. §51.3"
+    },
+    "final_score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "clamp(max(baseline + llm_adjustment, constraint_floor), 0, 100). §51.3"
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["SAFE", "CAUTION", "UNSAFE", "DANGEROUS"],
+      "description": "§52 default bands, configurable."
+    },
+    "risk_factors": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Extensible list, e.g. 'wind_speed', 'wave_height'. §54"
+    },
+    "reasoning": { "type": "string" },
+    "key_findings": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "hourly_scores": {
+      "type": "array",
+      "description": "Per-hour baseline+floor scores across the interpreted window, retained for best-time selection (§63.1) and charts (§83). Required per §48.4 and the §53 field list, though omitted from the doc's own abbreviated JSON example — flagging that as a doc inconsistency.",
+      "items": {
+        "type": "object",
+        "required": ["time", "score"],
+        "properties": {
+          "time": { "type": "string", "format": "date-time" },
+          "score": { "type": "integer", "minimum": 0, "maximum": 100 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "data_quality": { "$ref": "shared/DataQuality.json" },
+    "llm_interpretation_unavailable": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when the Risk LLM failed validation twice and ORCA fell back to baseline+floors with template reasoning. §56.5"
+    }
+  },
+  "additionalProperties": false
+}

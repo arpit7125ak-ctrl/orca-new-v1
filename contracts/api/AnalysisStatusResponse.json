@@ -1,0 +1,52 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/AnalysisStatusResponse.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AnalysisStatusResponse",
+  "description": "GET /api/v1/analysis/:analysis_id/status response body. Polled every 1-2s while status='running'. §35-39. IMPORTANT: 'status' (analysis-level, 5 values, §9) and 'agent_statuses[].status' (per-agent, 6 values including 'skipped', §37.1) are deliberately different enums — do not merge them.",
+  "type": "object",
+  "required": ["analysis_id", "status", "agent_statuses"],
+  "properties": {
+    "analysis_id": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["queued", "running", "completed", "partial", "failed"],
+      "description": "Analysis lifecycle state. §9"
+    },
+    "error": { "oneOf": [{ "$ref": "../shared/ErrorInfo.json" }, { "type": "null" }] },
+    "plan_summary": {
+      "type": ["object", "null"],
+      "description": "Populated once the Planner finishes. §35",
+      "properties": {
+        "primary_intent": { "type": "string" },
+        "response_language": { "type": "string" },
+        "location_summary": { "type": ["string", "null"] },
+        "time_window_summary": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "agent_statuses": {
+      "type": "array",
+      "description": "Only agents selected by the Planner appear here. §36",
+      "items": {
+        "type": "object",
+        "required": ["agent", "status"],
+        "properties": {
+          "agent": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["queued", "running", "completed", "partial", "failed", "skipped"],
+            "description": "Per-agent status. §37.1"
+          },
+          "selection_reason": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "skipped_agents": {
+      "type": "array",
+      "items": { "$ref": "../shared/AgentSelection.json" },
+      "description": "Collapsed 'not needed for this query' list. §36"
+    }
+  },
+  "additionalProperties": false
+}

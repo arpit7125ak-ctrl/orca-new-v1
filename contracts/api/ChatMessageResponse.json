@@ -1,0 +1,27 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/ChatMessageResponse.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ChatMessageResponse",
+  "description": "Response to POST /api/v1/chat/message. §86-92",
+  "type": "object",
+  "required": ["conversation_id", "response_text", "response_language", "answered_from"],
+  "properties": {
+    "conversation_id": { "type": "string" },
+    "response_text": { "type": "string" },
+    "response_language": { "type": "string" },
+    "answered_from": {
+      "type": "string",
+      "enum": ["stored_evidence", "new_analysis"],
+      "description": "§90.1 follow-up decision outcome — answered from stored analysis evidence, or triggered a new Planner execution."
+    },
+    "triggered_analysis_id": {
+      "type": ["string", "null"],
+      "description": "Populated when answered_from='new_analysis'. Links to the new analysis via parent_analysis_id. §90, §8"
+    },
+    "dashboard_url": {
+      "type": ["string", "null"],
+      "description": "Link to the full dashboard view, when a new analysis was triggered. §89"
+    }
+  },
+  "additionalProperties": false
+}

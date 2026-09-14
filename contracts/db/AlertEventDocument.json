@@ -1,0 +1,42 @@
+{
+  "$id": "https://orca.sih26176/schemas/db/AlertEventDocument.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AlertEventDocument",
+  "description": "MongoDB `alert_events` collection document — one per alert evaluation, whether or not it was actually sent. Index on (subscription_id, created_at) for dedup lookups. §70, §99.7. alert_type and channel enums kept identical to api/AlertSubscriptionRequest.json. 'level' here is intentionally the full 4-value risk scale (a SAFE evaluation is still logged for audit), unlike AlertSubscriptionRequest's minimum_level which is only 3-value (CAUTION/UNSAFE/DANGEROUS) since you can't subscribe to be alerted at SAFE — different concepts, not a mismatch.",
+  "type": "object",
+  "required": ["subscription_id", "alert_type", "level", "status", "created_at"],
+  "properties": {
+    "subscription_id": { "type": "string" },
+    "analysis_id": {
+      "type": ["string", "null"],
+      "description": "The alert_check analysis that produced this evaluation. §70.1"
+    },
+    "alert_type": {
+      "type": "string",
+      "enum": ["cyclone", "strong_wind", "high_wave", "swell_surge", "lightning", "thunderstorm", "poor_visibility", "other_hazard", "official_warning"]
+    },
+    "level": {
+      "type": "string",
+      "enum": ["SAFE", "CAUTION", "UNSAFE", "DANGEROUS"],
+      "description": "The evaluated risk level at check time — full scale, not just the subscription's alerting threshold."
+    },
+    "previous_level": {
+      "type": ["string", "null"],
+      "enum": ["SAFE", "CAUTION", "UNSAFE", "DANGEROUS", null],
+      "description": "Compared against level to decide whether this is a resend-worthy increase. §70.4"
+    },
+    "message_text": { "type": ["string", "null"] },
+    "channel": {
+      "type": ["string", "null"],
+      "enum": ["web_push", "sms", "whatsapp", "ivr", null]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["evaluated_no_send", "sent", "suppressed_duplicate", "failed"],
+      "description": "Dedup/delivery outcome. §70.4, §66.3-style dedup logic applied to alerts."
+    },
+    "sent_at": { "type": ["string", "null"], "format": "date-time" },
+    "created_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

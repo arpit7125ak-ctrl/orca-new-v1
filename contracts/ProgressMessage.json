@@ -1,0 +1,41 @@
+{
+  "$id": "https://orca.sih26176/schemas/ProgressMessage.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ProgressMessage",
+  "description": "AI Service → Backend progress update, POSTed to /internal/v1/progress whenever an important stage changes. §38",
+  "type": "object",
+  "required": ["analysis_id", "agent", "status", "status_code", "timestamp"],
+  "properties": {
+    "analysis_id": { "type": "string" },
+    "agent": {
+      "type": "string",
+      "description": "Agent or stage name, e.g. 'planner', 'ocean', 'risk', 'decision'."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["queued", "running", "completed", "partial", "failed", "skipped"]
+    },
+    "status_code": { "type": "integer" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "selection_reason": {
+      "type": ["string", "null"],
+      "description": "Present for Planner progress messages announcing an agent selection or skip. §20, §35"
+    },
+    "data_ref": {
+      "type": ["string", "null"],
+      "description": "Pointer to the stored result, e.g. 'agent_results/ocean'. Preferred over inlining large payloads."
+    },
+    "data": {
+      "description": "Inline data, only for small payloads where a data_ref round-trip isn't worth it.",
+      "type": ["object", "null"]
+    },
+    "error": {
+      "oneOf": [{ "$ref": "shared/ErrorInfo.json" }, { "type": "null" }]
+    },
+    "metadata": {
+      "type": ["object", "null"],
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

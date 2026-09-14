@@ -1,0 +1,83 @@
+{
+  "$id": "https://orca.sih26176/schemas/db/AnalysesDocument.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AnalysesDocument",
+  "description": "MongoDB `analyses` collection document. Unique index on analysis_id; secondary indexes on conversation_id and parent_analysis_id for §84 scenario chains. §99.1. DELIBERATE DEVIATION from §99.1's exact bullet list: the doc lists detected_language/override_language/response_language/primary_intent/secondary_intents/location/time_window/activity/vessel_type/selected_agents/skipped_agents/sampling as separate top-level fields alongside a 'planner_result'. This schema keeps them ONLY inside the nested 'plan' (ExecutionPlan.json) rather than also denormalizing copies to the top level, because a duplicate copy is a second source of truth that can drift from the nested original — the exact class of bug this whole contract set exists to prevent. MongoDB can index into 'plan.primary_intent' etc. directly without a flat duplicate. agent_statuses/data_quality/execution_trace/updated_at ARE added below as genuinely new fields, not denormalized duplicates of anything already in 'plan'.",
+  "type": "object",
+  "required": ["analysis_id", "request", "status", "created_at"],
+  "properties": {
+    "analysis_id": {
+      "type": "string",
+      "pattern": "^req_\\d{8}_\\d{4}_[a-z0-9]{6}$",
+      "description": "RESOLVED: req_{YYYYMMDD}_{HHMM}_{hash6}, receipt time in UTC. See api/AnalysisExecutionRequest.json for full rationale. Unique index."
+    },
+    "conversation_id": { "type": ["string", "null"] },
+    "parent_analysis_id": { "type": ["string", "null"] },
+    "alert_subscription_id": { "type": ["string", "null"] },
+    "request": { "$ref": "../AnalysisRequest.json" },
+    "plan": {
+      "oneOf": [{ "$ref": "../ExecutionPlan.json" }, { "type": "null" }],
+      "description": "Corresponds to §99.1's 'planner_result' field. Null until the Planner stage completes."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["queued", "running", "completed", "partial", "failed"],
+      "description": "§9"
+    },
+    "error": { "oneOf": [{ "$ref": "../shared/ErrorInfo.json" }, { "type": "null" }] },
+    "points": {
+      "type": "array",
+      "items": { "$ref": "../PointObservation.json" }
+    },
+    "agent_statuses": {
+      "type": "array",
+      "description": "Persisted live agent-status trace — §99.1 explicitly lists this; it was missing from earlier drafts of this document. Same shape as api/AnalysisStatusResponse.json's agent_statuses[].",
+      "items": {
+        "type": "object",
+        "required": ["agent", "status"],
+        "properties": {
+          "agent": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["queued", "running", "completed", "partial", "failed", "skipped"]
+          },
+          "selection_reason": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "data_quality": {
+      "oneOf": [{ "$ref": "../shared/DataQuality.json" }, { "type": "null" }],
+      "description": "§99.1 explicitly lists this at the document level, not just inside Decision/RiskAssessment — was missing from earlier drafts."
+    },
+    "execution_trace": {
+      "type": "array",
+      "description": "§99.1, §100. Was missing from earlier drafts — previously only appeared in api/AnalysisResultResponse.json, but §99.1 requires it persisted here too.",
+      "items": {
+        "type": "object",
+        "required": ["stage", "status"],
+        "properties": {
+          "stage": { "type": "string" },
+          "selected": { "type": ["boolean", "null"] },
+          "selection_reason": { "type": ["string", "null"] },
+          "status": { "type": "string" },
+          "status_code": { "type": ["integer", "null"] },
+          "started_at": { "type": ["string", "null"], "format": "date-time" },
+          "completed_at": { "type": ["string", "null"], "format": "date-time" },
+          "duration_ms": { "type": ["integer", "null"] },
+          "retry_count": { "type": ["integer", "null"] },
+          "error": { "oneOf": [{ "$ref": "../shared/ErrorInfo.json" }, { "type": "null" }] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "§99.1 lists created_at/updated_at/completed_at — updated_at was missing from earlier drafts. Bumped on every write to this document."
+    },
+    "completed_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "additionalProperties": false
+}

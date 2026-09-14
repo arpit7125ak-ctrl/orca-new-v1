@@ -1,0 +1,12 @@
+{
+  "_comment": "Section 7.6 - Activities are configuration-driven. An unknown activity returns 400. Add new activities here only; no code change needed.",
+  "activities": [
+    { "id": "fishing",          "label_en": "Fishing",             "safety_relevant": true  },
+    { "id": "boating",          "label_en": "Boating",             "safety_relevant": true  },
+    { "id": "marine_research",  "label_en": "Marine research",     "safety_relevant": true  },
+    { "id": "diving",           "label_en": "Diving",              "safety_relevant": true  },
+    { "id": "surfing",          "label_en": "Surfing",             "safety_relevant": true  },
+    { "id": "tourism",          "label_en": "Tourism",             "safety_relevant": true  },
+    { "id": "shipping",         "label_en": "Shipping/transport",  "safety_relevant": true  }
+  ]
+}

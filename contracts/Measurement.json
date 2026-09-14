@@ -1,0 +1,73 @@
+{
+  "$id": "https://orca.sih26176/schemas/Measurement.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Measurement",
+  "description": "Generic scalar value with full provenance. Used for every scientific/environmental field returned by a data agent. §43. RECONSTRUCTED from the architecture doc — diff against the actual locked Measurement.json before use.",
+  "type": "object",
+  "required": ["value", "status", "freshness", "source"],
+  "properties": {
+    "parameter": {
+      "type": ["string", "null"],
+      "description": "Canonical field name, e.g. 'wind_speed_ms'. Optional when Measurement is nested under a named key rather than used in a flat array."
+    },
+    "value": {
+      "type": ["number", "string", "boolean", "null"],
+      "description": "Null only when status='missing'."
+    },
+    "unit": {
+      "type": ["string", "null"],
+      "description": "RESOLVED (was an open anomaly): must match shared-config/canonical-units.json for this field's parameter/key name — e.g. a 'wind_speed_ms' key must always carry unit 'm/s'. Not enforceable by this schema alone (the parameter name is a dynamic map key, not a fixed property here); enforced at runtime by enforceCanonicalUnit() at the adapter stage (§24.2), then again by validateContract.js after structural validation passes."
+    },
+    "source": {
+      "type": ["string", "null"],
+      "description": "Provider name, e.g. 'INCOIS', 'IMD', 'Open-Meteo Marine'. Null when status is 'missing' or 'not_mapped' — no source exists for data that was never retrieved. §43"
+    },
+    "product_id": {
+      "type": ["string", "null"],
+      "description": "Dataset/product identifier distinct from the provider name, e.g. 'OSF-v2'. §43"
+    },
+    "retrieved_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Null when status is 'missing' or 'not_mapped'."
+    },
+    "valid_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Forecast or observation valid time, not the retrieval time."
+    },
+    "observation_type": {
+      "type": "string",
+      "enum": ["forecast", "observation"]
+    },
+    "status": { "$ref": "shared/DataFieldStatus.json" },
+    "freshness": { "$ref": "shared/Freshness.json" },
+    "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+    "official_source": {
+      "type": ["object", "null"],
+      "description": "Present only for official warning-derived fields. Additional provenance required for safety-critical warnings. §43.1",
+      "required": ["issuing_authority", "bulletin_id", "warning_level"],
+      "properties": {
+        "issuing_authority": { "type": "string", "description": "e.g. 'IMD', 'INCOIS'." },
+        "bulletin_id": { "type": "string" },
+        "issue_time": { "type": "string", "format": "date-time" },
+        "valid_from": { "type": "string", "format": "date-time" },
+        "valid_to": { "type": "string", "format": "date-time" },
+        "affected_area": {
+          "description": "Named coastal segment (string) or a GeoJSON polygon (object) defining the warning area. §49.1",
+          "oneOf": [
+            { "type": "string" },
+            { "type": "object" }
+          ]
+        },
+        "warning_level": {
+          "type": "string",
+          "enum": ["CAUTION", "UNSAFE", "DANGEROUS"],
+          "description": "Maps to the minimum Risk floor per §49.2."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

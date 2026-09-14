@@ -1,0 +1,40 @@
+{
+  "$id": "https://orca.sih26176/schemas/db/ConversationDocument.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConversationDocument",
+  "description": "MongoDB `conversations` collection document. Unique index on conversation_id. Same message/context shape as api/ConversationResponse.json, kept standalone rather than allOf-composed — see api/AlertSubscriptionResponse.json's description for why allOf + additionalProperties:false doesn't work for extending a schema with new fields. §91, §99.8",
+  "type": "object",
+  "required": ["conversation_id", "messages", "created_at"],
+  "properties": {
+    "conversation_id": { "type": "string" },
+    "subscriber_id": { "type": ["string", "null"], "description": "Links to users.user_id / alert_subscriptions.subscriber_id, if known." },
+    "current_context": {
+      "type": ["object", "null"],
+      "properties": {
+        "location": { "oneOf": [{ "$ref": "../shared/Location.json" }, { "type": "null" }] },
+        "activity": { "type": ["string", "null"] },
+        "vessel_type": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "messages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "text", "timestamp"],
+        "properties": {
+          "role": { "type": "string", "enum": ["user", "orca"] },
+          "text": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "detected_language": { "type": ["string", "null"] },
+          "response_language": { "type": ["string", "null"] },
+          "analysis_id": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "additionalProperties": false
+}

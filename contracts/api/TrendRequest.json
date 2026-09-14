@@ -1,0 +1,44 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/TrendRequest.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TrendRequest",
+  "description": "POST /api/v1/trend request body. §72",
+  "type": "object",
+  "required": ["parameter"],
+  "anyOf": [
+    { "required": ["coordinate"] },
+    { "required": ["place_name"] },
+    { "required": ["query"] }
+  ],
+  "properties": {
+    "query": { "type": ["string", "null"], "description": "e.g. 'Why has fish productivity declined near Ratnagiri?'" },
+    "coordinate": {
+      "type": ["object", "null"],
+      "properties": {
+        "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+        "lon": { "type": "number", "minimum": -180, "maximum": 180 }
+      },
+      "additionalProperties": false
+    },
+    "place_name": { "type": ["string", "null"] },
+    "parameter": { "type": "string", "description": "e.g. 'sst', 'chlorophyll'. §72.1" },
+    "baseline_period": {
+      "type": ["object", "null"],
+      "properties": {
+        "start": { "type": "string", "format": "date" },
+        "end": { "type": "string", "format": "date" }
+      },
+      "additionalProperties": false
+    },
+    "analysis_period": {
+      "type": ["object", "null"],
+      "properties": {
+        "start": { "type": "string", "format": "date" },
+        "end": { "type": "string", "format": "date" }
+      },
+      "additionalProperties": false
+    },
+    "language_override": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

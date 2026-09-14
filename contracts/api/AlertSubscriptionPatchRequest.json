@@ -1,0 +1,31 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/AlertSubscriptionPatchRequest.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AlertSubscriptionPatchRequest",
+  "description": "PATCH /api/v1/alerts/subscriptions/:id request body. All fields optional — only supplied fields are updated. subscriber_id/subscription_id/created_at are not patchable. §103",
+  "type": "object",
+  "properties": {
+    "location": { "$ref": "../AnalysisRequest.json#/definitions/place_or_coordinate" },
+    "activity": { "type": ["string", "null"] },
+    "vessel_type": { "type": ["string", "null"] },
+    "language_override": { "type": ["string", "null"] },
+    "alert_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["cyclone", "strong_wind", "high_wave", "swell_surge", "lightning", "thunderstorm", "poor_visibility", "other_hazard", "official_warning"]
+      }
+    },
+    "minimum_level": { "type": "string", "enum": ["CAUTION", "UNSAFE", "DANGEROUS"] },
+    "channel": { "type": "string", "enum": ["web_push", "sms", "whatsapp", "ivr"] },
+    "quiet_hours": {
+      "type": ["object", "null"],
+      "properties": {
+        "start": { "type": "string" },
+        "end": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,71 @@
+{
+  "$id": "https://orca.sih26176/schemas/ReportContent.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ReportContent",
+  "description": "Shareable marine advisory, generated from stored evidence only. Serves both internal AI Service → Backend content and the direct GET /api/v1/report/:analysis_id response. §73, §99.10",
+  "type": "object",
+  "required": ["analysis_id", "response_language", "generated_at", "location", "time_window", "recommendation"],
+  "properties": {
+    "analysis_id": { "type": "string" },
+    "response_language": { "type": "string" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "location": { "$ref": "shared/Location.json" },
+    "time_window": { "$ref": "shared/TimeWindow.json" },
+    "activity": { "type": ["string", "null"] },
+    "vessel_type": { "type": ["string", "null"] },
+    "recommendation": {
+      "type": "object",
+      "required": ["detailed", "one_line", "recommendation_type"],
+      "properties": {
+        "detailed": { "type": "string" },
+        "one_line": { "type": "string" },
+        "recommendation_type": {
+          "type": "string",
+          "enum": ["go", "go_with_caution", "go_in_safer_window", "not_recommended", "do_not_venture"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "point_scores": {
+      "type": "array",
+      "items": { "$ref": "RiskAssessment.json" }
+    },
+    "official_warnings_summary": { "type": ["string", "null"] },
+    "hazards_summary": { "type": ["array", "null"], "items": { "type": "string" } },
+    "gis_restrictions_summary": { "type": ["string", "null"] },
+    "pfz_summary": { "type": ["string", "null"] },
+    "best_time_windows": {
+      "type": "array",
+      "description": "Only SAFE/CAUTION windows can appear here, matching the §63.1 algorithm's own definition.",
+      "items": {
+        "type": "object",
+        "required": ["start", "end", "max_score", "level"],
+        "properties": {
+          "start": { "type": "string", "format": "date-time" },
+          "end": { "type": "string", "format": "date-time" },
+          "max_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "level": { "type": "string", "enum": ["SAFE", "CAUTION"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "data_quality": { "oneOf": [{ "$ref": "shared/DataQuality.json" }, { "type": "null" }] },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "retrieved_at"],
+        "properties": {
+          "source": { "type": "string" },
+          "product_id": { "type": ["string", "null"] },
+          "retrieved_at": { "type": "string", "format": "date-time" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "web_view_url": { "type": ["string", "null"], "format": "uri" },
+    "pdf_url": { "type": ["string", "null"], "format": "uri" },
+    "sms_text": { "type": ["string", "null"], "description": "Short text version for SMS/WhatsApp sharing. §73.1" }
+  },
+  "additionalProperties": false
+}

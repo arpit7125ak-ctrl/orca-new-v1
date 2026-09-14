@@ -1,0 +1,11 @@
+{
+  "_comment": "Section 7.7 - Vessel types are configuration-driven. 'conservatism_rank' 1 = most fragile/most conservative. Section 7.7 says: if vessel_type is missing for a safety request, the Planner applies the MOST conservative profile for the activity. Backend does not apply that default - it only validates the value is known.",
+  "vessel_types": [
+    { "id": "traditional_non_motorized", "label_en": "Traditional non-motorized craft",        "conservatism_rank": 1 },
+    { "id": "motorized_country_craft",   "label_en": "Motorized country craft (outboard)",     "conservatism_rank": 2 },
+    { "id": "recreational_boat",         "label_en": "Recreational/tourism boat",              "conservatism_rank": 3 },
+    { "id": "mechanized_fishing_vessel", "label_en": "Mechanized fishing vessel (trawler)",    "conservatism_rank": 4 },
+    { "id": "research_vessel",           "label_en": "Research vessel",                        "conservatism_rank": 5 },
+    { "id": "large_commercial_vessel",   "label_en": "Large commercial vessel",                "conservatism_rank": 6 }
+  ]
+}

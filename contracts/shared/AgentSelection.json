@@ -1,0 +1,21 @@
+{
+  "$id": "https://orca.sih26176/schemas/AgentSelection.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AgentSelection",
+  "description": "One entry in an ExecutionPlan's selected_agents[] or skipped_agents[]. §20, §21",
+  "type": "object",
+  "required": ["agent", "reason"],
+  "properties": {
+    "agent": {
+      "type": "string",
+      "description": "Agent Registry name, e.g. 'weather', 'ocean', 'gis'. §22"
+    },
+    "reason": { "type": "string" },
+    "mandatory_by_policy": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if plan validation added this selection because the Planner LLM omitted a mandatory agent. §20.2"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,8 @@
+{
+  "$id": "https://orca.sih26176/schemas/DataFieldStatus.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DataFieldStatus",
+  "description": "Availability/authority dimension of a data field. Deliberately excludes temporal quality (cached/stale/near-real-time) — see Freshness.json for that dimension. §42",
+  "type": "string",
+  "enum": ["available", "partial", "missing", "not_mapped", "derived"]
+}

@@ -1,0 +1,109 @@
+{
+  "$id": "https://orca.sih26176/schemas/ExecutionPlan.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecutionPlan",
+  "description": "Planner/Orchestrator output — the validated execution plan produced before any data agent runs. §10, §20, §20.1 (example). NEW — not one of the 6 originally locked contracts.",
+  "type": "object",
+  "required": ["analysis_id", "response_language", "primary_intent", "location", "time_window", "sampling", "selected_agents", "stages"],
+  "properties": {
+    "analysis_id": { "type": "string" },
+    "response_language": {
+      "type": "string",
+      "description": "Override if present, otherwise detected language. §11.3"
+    },
+    "language_detection": {
+      "type": "object",
+      "description": "Full detection detail per §11.2.",
+      "properties": {
+        "detected_language": { "type": "string" },
+        "script": { "type": ["string", "null"] },
+        "is_romanized": { "type": "boolean" },
+        "is_code_mixed": { "type": "boolean" },
+        "detection_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "override_language": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "primary_intent": {
+      "type": "string",
+      "enum": ["quick_information", "point_safety", "regional_search", "route_planning", "historical_trend", "alert_check", "report_advisory", "conversational_followup"],
+      "description": "§12.1"
+    },
+    "secondary_intents": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["quick_information", "point_safety", "regional_search", "route_planning", "historical_trend", "alert_check", "report_advisory", "conversational_followup"]
+      },
+      "description": "§12.2 compound requests."
+    },
+    "location": { "$ref": "shared/Location.json" },
+    "time_window": { "$ref": "shared/TimeWindow.json" },
+    "activity": {
+      "type": ["string", "null"],
+      "description": "Configuration-driven activity id. §7.6"
+    },
+    "vessel_type": {
+      "type": ["string", "null"],
+      "description": "Configuration-driven vessel type id, references a VesselProfile. §7.7, §18.2"
+    },
+    "vessel_assumed": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if the Planner applied the most conservative configured vessel profile because none was supplied for a safety request; this assumption must be stated in the result. §7.7"
+    },
+    "sampling": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["single_point", "local_grid", "regional_scan", "route_corridor", "historical"],
+          "description": "§16"
+        },
+        "radius_km": { "type": ["number", "null"] },
+        "spacing_km": { "type": ["number", "null"], "description": "Regional scan point spacing. §16" },
+        "shape": {
+          "type": ["string", "null"],
+          "enum": ["circular", "square", null],
+          "description": "GRID_SHAPE — whether diagonal points lie on the same radius or at square grid corners. §15"
+        },
+        "points": { "type": ["integer", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "selected_agents": {
+      "type": "array",
+      "items": { "$ref": "shared/AgentSelection.json" }
+    },
+    "skipped_agents": {
+      "type": "array",
+      "items": { "$ref": "shared/AgentSelection.json" }
+    },
+    "data_plan": {
+      "type": "array",
+      "description": "Data Discovery output, shown in the evidence panel. §19, §19.3",
+      "items": {
+        "type": "object",
+        "required": ["parameter", "agent", "preferred_source"],
+        "properties": {
+          "parameter": { "type": "string" },
+          "agent": { "type": "string" },
+          "preferred_source": { "type": "string" },
+          "fallback_sources": { "type": "array", "items": { "type": "string" } },
+          "spatial_resolution": { "type": ["string", "null"] },
+          "temporal_resolution": { "type": ["string", "null"] },
+          "freshness_requirement": { "type": ["string", "null"] },
+          "historical_availability": { "type": ["boolean", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "stages": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["risk", "decision", "route", "trend", "report"] },
+      "description": "§20.1 example, §104"
+    }
+  },
+  "additionalProperties": false
+}

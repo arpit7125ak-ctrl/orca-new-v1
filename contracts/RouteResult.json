@@ -1,0 +1,66 @@
+{
+  "$id": "https://orca.sih26176/schemas/RouteResult.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RouteResult",
+  "description": "Deterministic Route Tool output. Serves both the internal AI Service → Backend result and the direct GET /api/v1/route/:route_id response — one shape, no separate envelope. §71, §99.9",
+  "type": "object",
+  "required": ["route_id", "status", "origin", "destination", "vessel_type"],
+  "properties": {
+    "route_id": { "type": "string" },
+    "analysis_id": { "type": ["string", "null"] },
+    "status": {
+      "type": "string",
+      "enum": ["queued", "running", "completed", "no_safe_route", "failed"]
+    },
+    "error": { "oneOf": [{ "$ref": "shared/ErrorInfo.json" }, { "type": "null" }] },
+    "origin": { "$ref": "shared/Location.json" },
+    "destination": { "$ref": "shared/Location.json" },
+    "vessel_type": { "type": "string" },
+    "waypoints": {
+      "type": "array",
+      "description": "Empty when status='no_safe_route' or 'failed'. §71.1",
+      "items": {
+        "type": "object",
+        "required": ["seq", "lat", "lon"],
+        "properties": {
+          "seq": { "type": "integer", "minimum": 0 },
+          "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+          "lon": { "type": "number", "minimum": -180, "maximum": 180 },
+          "point_id": {
+            "type": ["string", "null"],
+            "pattern": "^(P[0-8]|R\\d{4}|C\\d{4}|W\\d{4})$",
+            "description": "Corridor grid cell (C####) or route waypoint (W####) id, if this position corresponds to one. §17.1"
+          },
+          "cumulative_distance_km": { "type": ["number", "null"] },
+          "risk_score": { "type": ["integer", "null"], "minimum": 0, "maximum": 100 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "total_distance_km": { "type": ["number", "null"] },
+    "estimated_duration_hours": { "type": ["number", "null"], "description": "From vessel cruising speed. §71.1" },
+    "max_risk_score": { "type": ["integer", "null"], "minimum": 0, "maximum": 100 },
+    "max_risk_level": { "type": ["string", "null"], "enum": ["SAFE", "CAUTION", "UNSAFE", "DANGEROUS", null] },
+    "time_of_passage_risk": {
+      "type": "array",
+      "description": "Risk at the time the vessel is expected to pass each waypoint. §71.1",
+      "items": {
+        "type": "object",
+        "required": ["waypoint_seq", "valid_time", "risk_score"],
+        "properties": {
+          "waypoint_seq": { "type": "integer" },
+          "valid_time": { "type": "string", "format": "date-time" },
+          "risk_score": { "type": "integer", "minimum": 0, "maximum": 100 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "blocking_reasons": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Populated only when status='no_safe_route'. Free-form, e.g. 'GIS-prohibited polygon blocks all corridors', 'vessel minimum depth violated along every candidate path'. §71.2"
+    },
+    "generated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

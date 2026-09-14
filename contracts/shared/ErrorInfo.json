@@ -1,0 +1,32 @@
+{
+  "$id": "https://orca.sih26176/schemas/ErrorInfo.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ErrorInfo",
+  "description": "Structured error attached to a failed analysis, agent, or stage. §9, §40, §100",
+  "type": "object",
+  "required": ["error_category", "message"],
+  "properties": {
+    "error_category": {
+      "type": "string",
+      "enum": [
+        "invalid_location",
+        "unsupported_region",
+        "unresolvable_place",
+        "unsupported_time",
+        "planner_failure",
+        "risk_failure",
+        "validation_failure",
+        "upstream_unavailable",
+        "timeout",
+        "internal_error"
+      ]
+    },
+    "message": { "type": "string" },
+    "http_status": {
+      "type": ["integer", "null"],
+      "description": "Mapped HTTP status code per §40, when surfaced to the Frontend."
+    },
+    "retry_count": { "type": ["integer", "null"] }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,88 @@
+{
+  "$id": "https://orca.sih26176/schemas/AnalysisRequest.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AnalysisRequest",
+  "description": "POST /api/v1/analysis request body. Raw user input before Planner interpretation. §6, §7. RECONSTRUCTED from the architecture doc — diff against the actual locked AnalysisRequest.json before use. NOTE: time_range here is the raw user-supplied range, pre-interpretation — do not confuse with shared/TimeWindow.json, which is the Planner's interpreted local+UTC output.",
+  "type": "object",
+  "anyOf": [
+    { "required": ["query"], "properties": { "query": { "type": "string", "minLength": 1 } } },
+    { "required": ["coordinate"], "properties": { "coordinate": { "type": "object" } } },
+    { "required": ["place_name"], "properties": { "place_name": { "type": "string", "minLength": 1 } } }
+  ],
+  "properties": {
+    "query": {
+      "type": ["string", "null"],
+      "description": "Natural-language query, typed or transcribed from voice. §6"
+    },
+    "coordinate": {
+      "type": ["object", "null"],
+      "properties": {
+        "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+        "lon": { "type": "number", "minimum": -180, "maximum": 180 }
+      },
+      "required": ["lat", "lon"],
+      "additionalProperties": false,
+      "description": "§7.2"
+    },
+    "place_name": {
+      "type": ["string", "null"],
+      "description": "§7.3. Max length enforced by config, not by this schema."
+    },
+    "date": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "ISO 8601 date. Natural-language dates inside query text ('tomorrow') are NOT put here — the Planner interprets those. §7.4, §14"
+    },
+    "time_range": {
+      "type": ["object", "null"],
+      "description": "Raw structured time range, pre-interpretation. §7.5",
+      "properties": {
+        "start": { "type": "string" },
+        "end": { "type": "string" }
+      },
+      "required": ["start", "end"],
+      "additionalProperties": false
+    },
+    "activity": {
+      "type": ["string", "null"],
+      "description": "Validated against shared-config/activities.json, not a closed schema enum — activities are config-extensible. §7.6"
+    },
+    "vessel_type": {
+      "type": ["string", "null"],
+      "description": "Validated against shared-config/vessel-types.json. §7.7"
+    },
+    "origin": { "$ref": "#/definitions/place_or_coordinate" },
+    "destination": { "$ref": "#/definitions/place_or_coordinate" },
+    "language_override": {
+      "type": ["string", "null"],
+      "description": "Validated against shared-config/languages.json. §7.8, §11"
+    },
+    "conversation_id": {
+      "type": ["string", "null"],
+      "description": "Links this analysis to an existing chat conversation. §8"
+    },
+    "parent_analysis_id": {
+      "type": ["string", "null"],
+      "description": "The earlier analysis this follow-up or scenario was derived from. §8, §84"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "place_or_coordinate": {
+      "type": ["object", "null"],
+      "description": "§7.9 — required together (both present or both absent) for route requests. Reused by RouteRequest.json and AlertSubscriptionRequest.json via fragment $ref.",
+      "properties": {
+        "place_name": { "type": ["string", "null"] },
+        "coordinate": {
+          "type": ["object", "null"],
+          "properties": {
+            "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+            "lon": { "type": "number", "minimum": -180, "maximum": 180 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/AnalysisResultResponse.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AnalysisResultResponse",
+  "description": "GET /api/v1/analysis/:analysis_id response body — the full dashboard result. §58, §78-81, §99.1, §104. Exactly one of decision/route_result/trend_result/quick_information_result is populated, matching plan.primary_intent — enforced below via the same completion rules as §104.",
+  "type": "object",
+  "required": ["analysis_id", "status", "plan"],
+  "properties": {
+    "analysis_id": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["queued", "running", "completed", "partial", "failed"]
+    },
+    "error": { "oneOf": [{ "$ref": "../shared/ErrorInfo.json" }, { "type": "null" }] },
+    "plan": { "$ref": "../ExecutionPlan.json" },
+    "points": {
+      "type": "array",
+      "items": { "$ref": "../PointObservation.json" }
+    },
+    "quick_information_result": {
+      "type": ["object", "null"],
+      "description": "Populated when plan.primary_intent='quick_information'. §12.1",
+      "properties": {
+        "point": { "$ref": "../PointObservation.json" },
+        "measurements": {
+          "type": "object",
+          "additionalProperties": { "$ref": "../Measurement.json" }
+        },
+        "answer_text": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "decision": {
+      "oneOf": [{ "$ref": "../Decision.json" }, { "type": "null" }],
+      "description": "Populated when plan.primary_intent is 'point_safety' or 'regional_search'. §104"
+    },
+    "route_result": {
+      "oneOf": [{ "$ref": "../RouteResult.json" }, { "type": "null" }],
+      "description": "Populated when plan.primary_intent='route_planning'. §104"
+    },
+    "trend_result": {
+      "oneOf": [{ "$ref": "../TrendResult.json" }, { "type": "null" }],
+      "description": "Populated when plan.primary_intent='historical_trend'. §104"
+    },
+    "data_quality": { "oneOf": [{ "$ref": "../shared/DataQuality.json" }, { "type": "null" }] },
+    "execution_trace": {
+      "type": "array",
+      "description": "§79, §100",
+      "items": {
+        "type": "object",
+        "required": ["stage", "status"],
+        "properties": {
+          "stage": { "type": "string" },
+          "selected": { "type": ["boolean", "null"] },
+          "selection_reason": { "type": ["string", "null"] },
+          "status": { "type": "string" },
+          "status_code": { "type": ["integer", "null"] },
+          "started_at": { "type": ["string", "null"], "format": "date-time" },
+          "completed_at": { "type": ["string", "null"], "format": "date-time" },
+          "duration_ms": { "type": ["integer", "null"] },
+          "retry_count": { "type": ["integer", "null"] },
+          "error": { "oneOf": [{ "$ref": "../shared/ErrorInfo.json" }, { "type": "null" }] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "created_at": { "type": ["string", "null"], "format": "date-time" },
+    "completed_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "plan": { "properties": { "primary_intent": { "enum": ["point_safety", "regional_search"] } } } } },
+      "then": { "required": ["decision"], "properties": { "decision": { "not": { "type": "null" } } } }
+    },
+    {
+      "if": { "properties": { "plan": { "properties": { "primary_intent": { "const": "route_planning" } } } } },
+      "then": { "required": ["route_result"], "properties": { "route_result": { "not": { "type": "null" } } } }
+    },
+    {
+      "if": { "properties": { "plan": { "properties": { "primary_intent": { "const": "historical_trend" } } } } },
+      "then": { "required": ["trend_result"], "properties": { "trend_result": { "not": { "type": "null" } } } }
+    },
+    {
+      "if": { "properties": { "plan": { "properties": { "primary_intent": { "const": "quick_information" } } } } },
+      "then": { "required": ["quick_information_result"], "properties": { "quick_information_result": { "not": { "type": "null" } } } }
+    }
+  ],
+  "additionalProperties": false
+}

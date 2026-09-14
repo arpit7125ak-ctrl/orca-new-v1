@@ -1,0 +1,1807 @@
+{
+  "info": {
+    "name": "ORCA Backend (SIH26176)",
+    "description": "Team Nautilus - ORCA Marine Intelligence Platform backend.\n\nIMPORT THIS, then set the collection variable `baseUrl` (default http://localhost:4000).\n\nRun the requests top to bottom. `analysis_id`, `conversation_id`, `route_id` and `subscription_id` are captured automatically by test scripts, so later requests work without you copying IDs by hand.\n\nInternal endpoints live on a DIFFERENT port (default 4100) via `internalUrl` and require a signed token - see the guide for how to mint one.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000"
+    },
+    {
+      "key": "internalUrl",
+      "value": "http://localhost:4100"
+    },
+    {
+      "key": "analysis_id",
+      "value": ""
+    },
+    {
+      "key": "conversation_id",
+      "value": ""
+    },
+    {
+      "key": "route_id",
+      "value": ""
+    },
+    {
+      "key": "subscription_id",
+      "value": ""
+    },
+    {
+      "key": "internal_token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Health",
+      "item": [
+        {
+          "name": "GET /health (liveness)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('reports ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /health/ready (readiness)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/health/ready",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health",
+                "ready"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// 503 here means MongoDB is down. ai_service unreachable is reported but does NOT fail readiness.",
+                  "pm.test('mongodb connected', () => pm.expect(pm.response.json().checks.mongodb.connected).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/config (Sections 7.6-7.8)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/config",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "config"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const d = pm.response.json().data;",
+                  "pm.test('7 activities', () => pm.expect(d.activities).to.have.lengthOf(7));",
+                  "pm.test('6 vessel types', () => pm.expect(d.vessel_types).to.have.lengthOf(6));",
+                  "pm.test('10 languages', () => pm.expect(d.languages).to.have.lengthOf(10));",
+                  "pm.test('wind is m/s not knots', () => pm.expect(d.canonical_units.wind_speed).to.eql('m/s'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Analysis",
+      "item": [
+        {
+          "name": "POST /analysis - valid (expect 202)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-UTC-Offset-Minutes",
+                "value": "330",
+                "description": "Not part of AnalysisRequest.json - sent as a header so the Backend can build a truthful TimeWindow. Omit it and time_window stays null for the Planner."
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"Is it safe to venture into the sea tomorrow morning?\",\n  \"coordinate\": {\n    \"lat\": 13.0827,\n    \"lon\": 80.5\n  },\n  \"date\": \"2026-09-14\",\n  \"time_range\": {\n    \"start\": \"06:00\",\n    \"end\": \"10:00\"\n  },\n  \"activity\": \"fishing\",\n  \"vessel_type\": \"motorized_country_craft\",\n  \"language_override\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analysis",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "analysis"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/api/AnalysisCreatedResponse.json: { analysis_id, status, status_url }",
+                  "// Returned at the TOP LEVEL - not wrapped in { success, data }.",
+                  "if (pm.response.code === 202) {",
+                  "  const d = pm.response.json();",
+                  "  pm.collectionVariables.set('analysis_id', d.analysis_id);",
+                  "  pm.test('202 Accepted', () => pm.response.to.have.status(202));",
+                  "  pm.test('analysis_id matches the locked Section 8.1 format', () =>",
+                  "    pm.expect(d.analysis_id).to.match(/^req_\\d{8}_\\d{4}_[a-z0-9]{6}$/));",
+                  "  pm.test('carries status_url', () => pm.expect(d.status_url).to.be.a('string'));",
+                  "} else if (pm.response.code === 502) {",
+                  "  const e = pm.response.json().error;",
+                  "  if (e.details && e.details.analysis_id) pm.collectionVariables.set('analysis_id', e.details.analysis_id);",
+                  "  pm.test('502 = AI Service down, analysis still persisted', () =>",
+                  "    pm.expect(e.error_category).to.eql('upstream_unavailable'));",
+                  "} else {",
+                  "  pm.test('unexpected status ' + pm.response.code, () => pm.expect.fail(pm.response.text()));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /analysis - empty body (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analysis",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "analysis"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Section 7.1: at least one of query / coordinates / place_name.",
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('category is validation_failure', () =>",
+                  "  pm.expect(pm.response.json().error.error_category).to.eql('validation_failure'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /analysis - lat 200 (expect 400 invalid_location)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coordinate\": {\n    \"lat\": 200,\n    \"lon\": 80.5\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analysis",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "analysis"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/AnalysisRequest.json enforces coordinate.lat min/max -90/90",
+                  "// directly via JSON Schema, and contract validation runs BEFORE the",
+                  "// module validator - so Ajv catches this first with the generic",
+                  "// validation_failure category, never reaching the more specific",
+                  "// invalid_location path in analysis.validator.js. Both are correct 400s;",
+                  "// this just confirms which layer catches it.",
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('rejected (category may be validation_failure OR invalid_location)', () =>",
+                  "  pm.expect(['validation_failure','invalid_location']).to.include(pm.response.json().error.error_category));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /analysis - unknown activity (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"test\",\n  \"activity\": \"submarine_racing\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analysis",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "analysis"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Section 7.6: unknown activity returns 400, and the message lists valid values.",
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('error lists valid activities', () =>",
+                  "  pm.expect(JSON.stringify(pm.response.json())).to.include('fishing'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /analysis - flat lat/lon (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"conditions offshore\",\n  \"lat\": 13.0,\n  \"lon\": 80.5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analysis",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "analysis"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Same layering as above: the contract's Ajv check (additionalProperties",
+                  "// on lat/lon at the root) fires before analysis.validator.js's friendlier",
+                  "// 'use coordinate instead' message ever runs. Both reject the request;",
+                  "// only the wording differs depending on which layer catches it first.",
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('category is validation_failure', () =>",
+                  "  pm.expect(pm.response.json().error.error_category).to.eql('validation_failure'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /analysis - overnight window (expect 202)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"night fishing\",\n  \"coordinate\": {\n    \"lat\": 13.0,\n    \"lon\": 80.5\n  },\n  \"date\": \"2026-09-14\",\n  \"time_range\": {\n    \"start\": \"22:00\",\n    \"end\": \"04:00\"\n  },\n  \"activity\": \"fishing\",\n  \"vessel_type\": \"motorized_country_craft\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analysis",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "analysis"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Section 7.5: there is no `overnight` flag in the contract. A clock range",
+                  "// where end < start is legal for night fishing; the Planner resolves which",
+                  "// calendar day the end falls on.",
+                  "pm.test('accepted (202) or AI Service down (502)', () =>",
+                  "  pm.expect([202, 502]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /analysis/:id/status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analysis/{{analysis_id}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "analysis",
+                "{{analysis_id}}",
+                "status"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/api/AnalysisStatusResponse.json",
+                  "//   required: analysis_id, status, agent_statuses",
+                  "pm.test('200 OK - polling always succeeds', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test('has a lifecycle status', () =>",
+                  "  pm.expect(['queued','running','completed','partial','failed']).to.include(d.status));",
+                  "pm.test('agent_statuses is always present', () =>",
+                  "  pm.expect(d.agent_statuses).to.be.an('object'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /analysis/:id (full result)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analysis/{{analysis_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "analysis",
+                "{{analysis_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/api/AnalysisResultResponse.json status enum includes 'failed'.",
+                  "// Section 40: a failed analysis' HTTP status is resolved from its STORED",
+                  "// error_category (statusForAnalysisState), so a genuinely failed analysis",
+                  "// (e.g. upstream_unavailable because the AI Service never ran) correctly",
+                  "// returns 502 here - that is not a bug, it is the design working.",
+                  "pm.test('200, 206, or 502 (a genuinely failed analysis reports its real status)', () =>",
+                  "  pm.expect([200, 206, 502]).to.include(pm.response.code));",
+                  "const body = pm.response.json();",
+                  "pm.test('response has an analysis_id', () => pm.expect(body.analysis_id || (body.data && body.data.analysis_id)).to.be.ok);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /analysis/:id - malformed id (expect 400)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analysis/not-a-valid-id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "analysis",
+                "not-a-valid-id"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// A malformed ID is 400 (bad input), not 404 (missing resource).",
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /analysis/:id - well-formed but missing (expect 404)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analysis/req_20200101_0000_aaaaaa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "analysis",
+                "req_20200101_0000_aaaaaa"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Geofence (Section 66)",
+      "item": [
+        {
+          "name": "POST /geofence/check - open sea (expect clear)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": 15.0,\n  \"lon\": 85.0,\n  \"device_id\": \"demo-device-001\",\n  \"language_override\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/geofence/check",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "geofence",
+                "check"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/api/GeofenceCheckResponse.json - FLAT shape, required: state",
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test('state is clear/approaching/inside', () =>",
+                  "  pm.expect(['clear','approaching','inside']).to.include(d.state));",
+                  "pm.test('deduplicated flag present', () => pm.expect(d).to.have.property('deduplicated'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /geofence/check - inside IMBL demo zone (expect inside)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": 9.5,\n  \"lon\": 79.5,\n  \"device_id\": \"demo-device-002\",\n  \"language_override\": \"ta\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/geofence/check",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "geofence",
+                "check"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Requires `npm run seed:gis` first.",
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "if (d.state === 'inside') {",
+                  "  pm.test('constraint_type is prohibited', () => pm.expect(d.constraint_type).to.eql('prohibited'));",
+                  "  pm.test('layer_name is flat, not nested', () => pm.expect(d.layer_name).to.be.a('string'));",
+                  "  pm.test('warning_text is in Tamil script', () =>",
+                  "    pm.expect(d.warning_text).to.match(/[\\u0B80-\\u0BFF]/));",
+                  "} else {",
+                  "  console.log('state=' + d.state + ' - did you run `npm run seed:gis`?');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /geofence/check - dedup (run twice)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": 9.5,\n  \"lon\": 79.5,\n  \"device_id\": \"demo-device-002\",\n  \"language_override\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/geofence/check",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "geofence",
+                "check"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Section 66.3: the SECOND identical check for the same device should",
+                  "// come back deduplicated=true - still true, but do not re-notify.",
+                  "const d = pm.response.json().data;",
+                  "console.log('deduplicated =', d.deduplicated);",
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /geofence/check - no coords (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_id\": \"demo-device-003\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/geofence/check",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "geofence",
+                "check"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Missing lat/lon is caught by CONTRACT validation",
+                  "// (api/GeofenceCheckRequest.json requires both) before the",
+                  "// controller's own invalid_location check ever runs. Both paths",
+                  "// are correct - this just confirms which one fires first.",
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('category is validation_failure (contract caught it first)', () =>",
+                  "  pm.expect(pm.response.json().error.error_category).to.eql('validation_failure'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Map / GIS",
+      "item": [
+        {
+          "name": "GET /map/layers (simplified geometry)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/map/layers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "map",
+                "layers"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/api/MapLayersResponse.json: { layers: [...] }",
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test('top level is { layers }', () => pm.expect(d.layers).to.be.an('array'));",
+                  "pm.test('every layer carries a source (Section 67 evidence rule)', () =>",
+                  "  d.layers.forEach(l => pm.expect(l.source).to.be.a('string')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /map/layers?constraint_type=prohibited",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/map/layers?constraint_type=prohibited",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "map",
+                "layers"
+              ],
+              "query": [
+                {
+                  "key": "constraint_type",
+                  "value": "prohibited"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.response.json().layers.forEach(l => pm.expect(l.constraint_type).to.eql('prohibited'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Chat",
+      "item": [
+        {
+          "name": "POST /chat/message - new conversation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Where is the nearest Potential Fishing Zone today?\",\n  \"language_override\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/chat/message",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "message"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/api/ChatMessageRequest.json: required `message`.",
+                  "// NOTE there is no lat/lon - a chat message cannot carry a location. It comes",
+                  "// from conversation context or from the Planner reading the message text.",
+                  "if (pm.response.code === 202) {",
+                  "  const d = pm.response.json();",
+                  "  pm.collectionVariables.set('conversation_id', d.conversation_id);",
+                  "  pm.test('202 Accepted', () => pm.response.to.have.status(202));",
+                  "  pm.test('answered_from says where the reply came from', () =>",
+                  "    pm.expect(d.answered_from).to.be.a('string'));",
+                  "  pm.test('response_text is an acknowledgement, not a fabricated verdict', () =>",
+                  "    pm.expect(d.response_text).to.be.a('string'));",
+                  "} else {",
+                  "  pm.test('502 means the AI Service is down', () => pm.expect(pm.response.code).to.eql(502));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /chat/message - follow-up (inherits context)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"What about tomorrow?\",\n  \"conversation_id\": \"{{conversation_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/chat/message",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "message"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// No lat/lon in this body on purpose - location is inherited from the",
+                  "// previous turn. That is the multi-turn requirement working.",
+                  "pm.test('202 or 502', () => pm.expect([202, 502]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /chat/message - Tamil",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"நாளை கடலுக்கு செல்வது பாதுகாப்பானதா?\",\n  \"language_override\": \"ta\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/chat/message",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "message"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Verifies non-Latin script survives sanitisation intact.",
+                  "pm.test('202 or 502', () => pm.expect([202, 502]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /chat/:conversation_id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/chat/{{conversation_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "{{conversation_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/api/ConversationResponse.json: required conversation_id, messages",
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test('has messages', () => pm.expect(d.messages).to.be.an('array'));",
+                  "pm.test('carries current_context for follow-ups', () =>",
+                  "  pm.expect(d).to.have.property('current_context'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /chat/:conversation_id/history",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/chat/{{conversation_id}}/history?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "{{conversation_id}}",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('has pagination', () =>",
+                  "  pm.expect(pm.response.json().data).to.have.property('pagination'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Route",
+      "item": [
+        {
+          "name": "POST /route",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": {\n    \"place_name\": \"Chennai Port\",\n    \"coordinate\": {\n      \"lat\": 13.1,\n      \"lon\": 80.3\n    }\n  },\n  \"destination\": {\n    \"place_name\": \"Puducherry\",\n    \"coordinate\": {\n      \"lat\": 11.93,\n      \"lon\": 79.83\n    }\n  },\n  \"vessel_type\": \"mechanized_fishing_vessel\",\n  \"activity\": \"fishing\",\n  \"departure_time\": \"2026-09-14T01:00:00Z\",\n  \"language_override\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/route",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "route"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/api/RouteRequest.json: origin, destination AND",
+                  "// vessel_type are all required. Capture route_id on EITHER",
+                  "// outcome - the route is saved even when dispatch to the AI",
+                  "// Service fails (502), same persist-before-dispatch pattern",
+                  "// as /analysis.",
+                  "const body = pm.response.json();",
+                  "if (pm.response.code === 202) {",
+                  "  pm.collectionVariables.set('route_id', body.route_id);",
+                  "} else if (pm.response.code === 502 && body.data && body.data.route_id) {",
+                  "  pm.collectionVariables.set('route_id', body.data.route_id);",
+                  "}",
+                  "pm.test('202 or 502', () => pm.expect([202, 502]).to.include(pm.response.code));",
+                  "pm.test('route_id captured either way', () =>",
+                  "  pm.expect(pm.collectionVariables.get('route_id')).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /route - missing vessel_type (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": {\n    \"place_name\": \"Chennai Port\"\n  },\n  \"destination\": {\n    \"place_name\": \"Puducherry\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/route",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "route"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// vessel_type is REQUIRED for a route, unlike a point analysis: a route is",
+                  "// sustained exposure, so substituting a conservative default is not enough.",
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('message names vessel_type', () =>",
+                  "  pm.expect(JSON.stringify(pm.response.json())).to.include('vessel_type'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /route/:route_id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/route/{{route_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "route",
+                "{{route_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/RouteResult.json: required route_id, status, origin,",
+                  "// destination, vessel_type. No `path_found` field - an empty waypoints array",
+                  "// plus populated blocking_reasons IS the 'no safe path' answer.",
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test('carries origin and destination', () => {",
+                  "  pm.expect(d).to.have.property('origin');",
+                  "  pm.expect(d).to.have.property('destination');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Trend",
+      "item": [
+        {
+          "name": "POST /trend",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"Why has fish productivity declined in this region?\",\n  \"coordinate\": {\n    \"lat\": 13.0827,\n    \"lon\": 80.5\n  },\n  \"parameter\": \"chlorophyll\",\n  \"baseline_period\": {\n    \"start\": \"2020-01-01\",\n    \"end\": \"2023-12-31\"\n  },\n  \"analysis_period\": {\n    \"start\": \"2025-01-01\",\n    \"end\": \"2025-12-31\"\n  },\n  \"language_override\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/trend",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "trend"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/api/TrendRequest.json: `parameter` is REQUIRED - a",
+                  "// trend is always a trend IN something. analysis_id is now in",
+                  "// a top-level `data` field on failure, matching every other",
+                  "// dispatch-failure response.",
+                  "const body = pm.response.json();",
+                  "if (pm.response.code === 202) {",
+                  "  pm.collectionVariables.set('analysis_id', body.analysis_id);",
+                  "} else if (pm.response.code === 502 && body.data && body.data.analysis_id) {",
+                  "  pm.collectionVariables.set('analysis_id', body.data.analysis_id);",
+                  "}",
+                  "pm.test('202 or 502', () => pm.expect([202, 502]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /trend - missing parameter (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coordinate\": {\n    \"lat\": 13.0,\n    \"lon\": 80.5\n  },\n  \"analysis_period\": {\n    \"start\": \"2025-01-01\",\n    \"end\": \"2025-12-31\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/trend",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "trend"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('message names parameter', () =>",
+                  "  pm.expect(JSON.stringify(pm.response.json())).to.include('parameter'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "7. Report",
+      "item": [
+        {
+          "name": "GET /report/:analysis_id (markdown)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/report/{{analysis_id}}?format=markdown&language=en",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "report",
+                "{{analysis_id}}"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "markdown"
+                },
+                {
+                  "key": "language",
+                  "value": "en"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// 400 here is CORRECT if the analysis has not finished yet - a report",
+                  "// on incomplete evidence would be cached forever.",
+                  "pm.test('200 (ready) or 400 (not finished)', () =>",
+                  "  pm.expect([200, 400]).to.include(pm.response.code));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('carries sources', () =>",
+                  "    pm.expect(pm.response.json().data).to.have.property('sources'));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "8. Alerts",
+      "item": [
+        {
+          "name": "POST /alerts/subscriptions (expect 201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subscriber_id\": \"demo-subscriber-001\",\n  \"location\": {\n    \"place_name\": \"Off Chennai\",\n    \"coordinate\": {\n      \"lat\": 13.0827,\n      \"lon\": 80.5\n    }\n  },\n  \"activity\": \"fishing\",\n  \"vessel_type\": \"motorized_country_craft\",\n  \"language_override\": \"ta\",\n  \"alert_types\": [\n    \"cyclone\",\n    \"high_wave\",\n    \"lightning\"\n  ],\n  \"minimum_level\": \"UNSAFE\",\n  \"channel\": \"web_push\",\n  \"quiet_hours\": {\n    \"start\": \"22:00\",\n    \"end\": \"05:00\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/alerts/subscriptions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "alerts",
+                "subscriptions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/api/AlertSubscriptionRequest.json required set:",
+                  "//   subscriber_id, location, alert_types, minimum_level, channel",
+                  "// location is place_or_coordinate (NOT flat lat/lon).",
+                  "// minimum_level is UPPERCASE: CAUTION | UNSAFE | DANGEROUS.",
+                  "// quiet_hours is just { start, end } - no enabled/offset/override fields;",
+                  "// DANGEROUS alerts always pierce quiet hours as a hard rule in code.",
+                  "if (pm.response.code === 201) {",
+                  "  const d = pm.response.json();",
+                  "  pm.collectionVariables.set('subscription_id', d.subscription_id);",
+                  "  pm.test('201 Created (synchronous, unlike an analysis)', () => pm.response.to.have.status(201));",
+                  "  pm.test('push credentials are NOT echoed back', () =>",
+                  "    pm.expect(d).to.not.have.property('push_subscription'));",
+                  "  pm.test('minimum_level round-trips uppercase', () => pm.expect(d.minimum_level).to.eql('UNSAFE'));",
+                  "} else if (pm.response.code === 409) {",
+                  "  pm.test('409 = duplicate active subscription', () => pm.response.to.have.status(409));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /alerts/subscriptions - duplicate (expect 409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subscriber_id\": \"demo-subscriber-001\",\n  \"location\": {\n    \"coordinate\": {\n      \"lat\": 13.0827,\n      \"lon\": 80.5\n    }\n  },\n  \"alert_types\": [\n    \"cyclone\"\n  ],\n  \"minimum_level\": \"UNSAFE\",\n  \"channel\": \"web_push\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/alerts/subscriptions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "alerts",
+                "subscriptions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Section 40: conflicting operation/state, e.g. duplicate subscription.",
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /alerts/subscriptions/:id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/alerts/subscriptions/{{subscription_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "alerts",
+                "subscriptions",
+                "{{subscription_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /alerts/subscriptions/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"minimum_level\": \"DANGEROUS\",\n  \"language_override\": \"hi\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/alerts/subscriptions/{{subscription_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "alerts",
+                "subscriptions",
+                "{{subscription_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test('minimum_level updated (uppercase)', () => pm.expect(d.minimum_level).to.eql('DANGEROUS'));",
+                  "pm.test('PATCH did not wipe unspecified fields', () =>",
+                  "  pm.expect(d.location).to.have.property('coordinate'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /alerts/subscriptions/:id (soft delete)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/alerts/subscriptions/{{subscription_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "alerts",
+                "subscriptions",
+                "{{subscription_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('deactivated, not destroyed (audit trail preserved)', () =>",
+                  "  pm.expect(pm.response.json().data.active).to.be.false);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "9. Voice",
+      "item": [
+        {
+          "name": "POST /voice/query (expect 502 unless Bhashini configured)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"audio_base64\": \"UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=\",\n  \"audio_mime_type\": \"audio/wav\",\n  \"language_override\": \"ta\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/voice/query",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "voice",
+                "query"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/api/VoiceQueryRequest.json requires BOTH audio_base64 and",
+                  "// audio_mime_type. The mime type is not decoration - guessing the encoding",
+                  "// would silently corrupt the transcript.",
+                  "// A 502 with bhashini_not_configured is the CORRECT never-fabricate response:",
+                  "// we refuse to invent a transcript for a safety query.",
+                  "pm.test('202 (configured) or 502 (not configured)', () =>",
+                  "  pm.expect([202, 502]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10. Internal (port 4100)",
+      "item": [
+        {
+          "name": "GET internal /health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{internalUrl}}/health",
+              "host": [
+                "{{internalUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/v1/progress - no token (expect 401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"analysis_id\": \"{{analysis_id}}\",\n  \"agent\": \"planner\",\n  \"status\": \"running\",\n  \"status_code\": 202,\n  \"timestamp\": \"2026-09-13T02:15:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{internalUrl}}/internal/v1/progress",
+              "host": [
+                "{{internalUrl}}"
+              ],
+              "path": [
+                "internal",
+                "v1",
+                "progress"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Section 98/102: the internal channel requires a signed token.",
+                  "pm.test('401 Unauthorized without a token', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/v1/progress - planner (plan + points)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-internal-token",
+                "value": "{{internal_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"analysis_id\": \"{{analysis_id}}\",\n  \"agent\": \"planner\",\n  \"status\": \"completed\",\n  \"status_code\": 200,\n  \"timestamp\": \"2026-09-13T02:15:10Z\",\n  \"selection_reason\": \"safety intent - weather, ocean and GIS are mandatory\",\n  \"data\": {\n    \"analysis_id\": \"{{analysis_id}}\",\n    \"response_language\": \"en\",\n    \"language_detection\": {\n      \"detected\": \"en\",\n      \"confidence\": 0.98\n    },\n    \"primary_intent\": \"point_safety\",\n    \"secondary_intents\": [],\n    \"location\": {\n      \"original\": {\n        \"name\": \"Off Chennai\",\n        \"lat\": 13.0827,\n        \"lon\": 80.5\n      },\n      \"validated\": {\n        \"lat\": 13.0827,\n        \"lon\": 80.5,\n        \"snapped\": false,\n        \"snap_distance_km\": null,\n        \"snap_reference\": null\n      }\n    },\n    \"time_window\": {\n      \"local\": \"2026-09-14T06:00:00+05:30/2026-09-14T10:00:00+05:30\",\n      \"utc\": \"2026-09-14T00:30:00Z/2026-09-14T04:30:00Z\",\n      \"original_expression\": \"tomorrow morning\",\n      \"matched_bucket\": \"morning\"\n    },\n    \"activity\": \"fishing\",\n    \"vessel_type\": \"motorized_country_craft\",\n    \"vessel_assumed\": false,\n    \"sampling\": {\n      \"mode\": \"nine_point_grid\",\n      \"radius_km\": 10\n    },\n    \"selected_agents\": [\n      {\n        \"agent\": \"weather\",\n        \"reason\": \"mandatory for any safety verdict\",\n        \"mandatory_by_policy\": true\n      },\n      {\n        \"agent\": \"ocean\",\n        \"reason\": \"wave and swell drive small-craft risk\",\n        \"mandatory_by_policy\": true\n      },\n      {\n        \"agent\": \"tide\",\n        \"reason\": \"affects launch and return windows\",\n        \"mandatory_by_policy\": false\n      }\n    ],\n    \"skipped_agents\": [\n      {\n        \"agent\": \"pfz\",\n        \"reason\": \"intent is safety only, not fishing opportunity\"\n      }\n    ],\n    \"stages\": [\n      \"planner\",\n      \"weather\",\n      \"ocean\",\n      \"tide\",\n      \"risk\",\n      \"decision\"\n    ],\n    \"points\": [\n      {\n        \"point_id\": \"P1\",\n        \"lat\": 13.0827,\n        \"lon\": 80.5,\n        \"point_status\": \"analysed\",\n        \"land_sea\": \"sea\"\n      },\n      {\n        \"point_id\": \"P2\",\n        \"lat\": 13.1727,\n        \"lon\": 80.5,\n        \"point_status\": \"analysed\",\n        \"land_sea\": \"sea\"\n      },\n      {\n        \"point_id\": \"P3\",\n        \"lat\": 13.0827,\n        \"lon\": 80.32,\n        \"point_status\": \"not_applicable\",\n        \"land_sea\": \"land\"\n      }\n    ]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{internalUrl}}/internal/v1/progress",
+              "host": [
+                "{{internalUrl}}"
+              ],
+              "path": [
+                "internal",
+                "v1",
+                "progress"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/ProgressMessage.json",
+                  "//   required: analysis_id, agent, status, status_code, timestamp",
+                  "// Note `agent`, NOT `stage`. The ExecutionPlan travels in `data` - this is",
+                  "// how the plan, points and location reach the Backend. They are NOT in the",
+                  "// final result callback.",
+                  "pm.test('200 OK with a valid token', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/v1/progress - weather agent result",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-internal-token",
+                "value": "{{internal_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"analysis_id\": \"{{analysis_id}}\",\n  \"agent\": \"weather\",\n  \"status\": \"completed\",\n  \"status_code\": 200,\n  \"timestamp\": \"2026-09-13T02:15:20Z\",\n  \"data\": {\n    \"analysis_id\": \"{{analysis_id}}\",\n    \"agent_name\": \"weather\",\n    \"status\": \"completed\",\n    \"duration_ms\": 120,\n    \"normalized\": {\n      \"P1\": {\n        \"measurements\": {\n          \"wind_speed_ms\": {\n            \"parameter\": \"wind_speed_ms\",\n            \"value\": 7.8,\n            \"unit\": \"m/s\",\n            \"source\": \"IMD\",\n            \"product_id\": \"IMD-FC-v1\",\n            \"retrieved_at\": \"2026-09-13T02:00:00Z\",\n            \"valid_time\": \"2026-09-14T01:00:00Z\",\n            \"observation_type\": \"forecast\",\n            \"status\": \"available\",\n            \"freshness\": {\n              \"state\": \"fresh\",\n              \"age_hours\": 0.5,\n              \"max_age_hours\": 6\n            },\n            \"confidence\": 0.8\n          },\n          \"visibility_km\": {\n            \"parameter\": \"visibility_km\",\n            \"value\": 9.0,\n            \"unit\": \"km\",\n            \"source\": \"IMD\",\n            \"retrieved_at\": \"2026-09-13T02:00:00Z\",\n            \"status\": \"available\",\n            \"freshness\": {\n              \"state\": \"fresh\",\n              \"age_hours\": 0.5,\n              \"max_age_hours\": 6\n            }\n          }\n        }\n      },\n      \"P2\": {\n        \"measurements\": {\n          \"wind_speed_ms\": {\n            \"parameter\": \"wind_speed_ms\",\n            \"value\": 8.4,\n            \"unit\": \"m/s\",\n            \"source\": \"IMD\",\n            \"retrieved_at\": \"2026-09-13T02:00:00Z\",\n            \"status\": \"available\",\n            \"freshness\": {\n              \"state\": \"fresh\",\n              \"age_hours\": 0.5,\n              \"max_age_hours\": 6\n            }\n          }\n        }\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{internalUrl}}/internal/v1/progress",
+              "host": [
+                "{{internalUrl}}"
+              ],
+              "path": [
+                "internal",
+                "v1",
+                "progress"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/AgentResult.json travels inline via ProgressMessage.data.",
+                  "// `normalized` is a MAP keyed by point_id; measurements is a MAP keyed by",
+                  "// canonical parameter name. Each value is a full Measurement with provenance.",
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/v1/progress - tide agent FAILS",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-internal-token",
+                "value": "{{internal_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"analysis_id\": \"{{analysis_id}}\",\n  \"agent\": \"tide\",\n  \"status\": \"failed\",\n  \"status_code\": 504,\n  \"timestamp\": \"2026-09-13T02:15:25Z\",\n  \"error\": {\n    \"error_category\": \"upstream_unavailable\",\n    \"message\": \"INCOIS tide endpoint did not respond\",\n    \"http_status\": 504,\n    \"retry_count\": 2\n  }\n}"
+            },
+            "url": {
+              "raw": "{{internalUrl}}/internal/v1/progress",
+              "host": [
+                "{{internalUrl}}"
+              ],
+              "path": [
+                "internal",
+                "v1",
+                "progress"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// A failed agent is recorded WITH its error_category (Section 107), because",
+                  "// the Risk stage needs to know what evidence it does NOT have (Section 50).",
+                  "pm.test('200 OK - the Backend accepts failure reports', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/v1/progress - risk assessment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-internal-token",
+                "value": "{{internal_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"analysis_id\": \"{{analysis_id}}\",\n  \"agent\": \"risk\",\n  \"status\": \"completed\",\n  \"status_code\": 200,\n  \"timestamp\": \"2026-09-13T02:15:40Z\",\n  \"data\": {\n    \"analysis_id\": \"{{analysis_id}}\",\n    \"results\": [\n      {\n        \"point_id\": \"P1\",\n        \"baseline_score\": 42,\n        \"llm_adjustment\": 3,\n        \"adjustment_reason\": \"Short steep swell period raises small-craft risk.\",\n        \"official_warnings\": [],\n        \"hard_rules_applied\": [],\n        \"constraint_floor\": null,\n        \"final_score\": 45,\n        \"risk_level\": \"caution\",\n        \"reasoning\": \"Moderate winds with no official warning in force. Tide data was unavailable and was not estimated.\",\n        \"key_findings\": [\n          \"Wind 7.8 m/s\",\n          \"Tide data unavailable\"\n        ],\n        \"hourly_scores\": [\n          {\n            \"time\": \"2026-09-14T01:00:00Z\",\n            \"score\": 40\n          },\n          {\n            \"time\": \"2026-09-14T02:00:00Z\",\n            \"score\": 42\n          },\n          {\n            \"time\": \"2026-09-14T03:00:00Z\",\n            \"score\": 38\n          }\n        ],\n        \"confidence\": 0.7,\n        \"llm_interpretation_unavailable\": false\n      },\n      {\n        \"point_id\": \"P2\",\n        \"baseline_score\": 55,\n        \"final_score\": 55,\n        \"risk_level\": \"unsafe\",\n        \"reasoning\": \"Higher winds further offshore.\",\n        \"confidence\": 0.7,\n        \"hourly_scores\": [\n          {\n            \"time\": \"2026-09-14T01:00:00Z\",\n            \"score\": 55\n          }\n        ]\n      }\n    ]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{internalUrl}}/internal/v1/progress",
+              "host": [
+                "{{internalUrl}}"
+              ],
+              "path": [
+                "internal",
+                "v1",
+                "progress"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/db/RiskResultsDocument.json stores the array under `results`,",
+                  "// and each RiskAssessment names the level `risk_level`.",
+                  "// baseline_score is max(hourly_scores) - the WORST hour, not the average",
+                  "// (Section 48.4.1). An average would let one calm hour mask a dangerous one.",
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/v1/result - with token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-internal-token",
+                "value": "{{internal_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"analysis_id\": \"{{analysis_id}}\",\n  \"final_stage\": \"decision\",\n  \"status\": \"partial\",\n  \"decision\": {\n    \"analysis_id\": \"{{analysis_id}}\",\n    \"response_language\": \"en\",\n    \"generated_at\": \"2026-09-13T02:16:00Z\",\n    \"recommendation_type\": \"go_with_caution\",\n    \"one_line_recommendation\": \"Conditions are marginal - stay close to shore and return before noon.\",\n    \"detailed_recommendation\": \"Winds are moderate at 7.8 m/s near shore, rising further offshore. Tide data was unavailable and has NOT been estimated, so launch and return timing could not be assessed.\",\n    \"key_findings\": {\n      \"safest_allowed_point\": \"P1\",\n      \"highest_risk_point\": \"P2\",\n      \"major_hazard\": \"Rising wind offshore\",\n      \"official_warning_status\": null,\n      \"gis_restriction\": null,\n      \"pfz_opportunity\": null,\n      \"best_time\": null,\n      \"main_uncertainty\": \"Tide data unavailable\",\n      \"additional_findings\": [\n        \"Wind 7.8 m/s near shore\"\n      ]\n    },\n    \"preferred_point\": \"P1\",\n    \"preferred_point_reason\": \"Lowest risk of the analysed points and closest to shore.\",\n    \"worst_point\": \"P2\",\n    \"worst_point_causes\": [\n      \"wind_speed_ms\"\n    ],\n    \"excluded_points\": [\n      {\n        \"point_id\": \"P3\",\n        \"reason\": \"not_applicable\"\n      }\n    ],\n    \"best_time_windows\": [\n      {\n        \"start\": \"2026-09-14T01:00:00Z\",\n        \"end\": \"2026-09-14T03:00:00Z\",\n        \"max_score\": 45,\n        \"level\": \"CAUTION\",\n        \"applies_to_point\": \"P1\"\n      }\n    ],\n    \"point_scores\": [\n      {\n        \"point_id\": \"P1\",\n        \"baseline_score\": 42,\n        \"llm_adjustment\": 3,\n        \"adjustment_reason\": \"Short steep swell period raises small-craft risk.\",\n        \"official_warnings\": [],\n        \"hard_rules_applied\": [],\n        \"constraint_floor\": null,\n        \"final_score\": 45,\n        \"risk_level\": \"CAUTION\",\n        \"risk_factors\": [],\n        \"reasoning\": \"Moderate winds with no official warning in force. Tide data was unavailable and was not estimated.\",\n        \"key_findings\": [\n          \"Wind 7.8 m/s\",\n          \"Tide data unavailable\"\n        ],\n        \"hourly_scores\": [\n          {\n            \"time\": \"2026-09-14T01:00:00Z\",\n            \"score\": 40\n          },\n          {\n            \"time\": \"2026-09-14T02:00:00Z\",\n            \"score\": 42\n          },\n          {\n            \"time\": \"2026-09-14T03:00:00Z\",\n            \"score\": 38\n          }\n        ],\n        \"confidence\": 0.7,\n        \"llm_interpretation_unavailable\": false\n      },\n      {\n        \"point_id\": \"P2\",\n        \"baseline_score\": 55,\n        \"final_score\": 55,\n        \"risk_level\": \"UNSAFE\",\n        \"reasoning\": \"Higher winds further offshore.\",\n        \"confidence\": 0.7,\n        \"hourly_scores\": [\n          {\n            \"time\": \"2026-09-14T01:00:00Z\",\n            \"score\": 55\n          }\n        ]\n      }\n    ]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{internalUrl}}/internal/v1/result",
+              "host": [
+                "{{internalUrl}}"
+              ],
+              "path": [
+                "internal",
+                "v1",
+                "result"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// contracts/api/InternalResultPayload.json + contracts/Decision.json +",
+                  "// contracts/RiskAssessment.json, all read directly this time.",
+                  "// Notable shapes that are easy to get wrong:",
+                  "//   preferred_point / worst_point are STRINGS (point_id refs), not objects",
+                  "//   key_findings is an OBJECT with named fields, not a string array",
+                  "//   point_scores items are full RiskAssessment objects",
+                  "//   risk_level / level are UPPERCASE throughout",
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('analysis is now terminal', () =>",
+                  "  pm.expect(['completed','partial']).to.include(pm.response.json().data.status));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

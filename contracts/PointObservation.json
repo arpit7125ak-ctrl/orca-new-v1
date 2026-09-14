@@ -1,0 +1,38 @@
+{
+  "$id": "https://orca.sih26176/schemas/PointObservation.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PointObservation",
+  "description": "One sampled point from the spatial sampling tool. §15.1, §17.1, §37.2. RECONSTRUCTED from the architecture doc — diff against the actual locked PointObservation.json before use. Canonical convention: point_id = P0-P8 for the local grid, never compass letters.",
+  "type": "object",
+  "required": ["point_id", "lat", "lon", "point_status", "land_sea"],
+  "properties": {
+    "point_id": {
+      "type": "string",
+      "pattern": "^(P[0-8]|R\\d{4}|C\\d{4}|W\\d{4})$",
+      "description": "Local grid: P0 (centre) - P8. Regional scan: R0001... Route corridor cells: C0001..., waypoints: W0001... Historical: reuses fixed local/regional IDs. §17.1"
+    },
+    "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+    "lon": { "type": "number", "minimum": -180, "maximum": 180 },
+    "bearing_deg": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 360,
+      "description": "Bearing from the sampling centre. Null for the centre point itself (P0)."
+    },
+    "distance_km": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "Distance from the sampling centre (P0) or route origin, in km. 0 for the centre point."
+    },
+    "point_status": {
+      "type": "string",
+      "enum": ["applicable", "not_applicable", "prohibited"],
+      "description": "applicable/not_applicable set by the sampling tool (§15.1). prohibited is added later once GIS constraints are evaluated (§37.2, §59)."
+    },
+    "land_sea": {
+      "type": "string",
+      "enum": ["land", "sea"]
+    }
+  },
+  "additionalProperties": false
+}

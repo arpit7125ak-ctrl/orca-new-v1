@@ -1,0 +1,36 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/AlertSubscriptionResponse.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AlertSubscriptionResponse",
+  "description": "Response body for the alert subscription CRUD endpoints (POST/GET/PATCH /api/v1/alerts/subscriptions). Deliberately standalone rather than composed from AlertSubscriptionRequest.json via allOf — that request schema's additionalProperties:false would reject the extra response-only fields (subscription_id, created_at, updated_at) under strict allOf composition. Field values (enums) are kept identical to AlertSubscriptionRequest.json by hand — diff both files together if either changes. §99.6, §103",
+  "type": "object",
+  "required": ["subscription_id", "subscriber_id", "location", "alert_types", "minimum_level", "channel", "created_at"],
+  "properties": {
+    "subscription_id": { "type": "string" },
+    "subscriber_id": { "type": "string" },
+    "location": { "$ref": "../AnalysisRequest.json#/definitions/place_or_coordinate" },
+    "activity": { "type": ["string", "null"] },
+    "vessel_type": { "type": ["string", "null"] },
+    "language_override": { "type": ["string", "null"] },
+    "alert_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["cyclone", "strong_wind", "high_wave", "swell_surge", "lightning", "thunderstorm", "poor_visibility", "other_hazard", "official_warning"]
+      }
+    },
+    "minimum_level": { "type": "string", "enum": ["CAUTION", "UNSAFE", "DANGEROUS"] },
+    "channel": { "type": "string", "enum": ["web_push", "sms", "whatsapp", "ivr"] },
+    "quiet_hours": {
+      "type": ["object", "null"],
+      "properties": {
+        "start": { "type": "string" },
+        "end": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "additionalProperties": false
+}

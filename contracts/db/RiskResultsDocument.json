@@ -1,0 +1,17 @@
+{
+  "$id": "https://orca.sih26176/schemas/db/RiskResultsDocument.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RiskResultsDocument",
+  "description": "MongoDB `risk_results` collection document. Unique index on analysis_id. §99.3",
+  "type": "object",
+  "required": ["analysis_id", "results", "created_at"],
+  "properties": {
+    "analysis_id": { "type": "string" },
+    "results": {
+      "type": "array",
+      "items": { "$ref": "../RiskAssessment.json" }
+    },
+    "created_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

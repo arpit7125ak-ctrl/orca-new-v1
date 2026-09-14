@@ -1,0 +1,56 @@
+{
+  "$id": "https://orca.sih26176/schemas/VesselProfile.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VesselProfile",
+  "description": "Configuration entry defining safety thresholds and route constraints for a vessel type. §18.2, §48.5. Canonical copy lives in config/vessel_profiles.yaml (AI Service); this schema is the shared shape for any API/UI surface that displays or validates it.",
+  "type": "object",
+  "required": ["vessel_type", "thresholds"],
+  "properties": {
+    "vessel_type": {
+      "type": "string",
+      "description": "Configuration-driven vessel type id, e.g. 'motorized_country_craft'. §7.7"
+    },
+    "display_name": { "type": "string" },
+    "thresholds": {
+      "type": "object",
+      "description": "Three-band thresholds per factor used by the deterministic Risk baseline. §48.2, §48.5, §24.2. Each field name's suffix must match the canonical unit assigned to that parameter in shared-config/canonical-units.json — that file is the single source of truth; field names here are derived from it, not the reverse. Wind is canonically m/s (WMO/SI), hence 'wind_ms', not 'wind_kn'.",
+      "required": ["wind_ms", "wave_height_m", "visibility_km"],
+      "properties": {
+        "wind_ms": { "$ref": "#/definitions/threshold_band" },
+        "wave_height_m": { "$ref": "#/definitions/threshold_band" },
+        "visibility_km": {
+          "allOf": [{ "$ref": "#/definitions/threshold_band" }],
+          "description": "Lower is worse — direction is inverted per §48.2."
+        },
+        "current_speed_ms": { "$ref": "#/definitions/threshold_band" }
+      },
+      "additionalProperties": false
+    },
+    "route_constraints": {
+      "type": "object",
+      "properties": {
+        "max_range_km": { "type": ["number", "null"] },
+        "cruising_speed_kmh": { "type": ["number", "null"] },
+        "min_depth_m": { "type": ["number", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "distance_from_coast_factor": {
+      "type": "boolean",
+      "description": "Whether distance from coast is treated as a safety factor for this vessel type. §18.2"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "threshold_band": {
+      "type": "object",
+      "required": ["caution", "unsafe", "dangerous"],
+      "properties": {
+        "caution": { "type": "number" },
+        "unsafe": { "type": "number" },
+        "dangerous": { "type": "number" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

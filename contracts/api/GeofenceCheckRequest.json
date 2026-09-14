@@ -1,0 +1,16 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/GeofenceCheckRequest.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GeofenceCheckRequest",
+  "description": "POST /api/v1/geofence/check request body — live GPS position. §66.1",
+  "type": "object",
+  "required": ["lat", "lon"],
+  "properties": {
+    "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+    "lon": { "type": "number", "minimum": -180, "maximum": 180 },
+    "device_id": { "type": ["string", "null"], "description": "For deduplication of repeated warnings. §66.3" },
+    "vessel_type": { "type": ["string", "null"] },
+    "language_override": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

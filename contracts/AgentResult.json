@@ -1,0 +1,50 @@
+{
+  "$id": "https://orca.sih26176/schemas/AgentResult.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AgentResult",
+  "description": "One data agent's complete output for an analysis, as persisted in the agent_results collection. §45, §99.2",
+  "type": "object",
+  "required": ["analysis_id", "agent_name", "status"],
+  "properties": {
+    "analysis_id": { "type": "string" },
+    "agent_name": {
+      "type": "string",
+      "description": "Agent Registry name, e.g. 'weather', 'ocean', 'gis'. §22"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["queued", "running", "completed", "partial", "failed", "skipped"],
+      "description": "§37.1"
+    },
+    "started_at": { "type": ["string", "null"], "format": "date-time" },
+    "completed_at": { "type": ["string", "null"], "format": "date-time" },
+    "duration_ms": { "type": ["integer", "null"], "minimum": 0 },
+    "retry_count": { "type": ["integer", "null"], "minimum": 0 },
+    "error": {
+      "oneOf": [{ "$ref": "shared/ErrorInfo.json" }, { "type": "null" }]
+    },
+    "normalized": {
+      "type": "object",
+      "description": "Canonical ORCA fields, source-adapter-converted. §24.1. by_point for point-mode agents (weather, ocean, gis); regional for agents fetched once and localized (tide, cyclone, pfz, ecosystem — §96).",
+      "properties": {
+        "by_point": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": { "$ref": "Measurement.json" }
+          }
+        },
+        "regional": {
+          "type": ["object", "null"],
+          "additionalProperties": { "$ref": "Measurement.json" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "raw": {
+      "description": "Unmodified provider response, kept for audit/debugging. Opaque — shape depends on the source adapter. §45",
+      "type": ["object", "array", "string", "null"]
+    }
+  },
+  "additionalProperties": false
+}

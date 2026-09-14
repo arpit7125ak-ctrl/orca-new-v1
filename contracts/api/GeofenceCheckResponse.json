@@ -1,0 +1,21 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/GeofenceCheckResponse.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GeofenceCheckResponse",
+  "description": "Response to POST /api/v1/geofence/check. Pure deterministic geometry, no LLM, target <1s. §66.2, §66.3",
+  "type": "object",
+  "required": ["state"],
+  "properties": {
+    "state": {
+      "type": "string",
+      "enum": ["clear", "approaching", "inside"]
+    },
+    "layer_name": { "type": ["string", "null"], "description": "Populated when state != 'clear'." },
+    "constraint_type": { "type": ["string", "null"], "enum": ["prohibited", "conditional", "warning_only", null] },
+    "distance_km": { "type": ["number", "null"] },
+    "bearing_deg": { "type": ["number", "null"], "minimum": 0, "maximum": 360 },
+    "warning_text": { "type": ["string", "null"], "description": "Pre-translated template in the user's language. §66.2" },
+    "deduplicated": { "type": "boolean", "default": false, "description": "True if this identical warning was suppressed as a repeat within the configured window. §66.3" }
+  },
+  "additionalProperties": false
+}

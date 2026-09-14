@@ -1,0 +1,34 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/MapLayersResponse.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MapLayersResponse",
+  "description": "GET /api/v1/map/layers response body. §67.1, §99.5",
+  "type": "object",
+  "required": ["layers"],
+  "properties": {
+    "layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["layer_name", "constraint_type", "version", "source", "last_updated", "geometry"],
+        "properties": {
+          "layer_name": { "type": "string", "description": "e.g. 'eez', 'mpa', 'restricted_zone', 'ports'. §65, §67" },
+          "constraint_type": {
+            "type": "string",
+            "enum": ["prohibited", "conditional", "warning_only", "none"],
+            "description": "§65.1. 'none' for purely informational layers like ports or coastline."
+          },
+          "version": { "type": "string" },
+          "source": { "type": "string" },
+          "last_updated": { "type": "string", "format": "date" },
+          "geometry": {
+            "type": "object",
+            "description": "Simplified GeoJSON FeatureCollection for map display. §67.1"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

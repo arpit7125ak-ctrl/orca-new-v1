@@ -1,0 +1,104 @@
+{
+  "$id": "https://orca.sih26176/schemas/Decision.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Decision",
+  "description": "Decision Agent final output. §57-63, §99.4. RECONSTRUCTED from the architecture doc — diff against the actual locked Decision.json before use.",
+  "type": "object",
+  "required": ["analysis_id", "response_language", "detailed_recommendation", "one_line_recommendation", "recommendation_type", "point_scores"],
+  "properties": {
+    "analysis_id": { "type": "string" },
+    "generated_at": { "type": "string", "format": "date-time", "description": "Added for consistency with RouteResult/TrendResult/ReportContent and for decisions-collection sorting — not explicitly named in §58 but implied by every other final-stage object having one." },
+    "response_language": { "type": "string", "description": "Must match the analysis's response_language. §56.3" },
+    "detailed_recommendation": {
+      "type": "string",
+      "description": "Complete evidence-based explanation. §58.1"
+    },
+    "one_line_recommendation": {
+      "type": "string",
+      "description": "Concise dashboard recommendation, short enough for SMS/push. §58.2"
+    },
+    "recommendation_type": {
+      "type": "string",
+      "enum": ["go", "go_with_caution", "go_in_safer_window", "not_recommended", "do_not_venture"],
+      "description": "§58.5"
+    },
+    "key_findings": {
+      "type": "object",
+      "description": "Structured conclusions per §58.3. Individual fields are null when not applicable (e.g. no GIS restriction on the preferred point).",
+      "properties": {
+        "safest_allowed_point": { "type": ["string", "null"] },
+        "highest_risk_point": { "type": ["string", "null"] },
+        "major_hazard": { "type": ["string", "null"] },
+        "official_warning_status": { "type": ["string", "null"] },
+        "gis_restriction": { "type": ["string", "null"] },
+        "pfz_opportunity": { "type": ["string", "null"] },
+        "best_time": { "type": ["string", "null"] },
+        "main_uncertainty": { "type": ["string", "null"] },
+        "additional_findings": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "preferred_point": {
+      "type": ["string", "null"],
+      "pattern": "^(P[0-8]|R\\d{4}|C\\d{4}|W\\d{4})$",
+      "description": "Lowest-risk applicable, allowed point. Null when recommendation_type='do_not_venture'. §59, §60"
+    },
+    "preferred_point_reason": {
+      "type": ["string", "null"],
+      "description": "Required when the tie-band rule selected a non-lowest-score point for PFZ/ecosystem advantage. §59.2"
+    },
+    "worst_point": {
+      "type": ["string", "null"],
+      "pattern": "^(P[0-8]|R\\d{4}|C\\d{4}|W\\d{4})$",
+      "description": "§61"
+    },
+    "worst_point_causes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "§61"
+    },
+    "excluded_points": {
+      "type": "array",
+      "description": "Points removed during hard-constraint selection, for audit/evidence. §59.1, §79",
+      "items": {
+        "type": "object",
+        "required": ["point_id", "reason"],
+        "properties": {
+          "point_id": { "type": "string" },
+          "reason": {
+            "type": "string",
+            "enum": ["not_applicable", "gis_prohibited", "dangerous"]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "best_time_windows": {
+      "type": "array",
+      "description": "Deterministically calculated per §63.1, ranked by lowest max score then length.",
+      "items": {
+        "type": "object",
+        "required": ["start", "end", "max_score", "level", "applies_to_point"],
+        "properties": {
+          "start": { "type": "string", "format": "date-time" },
+          "end": { "type": "string", "format": "date-time" },
+          "max_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "level": { "type": "string", "enum": ["SAFE", "CAUTION"] },
+          "applies_to_point": { "type": "string" },
+          "is_alternative_horizon": {
+            "type": "boolean",
+            "default": false,
+            "description": "True if this window falls outside the originally requested window and is offered as an alternative. §63.1 step 5, §60"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "point_scores": {
+      "type": "array",
+      "description": "All applicable points' Risk scores, returned exactly as received — never modified. §58.4, Rule 34",
+      "items": { "$ref": "RiskAssessment.json" }
+    }
+  },
+  "additionalProperties": false
+}

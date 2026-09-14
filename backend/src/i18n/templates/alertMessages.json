@@ -1,0 +1,89 @@
+{
+  "_comment": "Section 99.6/99.7: alert messages in the subscriber's language. Static pre-translated templates - no LLM in the alert delivery path, because an alert must be reliable and identical every time. Placeholders: {location}, {level}, {detail}.",
+  "_placeholders": ["{location}", "{level}", "{detail}"],
+
+  "adverse_weather": {
+    "en": "Weather alert for {location}: conditions are {level}. {detail}",
+    "hi": "{location} के लिए मौसम चेतावनी: स्थिति {level} है। {detail}",
+    "bn": "{location}-এর জন্য আবহাওয়া সতর্কতা: পরিস্থিতি {level}। {detail}",
+    "ta": "{location} க்கான வானிலை எச்சரிக்கை: நிலை {level}. {detail}",
+    "te": "{location} కోసం వాతావరణ హెచ్చరిక: పరిస్థితి {level}. {detail}",
+    "or": "{location} ପାଇଁ ପାଣିପାଗ ଚେତାବନୀ: ସ୍ଥିତି {level}। {detail}",
+    "mr": "{location} साठी हवामान इशारा: परिस्थिती {level}. {detail}",
+    "ml": "{location} നുള്ള കാലാവസ്ഥാ മുന്നറിയിപ്പ്: സാഹചര്യം {level}. {detail}",
+    "kn": "{location} ಗಾಗಿ ಹವಾಮಾನ ಎಚ್ಚರಿಕೆ: ಪರಿಸ್ಥಿತಿ {level}. {detail}",
+    "gu": "{location} માટે હવામાન ચેતવણી: સ્થિતિ {level}. {detail}"
+  },
+
+  "high_waves": {
+    "en": "High wave alert for {location}: {detail} Avoid venturing out.",
+    "hi": "{location} के लिए ऊँची लहर चेतावनी: {detail} समुद्र में जाने से बचें।",
+    "bn": "{location}-এর জন্য উচ্চ ঢেউ সতর্কতা: {detail} সমুদ্রে যাওয়া এড়িয়ে চলুন।",
+    "ta": "{location} க்கான உயர் அலை எச்சரிக்கை: {detail} கடலுக்குச் செல்வதைத் தவிர்க்கவும்.",
+    "te": "{location} కోసం అధిక అలల హెచ్చరిక: {detail} సముద్రంలోకి వెళ్లడం మానుకోండి.",
+    "or": "{location} ପାଇଁ ଉଚ୍ଚ ଲହରୀ ଚେତାବନୀ: {detail} ସମୁଦ୍ରକୁ ଯିବା ଏଡ଼ାନ୍ତୁ।",
+    "mr": "{location} साठी उंच लाटांचा इशारा: {detail} समुद्रात जाणे टाळा.",
+    "ml": "{location} നുള്ള ഉയർന്ന തിരമാല മുന്നറിയിപ്പ്: {detail} കടലിൽ പോകുന്നത് ഒഴിവാക്കുക.",
+    "kn": "{location} ಗಾಗಿ ಎತ್ತರದ ಅಲೆಗಳ ಎಚ್ಚರಿಕೆ: {detail} ಸಮುದ್ರಕ್ಕೆ ಹೋಗುವುದನ್ನು ತಪ್ಪಿಸಿ.",
+    "gu": "{location} માટે ઊંચા મોજાંની ચેતવણી: {detail} દરિયામાં જવાનું ટાળો."
+  },
+
+  "lightning": {
+    "en": "Lightning alert for {location}: {detail} Seek shelter immediately.",
+    "hi": "{location} के लिए बिजली चेतावनी: {detail} तुरंत सुरक्षित स्थान पर जाएँ।",
+    "bn": "{location}-এর জন্য বজ্রপাত সতর্কতা: {detail} অবিলম্বে আশ্রয় নিন।",
+    "ta": "{location} க்கான மின்னல் எச்சரிக்கை: {detail} உடனே பாதுகாப்பான இடத்திற்குச் செல்லவும்.",
+    "te": "{location} కోసం పిడుగు హెచ్చరిక: {detail} వెంటనే సురక్షిత ప్రదేశానికి వెళ్లండి.",
+    "or": "{location} ପାଇଁ ବଜ୍ରପାତ ଚେତାବନୀ: {detail} ତୁରନ୍ତ ନିରାପଦ ସ୍ଥାନକୁ ଯାଆନ୍ତୁ।",
+    "mr": "{location} साठी वीज पडण्याचा इशारा: {detail} त्वरित सुरक्षित ठिकाणी जा.",
+    "ml": "{location} നുള്ള മിന്നൽ മുന്നറിയിപ്പ്: {detail} ഉടൻ സുരക്ഷിത സ്ഥലത്തേക്ക് മാറുക.",
+    "kn": "{location} ಗಾಗಿ ಸಿಡಿಲು ಎಚ್ಚರಿಕೆ: {detail} ತಕ್ಷಣ ಸುರಕ್ಷಿತ ಸ್ಥಳಕ್ಕೆ ಹೋಗಿ.",
+    "gu": "{location} માટે વીજળીની ચેતવણી: {detail} તાત્કાલિક સુરક્ષિત સ્થળે જાઓ."
+  },
+
+  "cyclone": {
+    "en": "CYCLONE ALERT for {location}: {detail} Do not venture into the sea.",
+    "hi": "{location} के लिए चक्रवात चेतावनी: {detail} समुद्र में बिल्कुल न जाएँ।",
+    "bn": "{location}-এর জন্য ঘূর্ণিঝড় সতর্কতা: {detail} সমুদ্রে যাবেন না।",
+    "ta": "{location} க்கான புயல் எச்சரிக்கை: {detail} கடலுக்குச் செல்ல வேண்டாம்.",
+    "te": "{location} కోసం తుఫాను హెచ్చరిక: {detail} సముద్రంలోకి వెళ్లవద్దు.",
+    "or": "{location} ପାଇଁ ବାତ୍ୟା ଚେତାବନୀ: {detail} ସମୁଦ୍ରକୁ ଯାଆନ୍ତୁ ନାହିଁ।",
+    "mr": "{location} साठी चक्रीवादळ इशारा: {detail} समुद्रात जाऊ नका.",
+    "ml": "{location} നുള്ള ചുഴലിക്കാറ്റ് മുന്നറിയിപ്പ്: {detail} കടലിൽ പോകരുത്.",
+    "kn": "{location} ಗಾಗಿ ಚಂಡಮಾರುತ ಎಚ್ಚರಿಕೆ: {detail} ಸಮುದ್ರಕ್ಕೆ ಹೋಗಬೇಡಿ.",
+    "gu": "{location} માટે વાવાઝોડાની ચેતવણી: {detail} દરિયામાં ન જશો."
+  },
+
+  "official_warning": {
+    "en": "Official warning in force for {location}: {detail}",
+    "hi": "{location} के लिए आधिकारिक चेतावनी लागू: {detail}",
+    "bn": "{location}-এর জন্য সরকারি সতর্কতা জারি: {detail}",
+    "ta": "{location} க்கு அதிகாரப்பூர்வ எச்சரிக்கை அமலில் உள்ளது: {detail}",
+    "te": "{location} కోసం అధికారిక హెచ్చరిక అమలులో ఉంది: {detail}",
+    "or": "{location} ପାଇଁ ସରକାରୀ ଚେତାବନୀ ଲାଗୁ: {detail}",
+    "mr": "{location} साठी अधिकृत इशारा लागू: {detail}",
+    "ml": "{location} നു ഔദ്യോഗിക മുന്നറിയിപ്പ് നിലവിലുണ്ട്: {detail}",
+    "kn": "{location} ಗಾಗಿ ಅಧಿಕೃತ ಎಚ್ಚರಿಕೆ ಜಾರಿಯಲ್ಲಿದೆ: {detail}",
+    "gu": "{location} માટે સત્તાવાર ચેતવણી અમલમાં: {detail}"
+  },
+
+  "geofence_proximity": {
+    "en": "Boundary alert near {location}: {detail}",
+    "hi": "{location} के पास सीमा चेतावनी: {detail}",
+    "bn": "{location}-এর কাছে সীমানা সতর্কতা: {detail}",
+    "ta": "{location} அருகே எல்லை எச்சரிக்கை: {detail}",
+    "te": "{location} సమీపంలో సరిహద్దు హెచ్చరిక: {detail}",
+    "or": "{location} ନିକଟରେ ସୀମା ଚେତାବନୀ: {detail}",
+    "mr": "{location} जवळ सीमा इशारा: {detail}",
+    "ml": "{location} നു സമീപം അതിർത്തി മുന്നറിയിപ്പ്: {detail}",
+    "kn": "{location} ಬಳಿ ಗಡಿ ಎಚ್ಚರಿಕೆ: {detail}",
+    "gu": "{location} નજીક સીમા ચેતવણી: {detail}"
+  },
+
+  "_levels": {
+    "_comment": "Risk level -> localized word, used to fill {level}.",
+    "caution":   { "en": "caution",   "hi": "सावधानी",   "bn": "সতর্কতা",   "ta": "எச்சரிக்கை", "te": "జాగ్రత్త",  "or": "ସାବଧାନ",   "mr": "सावधगिरी", "ml": "ജാഗ്രത",   "kn": "ಎಚ್ಚರಿಕೆ",  "gu": "સાવધાની" },
+    "unsafe":    { "en": "unsafe",    "hi": "असुरक्षित", "bn": "অনিরাপদ",  "ta": "பாதுகாப்பற்ற", "te": "అసురక్షిత", "or": "ଅସୁରକ୍ଷିତ", "mr": "असुरक्षित", "ml": "സുരക്ഷിതമല്ല", "kn": "ಅಸುರಕ್ಷಿತ", "gu": "અસુરક્ષિત" },
+    "dangerous": { "en": "dangerous", "hi": "खतरनाक",   "bn": "বিপজ্জনক", "ta": "ஆபத்தான",  "te": "ప్రమాదకర",  "or": "ବିପଜ୍ଜନକ",  "mr": "धोकादायक", "ml": "അപകടകരം", "kn": "ಅಪಾಯಕಾರಿ", "gu": "જોખમી" }
+  }
+}

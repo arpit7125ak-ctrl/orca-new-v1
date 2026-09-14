@@ -1,0 +1,15 @@
+{
+  "_comment": "Section 7.8 - Language is auto-detected by the Planner. The Backend only validates an explicit override against this list. Codes are ISO 639-1.",
+  "languages": [
+    { "code": "en", "label_en": "English",   "native": "English"   },
+    { "code": "hi", "label_en": "Hindi",     "native": "हिन्दी"    },
+    { "code": "bn", "label_en": "Bengali",   "native": "বাংলা"     },
+    { "code": "ta", "label_en": "Tamil",     "native": "தமிழ்"     },
+    { "code": "te", "label_en": "Telugu",    "native": "తెలుగు"    },
+    { "code": "or", "label_en": "Odia",      "native": "ଓଡ଼ିଆ"     },
+    { "code": "mr", "label_en": "Marathi",   "native": "मराठी"    },
+    { "code": "ml", "label_en": "Malayalam", "native": "മലയാളം"  },
+    { "code": "kn", "label_en": "Kannada",   "native": "ಕನ್ನಡ"    },
+    { "code": "gu", "label_en": "Gujarati",  "native": "ગુજરાતી"  }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "$id": "https://orca.sih26176/schemas/api/VoiceQueryResponse.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VoiceQueryResponse",
+  "description": "Response to POST /api/v1/voice/query — audio + text out. §76.1",
+  "type": "object",
+  "required": ["transcript", "response_text", "response_language"],
+  "properties": {
+    "transcript": {
+      "type": "string",
+      "description": "Shown to the user so they can correct misrecognition. §76.2"
+    },
+    "detected_language": { "type": ["string", "null"] },
+    "response_text": { "type": "string" },
+    "response_language": { "type": "string" },
+    "response_audio_base64": { "type": ["string", "null"] },
+    "response_audio_mime_type": { "type": ["string", "null"] },
+    "conversation_id": { "type": ["string", "null"] },
+    "triggered_analysis_id": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

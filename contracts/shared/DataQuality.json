@@ -1,0 +1,20 @@
+{
+  "$id": "https://orca.sih26176/schemas/DataQuality.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DataQuality",
+  "description": "Per-agent data quality summary shown on the Data Quality dashboard and used in Risk confidence calculation. §55, §80. Keyed by agent/parameter name (e.g. 'weather', 'ocean', 'tide').",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "required": ["status", "freshness"],
+    "properties": {
+      "status": { "$ref": "DataFieldStatus.json" },
+      "freshness": { "$ref": "Freshness.json" },
+      "source_note": {
+        "type": ["string", "null"],
+        "description": "e.g. 'IMD bulletin, 10:30 IST' or 'cached, 1 day old'. §80"
+      }
+    },
+    "additionalProperties": false
+  }
+}
