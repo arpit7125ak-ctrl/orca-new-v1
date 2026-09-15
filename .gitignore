@@ -1,0 +1,4 @@
+current.md
+mongo_data/
+mongod.log
+mongod.log.*

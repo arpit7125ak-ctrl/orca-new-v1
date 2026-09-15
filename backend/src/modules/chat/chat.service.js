@@ -43,12 +43,11 @@ async function handleMessage({
   if (conversationId) {
     conversation = await Conversation.findOne({ conversation_id: conversationId });
     if (!conversation) {
-      const error = new AppError(
-        `Conversation ${conversationId} was not found.`,
-        ERROR_CATEGORIES.INTERNAL_ERROR
-      );
-      error.httpStatusOverride = HTTP.NOT_FOUND;
-      throw error;
+      conversation = new Conversation({
+        conversation_id: conversationId,
+        subscriber_id: userId,
+        messages: [],
+      });
     }
   } else {
     conversation = new Conversation({

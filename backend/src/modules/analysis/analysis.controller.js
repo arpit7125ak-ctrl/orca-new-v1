@@ -125,4 +125,25 @@ const getAnalysisStatus = asyncHandler(async (req, res) => {
   return res.status(HTTP.OK).json(body);
 });
 
-module.exports = { createAnalysis, getAnalysis, getAnalysisStatus };
+/**
+ * GET /api/v1/analysis/latest
+ * Section 103: Retrieves the most recently completed real analysis from MongoDB.
+ */
+const getLatestAnalysis = asyncHandler(async (req, res) => {
+  const Analysis = require('../../db/models/analysis.model');
+  const latest = await Analysis.findOne({ status: 'completed' })
+    .sort({ created_at: -1 })
+    .lean();
+
+  if (!latest) {
+    return res.status(HTTP.NOT_FOUND).json({
+      success: false,
+      message: 'No completed analyses found.',
+    });
+  }
+
+  const { body } = await analysisService.getFullResult(latest.analysis_id, { includeRaw: true });
+  return res.status(HTTP.OK).json(body);
+});
+
+module.exports = { createAnalysis, getAnalysis, getAnalysisStatus, getLatestAnalysis };

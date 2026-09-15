@@ -29,7 +29,8 @@ router.post(
   controller.createAnalysis
 );
 
-// Specific route first - see note above.
+// Specific routes first
+router.get('/latest', controller.getLatestAnalysis);
 router.get('/:analysis_id/status', controller.getAnalysisStatus);
 
 router.get('/:analysis_id', controller.getAnalysis);
