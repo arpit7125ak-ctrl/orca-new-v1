@@ -346,10 +346,9 @@ async def _finish_quick_information(
         "final_stage": "quick_information",
         "status": "partial" if failed_agents else "completed",
         "quick_information_result": {
-            "analysis_id": analysis_id,
-            "response_language": response_language,
+            "point": points[0] if points else None,
+            "measurements": measurements,
             "answer_text": answer,
-            "fields": fields,
         },
     })
 

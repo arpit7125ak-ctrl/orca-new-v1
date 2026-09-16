@@ -91,14 +91,14 @@ export const orcaApi = {
   /**
    * Poll analysis until completion or failure
    */
-  async pollAnalysisUntilDone(analysisId, onProgress = () => {}, intervalMs = 1200, maxAttempts = 50) {
+  async pollAnalysisUntilDone(analysisId, onProgress = () => { }, intervalMs = 1200, maxAttempts = 50) {
     let attempts = 0;
     while (attempts < maxAttempts) {
       attempts++;
       const statusData = await this.getAnalysisStatus(analysisId);
       onProgress(statusData);
 
-      if (statusData.status === 'completed') {
+      if (statusData.status === 'completed' || statusData.status === 'partial') {
         return await this.getAnalysis(analysisId);
       }
       if (statusData.status === 'failed') {

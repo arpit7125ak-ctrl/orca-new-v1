@@ -32,7 +32,9 @@ export default function ReportModal({ analysis, isOpen, onClose }) {
 - **Safety Category:** ${category}
 - **Synthesized Risk Score:** ${score} / 100
 - **Primary Operational Advice:**
-  ${decision.primary_advice || 'Conditions are favorable for normal maritime operations. Follow standard safety protocols.'}
+  ${decision.one_line_recommendation || decision.primary_advice || 'Conditions are favorable for normal maritime operations. Follow standard safety protocols.'}
+- **Detailed Metocean Advisory:**
+  ${decision.detailed_recommendation || 'Follow standard safety protocols and monitor marine VHF channel 16.'}
 
 ### KEY OPERATIONAL DIRECTIVES
 ${(decision.recommendations || [

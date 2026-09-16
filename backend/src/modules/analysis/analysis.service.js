@@ -63,14 +63,14 @@ async function createAnalysis(body, context = {}, options = {}) {
   // half-object that violates the contract.
   const location = originalCoordinate
     ? {
-        original: {
-          name: body.place_name || null,
-          lat: Number(originalCoordinate.lat),
-          lon: Number(originalCoordinate.lon),
-        },
-        // `validated` is Planner-owned (Section 7.10). Null, never guessed.
-        validated: null,
-      }
+      original: {
+        name: body.place_name || null,
+        lat: Number(originalCoordinate.lat),
+        lon: Number(originalCoordinate.lon),
+      },
+      // `validated` is Planner-owned (Section 7.10). Null, never guessed.
+      validated: null,
+    }
     : null;
 
   // Null unless we have BOTH an explicit date and an explicit offset - see

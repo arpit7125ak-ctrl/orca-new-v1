@@ -35,7 +35,8 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
   const category = (rawLevel || 'SAFE').toUpperCase();
   const score = Math.round(decision.overall_risk_score ?? p0Risk.final_score ?? decision.risk_score ?? p0Summary.final_score ?? risk.overall_risk_score ?? 25);
   
-  const advice = decision.one_line_recommendation || 
+  const advice = analysis.quick_information_result?.answer_text ||
+                 decision.one_line_recommendation || 
                  decision.primary_advice || 
                  decision.detailed_recommendation || 
                  p0Risk.reasoning || 

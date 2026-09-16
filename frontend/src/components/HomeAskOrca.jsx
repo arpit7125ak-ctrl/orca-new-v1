@@ -1,29 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Compass, 
-  Mic, 
-  MicOff, 
-  ChevronDown, 
-  ChevronUp, 
-  Sparkles, 
-  MapPin, 
-  Calendar, 
-  Clock, 
-  Ship, 
-  Fish, 
-  Radio, 
-  ArrowRight, 
-  CheckCircle2, 
-  AlertTriangle, 
+import {
+  Compass,
+  Mic,
+  MicOff,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  MapPin,
+  Calendar,
+  Clock,
+  Ship,
+  Fish,
+  Radio,
+  ArrowRight,
+  CheckCircle2,
+  AlertTriangle,
   RotateCcw,
   Globe,
   SlidersHorizontal
 } from 'lucide-react';
 import { createSpeechRecognizer } from '../utils/speech';
 
-export default function HomeAskOrca({ 
-  onStartAnalysis, 
-  cachedAnalysis, 
+export default function HomeAskOrca({
+  onStartAnalysis,
+  cachedAnalysis,
   onViewCached,
   selectedLang = 'en',
   onSelectLang
@@ -102,7 +102,7 @@ export default function HomeAskOrca({
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
     const finalQuery = query.trim() || `Is it safe for a ${vesselType.replace(/_/g, ' ')} to conduct ${activity} at ${placeName}?`;
-    
+
     // Format ISO date (YYYY-MM-DD) per AnalysisRequest.json contract
     const d = new Date();
     if (dateOption === 'tomorrow') {
@@ -138,18 +138,17 @@ export default function HomeAskOrca({
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 py-4 sm:py-8">
-      
+
       {/* 1. Cached / Recent Advisory Banner (§5 & §85: show age and offline state) */}
       {cachedAnalysis && (
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-lg backdrop-blur-md">
           <div className="flex items-center space-x-3 min-w-0">
-            <span className={`w-3 h-3 rounded-full flex-shrink-0 ${
-              cachedAnalysis.decision?.recommendation_type === 'go' 
-                ? 'bg-emerald-400' 
+            <span className={`w-3 h-3 rounded-full flex-shrink-0 ${cachedAnalysis.decision?.recommendation_type === 'go'
+                ? 'bg-emerald-400'
                 : cachedAnalysis.decision?.recommendation_type === 'go_with_caution'
-                ? 'bg-amber-400'
-                : 'bg-rose-500'
-            }`} />
+                  ? 'bg-amber-400'
+                  : 'bg-rose-500'
+              }`} />
             <div className="truncate">
               <div className="flex items-center space-x-2">
                 <span className="text-xs font-bold text-white uppercase tracking-wider">
@@ -206,11 +205,10 @@ export default function HomeAskOrca({
             <button
               type="button"
               onClick={toggleMic}
-              className={`absolute right-3 top-3 p-2.5 rounded-xl border transition-all cursor-pointer ${
-                isRecording
+              className={`absolute right-3 top-3 p-2.5 rounded-xl border transition-all cursor-pointer ${isRecording
                   ? 'bg-rose-500 text-white border-rose-400 animate-pulse'
                   : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white hover:bg-slate-700'
-              }`}
+                }`}
               title="Speak in your regional language"
             >
               {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
