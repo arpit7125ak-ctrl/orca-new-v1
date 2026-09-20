@@ -1,6 +1,6 @@
 # ORCA — Detailed System Pipelines & Architecture Blueprint 🌊🛡️
 > **Smart India Hackathon (SIH 26176)** · Intelligent Multi-Agent Coastal Risk & Navigation Operating System.  
-> **Classification**: Authoritative Technical Architecture, Data Ingestion Pipelines, Mathematical Formulations, and System Block Diagrams.
+> **Classification**: Authoritative Technical Architecture, Data Ingestion Pipelines, Mathematical Formulations, and High-Resolution System Block Diagrams.
 
 ---
 
@@ -9,9 +9,14 @@
 2. [Pipeline 1: Multi-Agent Telemetry Ingestion Pipeline](#2-pipeline-1-multi-agent-telemetry-ingestion-pipeline)
 3. [Pipeline 2: 4-Stage Deterministic Risk & Decision Governor Pipeline](#3-pipeline-2-4-stage-deterministic-risk--decision-governor-pipeline)
 4. [Pipeline 3: Real-Time At-Sea Geofence & Boundary Sentinel Pipeline](#4-pipeline-3-real-time-at-sea-geofence--boundary-sentinel-pipeline)
-5. [Pipeline 5: Master End-to-End Enterprise Architecture](#5-pipeline-5-master-end-to-end-enterprise-architecture)
-6. [Multi-Activity Operating Matrix](#6-multi-activity-operating-matrix)
-7. [Future Enterprise Vision & Final Architecture Roadmap](#7-future-enterprise-vision--final-architecture-roadmap)
+5. [Pipeline 4: Natural Language & Multilingual Voice Copilot Pipeline](#5-pipeline-4-natural-language--multilingual-voice-copilot-pipeline)
+6. [Pipeline 5: Coastal Route Planning & Passage Hazard Pipeline](#6-pipeline-5-coastal-route-planning--passage-hazard-pipeline)
+7. [Pipeline 6: Proactive Alert Subscriptions & Multi-Channel Broadcast Pipeline](#7-pipeline-6-proactive-alert-subscriptions--multi-channel-broadcast-pipeline)
+8. [Pipeline 7: End-to-End Handshake & Callback Lifecycle Pipeline](#8-pipeline-7-end-to-end-handshake--callback-lifecycle-pipeline)
+9. [Pipeline 8: Explainable AI (XAI) Score Waterfall & Provenance Audit Pipeline](#9-pipeline-8-explainable-ai-xai-score-waterfall--provenance-audit-pipeline)
+10. [Pipeline 9: Master End-to-End Enterprise Architecture](#10-pipeline-9-master-end-to-end-enterprise-architecture)
+11. [Multi-Activity Operating Matrix](#11-multi-activity-operating-matrix)
+12. [Future Enterprise Vision & Final Architecture Roadmap](#12-future-enterprise-vision--final-architecture-roadmap)
 
 ---
 
@@ -119,7 +124,6 @@ flowchart LR
 #### Stage 1: Numerical Sensor Baseline
 Computes a weighted arithmetic aggregation based on vessel craft vulnerabilities:
 $$\text{Score}_{\text{base}} = \sum_{i=1}^{N} w_i \cdot \phi_i(p_i, \text{vessel\_profile})$$
-Where parameters $p_i$ include sustained wind speed, peak gusts, significant wave height, primary swell period, and current velocity.
 
 #### Stage 2: Hard Safety Constraint Floors
 Non-negotiable safety rules override lower mathematical scores:
@@ -129,7 +133,7 @@ $$\text{Floor} = \max \left( \text{Floor}_{\text{IMD\_Warning}}, \text{Floor}_{\
 - **Inside Marine Sanctuary / Restricted Navy Zone**: Enforces $\text{Floor} = 100$ (`PROHIBITED`).
 
 #### Stage 3: Bounded LLM Reasoning
-Google Gemini 2.5 Flash evaluates multi-modal nuance (e.g. rising barometric pressure vs dissipating cloud squall), but its output is mathematically bounded:
+Google Gemini 2.5 Flash evaluates multi-modal nuance, strictly bounded:
 $$\text{Proposed} = \text{Score}_{\text{base}} + \text{clamp}(\Delta_{\text{LLM}}, -10, +10)$$
 The LLM is **never** permitted to lower a score below the Stage 2 constraint floor:
 $$\text{Audited\_Score} = \max(\text{Proposed}, \text{Floor})$$
@@ -145,8 +149,6 @@ Evaluates 9 geographic points to identify sheltered waters:
             /          |          \
        [P6: SW]     [P5: S]      [P4: SE]
 ```
-If the vessel's target fishing spot ($P0$) is in rough water (Score: 68), but point $P6$ (leeward of a coastal headland) has lower wave steepness (Score: 28), ORCA issues:
-> *"Caution at target coordinates ($P0$). Recommended safer alternative: Proceed 5.2 km Southwest ($P6$) for sheltered waters."*
 
 ---
 
@@ -170,25 +172,143 @@ stateDiagram-v2
 ```
 
 ### Boundary Layer Categories in MongoDB Atlas
-
-1. **UNCLOS International Maritime Boundary Lines (IMBL)**:
-   - India-Sri Lanka Maritime Boundary (Palk Strait & Gulf of Mannar)
-   - India-Pakistan Sir Creek Maritime Delimitation
-2. **Marine Protected Areas (MPAs) & Sanctuaries**:
-   - Gulf of Mannar Biosphere Reserve
-   - Gahirmatha Olive Ridley Turtle Sanctuary
-   - Sundarbans National Park
-   - Malvan Marine Sanctuary
-3. **National Maritime Zones**:
-   - 12 Nautical Mile Territorial Sea baseline
-   - 200 Nautical Mile Exclusive Economic Zone (EEZ)
-4. **Seasonal & Commercial Exclusions**:
-   - Annual Monsoon Fishing Ban (East & West Coasts)
-   - ONAG / ODAG Offshore Oil Field Safety Zones (Bombay High)
+1. **UNCLOS International Maritime Boundary Lines (IMBL)**: Palk Strait, Gulf of Mannar, Sir Creek.
+2. **Marine Protected Areas (MPAs) & Sanctuaries**: Gulf of Mannar Biosphere, Gahirmatha Turtle Sanctuary, Sundarbans.
+3. **National Maritime Zones**: 12 NM Territorial Sea, 200 NM Exclusive Economic Zone (EEZ).
+4. **Seasonal & Commercial Exclusions**: Annual Monsoon Fishing Ban, ODAG Bombay High Oil Field Safety Zones.
 
 ---
 
-## 5. Pipeline 5: Master End-to-End Enterprise Architecture
+## 5. Pipeline 4: Natural Language & Multilingual Voice Copilot Pipeline
+
+Converts spoken operator dialects and free-text queries into structured spatial parameters and delivers synthesized audio advisories.
+
+### Architecture Diagram
+![ORCA Natural Language & Multilingual Voice Copilot Pipeline](./docs/assets/architecture/orca-nl-voice-pipeline.jpg)
+
+### Conversational Voice Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Maritime Operator
+    participant Mic as Web Speech / Bhashini API
+    participant Planner as Multi-Modal Planner Agent
+    participant Graph as LangGraph Chat Memory
+    participant AI as Gemini 2.5 Flash
+    participant Audio as Browser Speech Synthesis
+
+    User->>Mic: Spoken dialect query ("Kal subah Kochi safe hai kya?")
+    Mic->>Planner: Transcribed text (Hindi / Tamil / etc.)
+    Planner->>Planner: Extract intent, gazetteer location (Kochi -> 9.93, 76.26)
+    Planner->>Graph: Query context & active analysis session
+    Graph->>AI: Synthesize contextual conversational response
+    AI->>Audio: Multi-turn response text
+    Audio-->>User: Spoken safety advice in operator's native language
+```
+
+---
+
+## 6. Pipeline 5: Coastal Route Planning & Passage Hazard Pipeline
+
+Calculates collision-free, depth-safe navigational routes between Indian coastal ports while scoring segment-by-segment metocean risk.
+
+### Architecture Diagram
+![ORCA Coastal Route Planning & Passage Hazard Pipeline](./docs/assets/architecture/orca-route-pipeline.jpg)
+
+### Waypoint Scoring & Routing Flow
+
+```mermaid
+flowchart TD
+    OrigDest["1. Origin Port & Destination Selection<br/>(e.g., Cochin Port -> Mangalore Harbor)"]
+    BathymetryGrid["2. A* / Dijkstra Pathfinder<br/>Enforces Minimum Safe Under-Keel Depth (>= 10m)"]
+    Avoidance["3. Real-Time Geospatial Avoidance<br/>Steers Clear of IMBL, MPAs, Shallow Reefs, ODAG Zones"]
+    WaypointRisk["4. Segment-by-Segment Risk Scoring<br/>Evaluates W0 to Wn (Wind, Swell, Breaking Waves)"]
+    PassageOpt["5. Passage Optimization Engine<br/>Tidal Stream Velocity & Fuel Consumption Profiling"]
+
+    OrigDest --> BathymetryGrid --> Avoidance --> WaypointRisk --> PassageOpt
+```
+
+---
+
+## 7. Pipeline 6: Proactive Alert Subscriptions & Multi-Channel Broadcast Pipeline
+
+Monitors developing cyclones, gale winds, and tidal surges 24/7 and proactively notifies registered operators via multiple communication channels.
+
+### Architecture Diagram
+![ORCA Proactive Alert Subscriptions & Multi-Channel Broadcast Engine](./docs/assets/architecture/orca-alerts-pipeline.jpg)
+
+### Surveillance & Notification Flow
+
+```mermaid
+flowchart LR
+    Sub["1. User Subscription Profile<br/>- Location & Port<br/>- Vessel Type<br/>- Parameter Limits (Wind > 15m/s)"]
+    Cron["2. Node-Cron Surveillance Daemon<br/>Polls every 15 minutes"]
+    Comp["3. Ingest Comparator<br/>Checks IMD Bulletins & SACHET Alerts"]
+    Trigger["4. Threshold Trigger<br/>Condition Met?"]
+    Dispatcher["5. Multi-Channel Dispatcher<br/>- Web Push Notifications<br/>- SMS Gateway<br/>- WhatsApp Alerts<br/>- Automated IVR Voice Calls"]
+
+    Sub --> Cron
+    Comp --> Trigger
+    Cron --> Trigger
+    Trigger --> Dispatcher
+```
+
+---
+
+## 8. Pipeline 7: End-to-End Handshake & Callback Lifecycle Pipeline
+
+The asynchronous communication contract between the Frontend Client, Node.js Backend Gateway, and Python AI Service.
+
+### Architecture Diagram
+![ORCA End-to-End Handshake & Callback Lifecycle](./docs/assets/architecture/orca-e2e-handshake-pipeline.jpg)
+
+### Lifecycle Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant FE as Frontend Client (:5173 / Render)
+    participant BE as Backend Gateway (:4000)
+    participant DB as MongoDB Atlas Cluster0
+    participant AI as AI Multi-Agent Service (:8000)
+    participant Internal as Internal Gateway (:4100)
+
+    FE->>BE: POST /api/v1/analysis (User Request)
+    BE->>DB: Persist analysis document (status: "pending")
+    BE->>AI: POST /v1/analysis/execute (JWT-signed dispatch)
+    BE-->>FE: 202 Accepted { analysis_id }
+    
+    loop Real-Time Telemetry Gathering
+        AI->>Internal: POST /internal/v1/progress (Agent completed / failed)
+        Internal->>DB: Append progress checkpoint
+        FE->>BE: GET /api/v1/analysis/:id/status (Polling every 1.2s)
+        BE-->>FE: 200 OK { step, completed_agents }
+    end
+
+    AI->>Internal: POST /internal/v1/result (Full Decision Payload)
+    Internal->>DB: Persist final results & update status: "completed"
+    FE->>BE: GET /api/v1/analysis/:id
+    BE-->>FE: 200 OK { decision, spatial_matrix, traces }
+```
+
+---
+
+## 9. Pipeline 8: Explainable AI (XAI) Score Waterfall & Provenance Audit Pipeline
+
+Guarantees full mathematical transparency, provenance auditability, and zero hallucination across all advisory verdicts.
+
+### Architecture Diagram
+![ORCA XAI Score Waterfall & Provenance Audit Pipeline](./docs/assets/architecture/orca-xai-pipeline.jpg)
+
+### Key Auditing Principles
+1. **Never-Fabricate Invariants**: If a sensor is offline, `value` is `null` and `source` is `null`. Missing telemetry is marked as "—" and never hallucinated as zero.
+2. **Deterministic Constraint Floor**: Bounded LLM delta ($\pm 10$) can never nudge a dangerous condition below official IMD warning thresholds.
+3. **Sensor Provenance Metadata**: Every measurement document records its `product_id`, `source`, `retrieved_at`, `valid_time`, and mathematical `confidence` rating (0.0 to 1.0).
+
+---
+
+## 10. Pipeline 9: Master End-to-End Enterprise Architecture
 
 The overall enterprise architecture synchronizes client interfaces, security gateways, multi-agent AI cores, distributed database clusters, and external emergency services.
 
@@ -207,7 +327,7 @@ The overall enterprise architecture synchronizes client interfaces, security gat
 
 ---
 
-## 6. Multi-Activity Operating Matrix
+## 11. Multi-Activity Operating Matrix
 
 ORCA adapts its telemetry evaluation to the specific operational profile of each marine activity:
 
@@ -223,7 +343,7 @@ ORCA adapts its telemetry evaluation to the specific operational profile of each
 
 ---
 
-## 7. Future Enterprise Vision & Final Architecture Roadmap
+## 12. Future Enterprise Vision & Final Architecture Roadmap
 
 Following the completion of target SIH roadmap goals, the ORCA system scales into a **Nationwide Autonomous Marine Safety Infrastructure**:
 
