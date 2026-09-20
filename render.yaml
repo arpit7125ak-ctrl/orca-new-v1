@@ -17,7 +17,7 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_BASE_URL
-        value: /api/v1
+        value: https://orca-backend-anp5.onrender.com/api/v1
 
   # --- 2. Backend Gateway: Node.js Express API ----------------------------
   - type: web
@@ -42,7 +42,7 @@ services:
       - key: MONGO_URI
         sync: false # Enter your MongoDB Atlas connection string in Render Dashboard
       - key: AI_SERVICE_URL
-        value: http://orca-ai-service:8000
+        value: https://orca-ai-service-b0fx.onrender.com
       - key: ALLOWED_ORIGINS
         value: "*"
 
@@ -63,7 +63,7 @@ services:
       - key: AI_SERVICE_PORT
         value: 8000
       - key: BACKEND_INTERNAL_URL
-        value: http://orca-backend:4000
+        value: https://orca-backend-anp5.onrender.com
       - key: INTERNAL_SECRET
         fromService:
           type: web

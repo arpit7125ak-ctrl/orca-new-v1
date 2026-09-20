@@ -14,14 +14,9 @@ export function getApiBase() {
   const envBase = import.meta.env.VITE_API_BASE || import.meta.env.VITE_API_BASE_URL;
   if (envBase) return envBase.replace(/\/+$/, '');
 
-  // Auto-detection for Render blueprint deployments
+  // Auto-detection for Render deployments
   if (typeof window !== 'undefined' && window.location.hostname.includes('onrender.com')) {
-    const host = window.location.hostname;
-    const match = host.match(/orca-frontend(-[a-z0-9]+)?\.onrender\.com/i);
-    if (match && match[1]) {
-      return `https://orca-backend${match[1]}.onrender.com/api/v1`;
-    }
-    return 'https://orca-backend.onrender.com/api/v1';
+    return 'https://orca-backend-anp5.onrender.com/api/v1';
   }
 
   return '/api/v1';
