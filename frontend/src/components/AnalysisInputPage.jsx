@@ -17,19 +17,19 @@ import {
 } from 'lucide-react';
 import L from 'leaflet';
 import { createSpeechRecognizer } from '../utils/speech';
+import { getNearestCoastalPlace, resolvePlaceFromCoordinates } from '../utils/geo';
+import { ACTIVITIES, VESSEL_TYPES, normalizeActivity, normalizeVesselType } from '../utils/maritimeConfig';
 
 export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultValues = {} }) {
   // Input fields matching Image 2 & Image 3
-  const [locationName, setLocationName] = useState(defaultValues.place_name || 'Kochi Offshore');
-  const [lat, setLat] = useState(defaultValues.lat ? String(defaultValues.lat) : '9.94');
-  const [lon, setLon] = useState(defaultValues.lon ? String(defaultValues.lon) : '76.16');
-  const [activity, setActivity] = useState(defaultValues.activity || 'fishing');
-  const [vesselType, setVesselType] = useState(defaultValues.vessel_type || 'motorized_country_craft');
-  const [dateOption, setDateOption] = useState('tomorrow');
-  const [timeRange, setTimeRange] = useState('morning');
-  const [customQuery, setCustomQuery] = useState(
-    'Is it safe for a motorized country craft to fish 15km off Kochi tomorrow morning?'
-  );
+  const [locationName, setLocationName] = useState(defaultValues.place_name || '');
+  const [lat, setLat] = useState(defaultValues.lat ? String(defaultValues.lat) : '');
+  const [lon, setLon] = useState(defaultValues.lon ? String(defaultValues.lon) : '');
+  const [activity, setActivity] = useState(defaultValues.activity || '');
+  const [vesselType, setVesselType] = useState(defaultValues.vessel_type || '');
+  const [dateOption, setDateOption] = useState(defaultValues.date || '');
+  const [timeRange, setTimeRange] = useState(defaultValues.time_range || '');
+  const [customQuery, setCustomQuery] = useState(defaultValues.query || '');
 
   const [isRecording, setIsRecording] = useState(false);
   const [speechRecognizer, setSpeechRecognizer] = useState(null);
@@ -45,6 +45,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
     { name: 'Kochi, Kerala', lat: 9.94, lon: 76.16, query: 'Motorized fishing 15km off Kochi coast tomorrow morning' },
     { name: 'Mumbai, Maharashtra', lat: 18.96, lon: 72.82, query: 'Trawler coastal operations off Mumbai harbour tomorrow morning' },
     { name: 'Veraval, Gujarat', lat: 20.89, lon: 70.36, query: 'Deep sea mechanized fishing 30km off Veraval coast' },
+    { name: 'Rameswaram / Palk Bay', lat: 9.288, lon: 79.313, query: 'Motorized fishing operations in Palk Bay near Rameswaram' },
     { name: 'Puri, Odisha', lat: 19.78, lon: 85.83, query: 'Traditional boat fishing safety off Puri coastline' },
     { name: 'Goa Coast', lat: 15.49, lon: 73.81, query: 'Recreational coastal boating conditions off Goa' },
   ];
@@ -128,44 +129,99 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
         opacity: 0.7,
       }).addTo(map);
 
-      // Map click handler to update coordinates (Image 3 requirement: "The user can click anywhere on the map")
+      // Map click handler to update coordinates and place automatically
       map.on('click', (e) => {
         const clickedLat = Number(e.latlng.lat.toFixed(4));
         const clickedLon = Number(e.latlng.lng.toFixed(4));
-        setLat(String(clickedLat));
-        setLon(String(clickedLon));
-        marker.setLatLng([clickedLat, clickedLon]);
-        map.panTo([clickedLat, clickedLon]);
-        setLocationName(`Coord (${clickedLat}°N, ${clickedLon}°E)`);
+        handleLocationUpdate(clickedLat, clickedLon, true);
       });
 
       marker.on('dragend', (e) => {
         const pos = e.target.getLatLng();
         const draggedLat = Number(pos.lat.toFixed(4));
         const draggedLon = Number(pos.lng.toFixed(4));
-        setLat(String(draggedLat));
-        setLon(String(draggedLon));
-        setLocationName(`Coord (${draggedLat}°N, ${draggedLon}°E)`);
+        handleLocationUpdate(draggedLat, draggedLon, false);
       });
 
       mapInstanceRef.current = map;
-    }
 
-    return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
+      // Invalidate size on initial mount and animation completion
+      requestAnimationFrame(() => {
+        if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
+      });
+      const timer = setTimeout(() => {
+        if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
+      }, 200);
+
+      let resizeObserver;
+      if (typeof ResizeObserver !== 'undefined' && mapContainerRef.current) {
+        resizeObserver = new ResizeObserver(() => {
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.invalidateSize();
+          }
+        });
+        resizeObserver.observe(mapContainerRef.current);
       }
-    };
+
+      return () => {
+        if (timer) clearTimeout(timer);
+        if (resizeObserver) resizeObserver.disconnect();
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.remove();
+          mapInstanceRef.current = null;
+        }
+      };
+    }
   }, []);
 
-  // Update map marker when lat/lon input changes
+  // Centralized coordinate and place synchronizer
+  const handleLocationUpdate = async (newLat, newLon, shouldPan = true) => {
+    const sLat = String(newLat);
+    const sLon = String(newLon);
+    setLat(sLat);
+    setLon(sLon);
+
+    if (markerRef.current) {
+      markerRef.current.setLatLng([newLat, newLon]);
+    }
+    if (shouldPan && mapInstanceRef.current) {
+      mapInstanceRef.current.panTo([newLat, newLon]);
+    }
+
+    // 1. Instant local coastal place fill
+    const immediatePlace = getNearestCoastalPlace(newLat, newLon);
+    setLocationName(immediatePlace);
+
+    // 2. Automatically update mission query if template
+    setCustomQuery((prev) => {
+      if (!prev || prev.startsWith('Is it safe for a')) {
+        return `Is it safe for a ${vesselType.replace(/_/g, ' ')} to fish off ${immediatePlace}?`;
+      }
+      return prev;
+    });
+
+    // 3. Asynchronously enrich with Nominatim if reachable
+    try {
+      const enriched = await resolvePlaceFromCoordinates(newLat, newLon);
+      if (enriched && enriched !== immediatePlace) {
+        setLocationName(enriched);
+        setCustomQuery((prev) => {
+          if (!prev || prev.startsWith('Is it safe for a')) {
+            return `Is it safe for a ${vesselType.replace(/_/g, ' ')} to fish off ${enriched}?`;
+          }
+          return prev;
+        });
+      }
+    } catch {}
+  };
+
+  // Update map marker when lat/lon input changes manually
   useEffect(() => {
     const pLat = parseFloat(lat);
     const pLon = parseFloat(lon);
     if (!isNaN(pLat) && !isNaN(pLon) && markerRef.current && mapInstanceRef.current) {
       markerRef.current.setLatLng([pLat, pLon]);
-      mapInstanceRef.current.setView([pLat, pLon], mapInstanceRef.current.getZoom());
+      mapInstanceRef.current.panTo([pLat, pLon]);
     }
   }, [lat, lon]);
 
@@ -179,13 +235,10 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
       (pos) => {
         const myLat = Number(pos.coords.latitude.toFixed(4));
         const myLon = Number(pos.coords.longitude.toFixed(4));
-        setLat(String(myLat));
-        setLon(String(myLon));
-        setLocationName('My GPS Coordinates');
-        if (mapInstanceRef.current && markerRef.current) {
-          markerRef.current.setLatLng([myLat, myLon]);
+        if (mapInstanceRef.current) {
           mapInstanceRef.current.setView([myLat, myLon], 10);
         }
+        handleLocationUpdate(myLat, myLon, true);
       },
       (err) => {
         alert('Could not retrieve GPS location: ' + err.message);
@@ -203,36 +256,57 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
     
-    // Format ISO date (YYYY-MM-DD) per AnalysisRequest.json contract
-    const d = new Date();
-    if (dateOption === 'tomorrow') {
-      d.setDate(d.getDate() + 1);
-    } else if (dateOption === 'day_after') {
-      d.setDate(d.getDate() + 2);
+    // Format ISO date (YYYY-MM-DD) per AnalysisRequest.json contract (only if chosen)
+    let isoDate = undefined;
+    if (dateOption) {
+      const d = new Date();
+      if (dateOption === 'tomorrow') {
+        d.setDate(d.getDate() + 1);
+      } else if (dateOption === 'day_after') {
+        d.setDate(d.getDate() + 2);
+      }
+      isoDate = d.toISOString().split('T')[0];
     }
-    const isoDate = d.toISOString().split('T')[0];
 
-    // Format structured time range object { start, end } per AnalysisRequest.json
+    // Format structured time range object { start, end } (only if chosen)
     const timeRangeMap = {
       morning: { start: '06:00', end: '11:00' },
       afternoon: { start: '12:00', end: '16:00' },
       evening: { start: '16:00', end: '20:00' },
       night: { start: '20:00', end: '04:00' },
     };
-    const structuredTimeRange = timeRangeMap[timeRange] || { start: '06:00', end: '11:00' };
+    const structuredTimeRange = timeRange ? timeRangeMap[timeRange] : undefined;
+
+    const trimmedPlace = locationName ? locationName.trim() : '';
+    const trimmedQuery = customQuery ? customQuery.trim() : '';
+    let queryText = trimmedQuery;
+    if (!queryText) {
+      const actText = activity ? activity.replace(/_/g, ' ') : 'marine operations';
+      const vesText = vesselType ? `for a ${vesselType.replace(/_/g, ' ')} ` : '';
+      const locText = trimmedPlace ? `at ${trimmedPlace}` : 'in coastal waters';
+      queryText = `Is it safe ${vesText}to conduct ${actText} ${locText}?`;
+    }
+
+    const pLat = parseFloat(lat);
+    const pLon = parseFloat(lon);
+    const hasValidCoords = !isNaN(pLat) && !isNaN(pLon) && pLat >= -90 && pLat <= 90 && pLon >= -180 && pLon <= 180;
+
+    const canonicalActivity = activity ? normalizeActivity(activity) : undefined;
+    const canonicalVessel = vesselType ? normalizeVesselType(vesselType) : undefined;
 
     const payload = {
-      query: customQuery || `Is it safe for a ${vesselType.replace(/_/g, ' ')} to conduct ${activity} at ${locationName}?`,
-      coordinate: {
-        lat: parseFloat(lat) || 9.94,
-        lon: parseFloat(lon) || 76.16,
-      },
-      activity,
-      vessel_type: vesselType,
+      query: queryText,
+      activity: canonicalActivity || undefined,
+      vessel_type: canonicalVessel || undefined,
       date: isoDate,
       time_range: structuredTimeRange,
-      place_name: locationName,
+      coordinate: hasValidCoords ? { lat: pLat, lon: pLon } : { lat: 9.94, lon: 76.16 },
     };
+
+    if (trimmedPlace) {
+      payload.place_name = trimmedPlace;
+    }
+
     onStartAnalyze(payload);
   };
 
@@ -304,35 +378,69 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                 />
               </div>
 
-              {/* Coordinates + Helper buttons */}
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <div className="flex items-center space-x-1.5 text-xs font-mono bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-slate-400">
-                  <span>Lat: <b className="text-cyan-300">{lat}°N</b></span>
-                  <span>•</span>
-                  <span>Lon: <b className="text-cyan-300">{lon}°E</b></span>
+              {/* Coordinates Inputs (Auto-filled by clicking map, or editable directly) */}
+              <div className="grid grid-cols-2 gap-2 mt-2.5">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                    Latitude (°N)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    value={lat}
+                    onChange={(e) => {
+                      const newLat = e.target.value;
+                      setLat(newLat);
+                      const pL = parseFloat(newLat);
+                      const pLon = parseFloat(lon);
+                      if (!isNaN(pL) && !isNaN(pLon) && pL >= -90 && pL <= 90) {
+                        const nearest = getNearestCoastalPlace(pL, pLon);
+                        setLocationName(nearest);
+                      }
+                    }}
+                    placeholder="e.g. 9.9400"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono"
+                  />
                 </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                    Longitude (°E)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    value={lon}
+                    onChange={(e) => {
+                      const newLon = e.target.value;
+                      setLon(newLon);
+                      const pL = parseFloat(lat);
+                      const pLon = parseFloat(newLon);
+                      if (!isNaN(pL) && !isNaN(pLon) && pLon >= -180 && pLon <= 180) {
+                        const nearest = getNearestCoastalPlace(pL, pLon);
+                        setLocationName(nearest);
+                      }
+                    }}
+                    placeholder="e.g. 76.1600"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono"
+                  />
+                </div>
+              </div>
 
+              {/* Helper Quick Action Buttons */}
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={handleUseMyLocation}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center space-x-1 transition-colors cursor-pointer"
+                  className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center space-x-1.5 transition-colors cursor-pointer"
                 >
-                  <LocateFixed className="w-3 h-3 text-cyan-400" />
-                  <span>Use my location</span>
+                  <LocateFixed className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Use my GPS location</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => setIsMapSelectMode(!isMapSelectMode)}
-                  className={`text-xs px-2.5 py-1 rounded-lg border flex items-center space-x-1 transition-colors cursor-pointer ${
-                    isMapSelectMode
-                      ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400'
-                      : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700'
-                  }`}
-                >
-                  <Navigation className="w-3 h-3 text-cyan-400" />
-                  <span>Click on map to pin</span>
-                </button>
+                <div className="text-[11px] text-cyan-400 font-medium flex items-center space-x-1.5 bg-cyan-950/60 border border-cyan-800/80 px-2.5 py-1.5 rounded-lg">
+                  <Navigation className="w-3 h-3 text-cyan-400 animate-pulse" />
+                  <span>Click anywhere on map to auto-fill</span>
+                </div>
               </div>
             </div>
 
@@ -349,11 +457,12 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                     onChange={(e) => setActivity(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-8 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
-                    <option value="fishing">🎣 Coastal Fishing</option>
-                    <option value="trawling">🚢 Deep Sea Trawling</option>
-                    <option value="tourism">🚤 Tourism & Ferry</option>
-                    <option value="recreation">🏄 Recreational Water Sports</option>
-                    <option value="cargo">📦 Coastal Cargo Transit</option>
+                    <option value="">-- Select Maritime Activity (Optional) --</option>
+                    {ACTIVITIES.map((act) => (
+                      <option key={act.id} value={act.id}>
+                        {act.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -369,10 +478,12 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                     onChange={(e) => setVesselType(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-8 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
-                    <option value="motorized_country_craft">FRP Motorized Craft (&lt;10m)</option>
-                    <option value="mechanized_fishing_vessel">Mechanized Trawler (&gt;15m)</option>
-                    <option value="traditional_non_motorized">Traditional Non-Motorized Canoe</option>
-                    <option value="recreational_boat">Speedboat / Recreational Craft</option>
+                    <option value="">-- Select Vessel Classification (Optional) --</option>
+                    {VESSEL_TYPES.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -391,8 +502,9 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                     onChange={(e) => setDateOption(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-8 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
-                    <option value="tomorrow">📅 Tomorrow (Forecast)</option>
+                    <option value="">-- Select Date (Optional) --</option>
                     <option value="today">📅 Today (Immediate)</option>
+                    <option value="tomorrow">📅 Tomorrow (Forecast)</option>
                     <option value="day_after">📅 Day After Tomorrow</option>
                   </select>
                 </div>
@@ -409,6 +521,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                     onChange={(e) => setTimeRange(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-8 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
+                    <option value="">-- Select Operational Window (Optional) --</option>
                     <option value="morning">🌅 Morning (04:00 - 10:00)</option>
                     <option value="afternoon">☀️ Afternoon (12:00 - 16:00)</option>
                     <option value="evening">🌇 Evening (16:00 - 20:00)</option>
@@ -481,8 +594,13 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
             <div ref={mapContainerRef} className="absolute inset-0 w-full h-full" />
             
             {/* Overlay hint */}
-            <div className="absolute top-3 left-3 z-[400] bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-800 text-[11px] text-slate-300 shadow-md pointer-events-none">
-              <span className="font-bold text-cyan-400">Active Pin:</span> {lat}°N, {lon}°E
+            <div className="absolute top-3 left-3 z-[400] bg-slate-950/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-700 text-xs text-slate-200 shadow-xl pointer-events-none max-w-[85%] truncate">
+              <span className="font-bold text-cyan-400">📍 Target:</span> {locationName || 'Click water on map to pin'}
+              {(lat && lon) && (
+                <span className="text-slate-400 ml-1.5 font-mono text-[11px]">
+                  ({lat}°N, {lon}°E)
+                </span>
+              )}
             </div>
 
             <div className="absolute bottom-3 left-3 z-[400] bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-md border border-slate-800 text-[10px] text-slate-400 pointer-events-none">

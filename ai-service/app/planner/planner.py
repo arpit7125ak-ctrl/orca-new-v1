@@ -213,7 +213,7 @@ def _heuristic_agents(intent: str, query: Optional[str]) -> List[Dict[str, str]]
 
 
 def _apply_mandatory_policy(
-    intent: str, selected: List[Dict[str, Any]]
+    intent: str, selected: List[Dict[str, Any]], query: Optional[str] = None, request: Optional[Dict[str, Any]] = None
 ) -> List[Dict[str, Any]]:
     """Section 20.2 - add back any mandatory agent the LLM omitted.
 
@@ -228,6 +228,19 @@ def _apply_mandatory_policy(
             selected.append(
                 {"agent": agent, "reason": "mandatory_by_policy", "mandatory_by_policy": True}
             )
+            chosen.add(agent)
+
+    # Ensure query keywords like tide are honored
+    q = (query or "").lower()
+    if any(w in q for w in ("tide", "low tide", "high tide", "tidal")) and "tide" not in chosen:
+        selected.append({"agent": "tide", "reason": "Query mentions tidal conditions"})
+        chosen.add("tide")
+
+    activity = ((request.get("activity") if request else "") or "").lower()
+    if (any(w in q for w in ("fish", "fishing", "catch", "pfz", "tuna", "mackerel")) or activity == "fishing") and "pfz" not in chosen:
+        selected.append({"agent": "pfz", "reason": "Fishing activity or query requested"})
+        chosen.add("pfz")
+
     return selected
 
 
@@ -327,7 +340,7 @@ async def build_plan(
         ]
         log.warning("[planner] LLM unavailable (%s) - using heuristic plan", llm.reason)
 
-    selected = _apply_mandatory_policy(intent, selected)
+    selected = _apply_mandatory_policy(intent, selected, query, request)
 
     # Anything selected must not also appear as skipped.
     chosen = {s["agent"] for s in selected}

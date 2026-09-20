@@ -20,11 +20,14 @@
     "test:integration": "jest tests/integration",
     "test:contract": "jest tests/contract",
     "seed:gis": "node scripts/seed-gis-layers.js",
+    "seed:zones": "node scripts/seed-all-indian-zones.js",
     "seed:ports": "node scripts/seed-ports.js",
+    "seed:pfz": "node scripts/seed-pfz.js",
     "create-indexes": "node scripts/create-indexes.js",
     "validate-schemas": "node scripts/validate-schemas.js",
     "check": "node scripts/check-syntax.js && python3 scripts/check-contracts.py",
-    "check:contracts": "python3 scripts/check-contracts.py"
+    "check:contracts": "python3 scripts/check-contracts.py",
+    "test:decision": "node scripts/test-decision.js"
   },
   "dependencies": {
     "ajv": "^8.17.1",

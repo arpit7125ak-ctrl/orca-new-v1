@@ -12,10 +12,14 @@
 //   3. Only then bind the port.
 // ---------------------------------------------------------------------------
 
+const cron = require('node-cron');
 const env = require('./config/env');
+const limits = require('./config/limits');
 const { connect, disconnect } = require('./db/connection');
 const createApp = require('./app');
 const { logger } = require('./observability/logger');
+const { syncPfzFromIncois } = require('./modules/pfz/pfzSync.service');
+const PfzAdvisory = require('./db/models/pfzAdvisory.model');
 
 // Requiring the barrel registers all 12 models with Mongoose, which is what
 // triggers index creation. Without this, a model only used by a rarely-hit
@@ -23,6 +27,7 @@ const { logger } = require('./observability/logger');
 require('./db/models');
 
 let server = null;
+let pfzCronTask = null;
 
 async function start() {
   try {
@@ -47,6 +52,60 @@ async function start() {
     // audio over a weak connection), so it is raised here.
     server.headersTimeout = 65000;
     server.keepAliveTimeout = 60000;
+
+    // --- 4. Automatic PFZ Synchronization Scheduler ----------------------
+    // Automatically runs at 8:00 PM IST daily without manual intervention
+    pfzCronTask = cron.schedule(
+      limits.PFZ_SYNC_CRON,
+      async () => {
+        logger.info('[server] [pfz-sync] Starting daily 8:00 PM INCOIS PFZ sync...');
+        try {
+          const res = await syncPfzFromIncois();
+          logger.info({ res }, '[server] [pfz-sync] Daily INCOIS PFZ sync completed');
+        } catch (err) {
+          logger.error({ err: err.message }, '[server] [pfz-sync] Daily INCOIS PFZ sync failed');
+        }
+      },
+      { timezone: 'Asia/Kolkata' }
+    );
+
+    logger.info(
+      { cron: limits.PFZ_SYNC_CRON, timezone: 'Asia/Kolkata' },
+      '[server] [pfz-sync] Automatic daily PFZ sync registered'
+    );
+
+    // Initial check: if MongoDB has no active PFZ advisories, trigger initial sync in background
+    setTimeout(async () => {
+      try {
+        const count = await PfzAdvisory.countDocuments({ active: true });
+        if (count === 0) {
+          logger.info('[server] [pfz-sync] No active PFZ data in DB. Triggering initial automatic sync...');
+          await syncPfzFromIncois();
+        } else {
+          logger.info({ active_pfz_count: count }, '[server] [pfz-sync] Active PFZ advisories present');
+        }
+      } catch (e) {
+        logger.warn({ err: e.message }, '[server] [pfz-sync] Initial background check warning');
+      }
+    }, 1500);
+
+    // Initial check: verify authoritative Indian Maritime Zones & MPAs in MongoDB
+    setTimeout(async () => {
+      try {
+        const GisLayer = require('./db/models/gisLayer.model');
+        const demoCount = await GisLayer.countDocuments({ source: 'DEMO_SEED_DATA' });
+        const authCount = await GisLayer.countDocuments({ version: { $regex: 'v2' } });
+        if (demoCount > 0 || authCount === 0) {
+          logger.info('[server] [gis-sync] Synchronizing authoritative Indian Maritime Zones & MPAs into MongoDB...');
+          const { syncAuthoritativeGisLayers } = require('../scripts/seed-all-indian-zones');
+          await syncAuthoritativeGisLayers();
+        } else {
+          logger.info({ authoritative_zones: authCount }, '[server] [gis-sync] Authoritative maritime zones active in MongoDB');
+        }
+      } catch (e) {
+        logger.warn({ err: e.message }, '[server] [gis-sync] Background GIS check warning');
+      }
+    }, 2000);
   } catch (err) {
     logger.fatal({ err: err.message, stack: err.stack }, '[server] Failed to start');
     process.exit(1);
@@ -70,6 +129,9 @@ async function shutdown(signal) {
   }, 15000);
 
   try {
+    if (pfzCronTask) {
+      pfzCronTask.stop();
+    }
     if (server) {
       await new Promise((resolve) => server.close(resolve));
       logger.info('[server] HTTP server closed');

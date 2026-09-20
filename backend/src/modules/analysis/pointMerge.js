@@ -78,8 +78,8 @@ function mergeByPoint(points = [], agentResults = []) {
       continue;
     }
 
-    // contracts/AgentResult.json: `normalized`, keyed by point_id.
-    const normalized = result.normalized || {};
+    // contracts/AgentResult.json: `normalized.by_point` or flat, keyed by point_id.
+    const normalized = result.normalized?.by_point || result.normalized || {};
     const seenPointIds = new Set();
 
     for (const [pointId, observation] of Object.entries(normalized)) {

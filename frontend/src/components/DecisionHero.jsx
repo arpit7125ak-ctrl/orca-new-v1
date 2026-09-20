@@ -30,8 +30,17 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
   const p0Risk = p0.risk || {};
   const p0Summary = decision.point_summaries?.find(p => p.point_id === 'P0') || decision.point_summaries?.[0] || p0Risk;
 
-  const rawLevel = decision.safety_category || decision.category || p0Risk.risk_level || p0Summary.risk_level || 
-                   (decision.recommendation_type === 'not_recommended' ? 'UNSAFE' : 'SAFE');
+  const recType = String(decision.recommendation_type || '').toLowerCase();
+  let fallbackFromRec = 'SAFE';
+  if (recType.includes('danger') || recType === 'return_immediately') {
+    fallbackFromRec = 'DANGEROUS';
+  } else if (recType.includes('not') || recType.includes('do_not') || recType.includes('no_go') || recType === 'do_not_venture') {
+    fallbackFromRec = 'UNSAFE';
+  } else if (recType.includes('caution')) {
+    fallbackFromRec = 'CAUTION';
+  }
+
+  const rawLevel = decision.safety_category || decision.category || p0Risk.risk_level || p0Summary.risk_level || fallbackFromRec;
   const category = (rawLevel || 'SAFE').toUpperCase();
   const score = Math.round(decision.overall_risk_score ?? p0Risk.final_score ?? decision.risk_score ?? p0Summary.final_score ?? risk.overall_risk_score ?? 25);
   

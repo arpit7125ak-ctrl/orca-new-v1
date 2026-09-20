@@ -4,6 +4,8 @@
  * Architecture Spec §2.1.4: Frontend NEVER communicates directly with AI-Service or external providers.
  */
 
+import { normalizeActivity, normalizeVesselType } from '../utils/maritimeConfig';
+
 const API_BASE = import.meta.env.VITE_API_BASE || '/api/v1';
 
 async function request(endpoint, options = {}) {
@@ -21,7 +23,11 @@ async function request(endpoint, options = {}) {
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
-      const errorMsg = (data && data.error && data.error.message) || (data && data.message) || `HTTP error ${response.status}`;
+      let errorMsg = (data && data.error && data.error.message) || (data && data.message) || `HTTP error ${response.status}`;
+      if (data && data.error && data.error.details && Array.isArray(data.error.details.violations)) {
+        const violationDetails = data.error.details.violations.map(v => `${v.field}: ${v.message}`).join(', ');
+        errorMsg += ` (${violationDetails})`;
+      }
       throw new Error(errorMsg);
     }
 
@@ -57,9 +63,34 @@ export const orcaApi = {
    * Submit new safety analysis query (natural language or structured)
    */
   async createAnalysis(payload) {
+    const sanitized = { ...payload };
+    if (sanitized.activity) {
+      sanitized.activity = normalizeActivity(sanitized.activity);
+      if (!sanitized.activity) delete sanitized.activity;
+    } else {
+      delete sanitized.activity;
+    }
+
+    if (sanitized.vessel_type) {
+      sanitized.vessel_type = normalizeVesselType(sanitized.vessel_type);
+      if (!sanitized.vessel_type) delete sanitized.vessel_type;
+    } else {
+      delete sanitized.vessel_type;
+    }
+
+    if (!sanitized.date) {
+      delete sanitized.date;
+    }
+    if (!sanitized.time_range) {
+      delete sanitized.time_range;
+    }
+    if (!sanitized.place_name || !sanitized.place_name.trim()) {
+      delete sanitized.place_name;
+    }
+
     const res = await request('/analysis', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(sanitized),
     });
     return res.data || res;
   },

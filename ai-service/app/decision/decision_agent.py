@@ -240,7 +240,7 @@ async def build_decision(
             recommendation_type, preferred
         )
         detailed = llm.data.get("detailed_recommendation") or _fallback_detailed(
-            recommendation_type, preferred, worst, excluded, agents_missing
+            recommendation_type, preferred, worst, excluded, agents_missing, merged_points
         )
         major_hazard = llm.data.get("major_hazard")
         main_uncertainty = llm.data.get("main_uncertainty")
@@ -248,10 +248,18 @@ async def build_decision(
         log.info("[decision] LLM unavailable (%s) - deterministic advisory", llm.reason)
         one_line = _fallback_one_line(recommendation_type, preferred)
         detailed = _fallback_detailed(
-            recommendation_type, preferred, worst, excluded, agents_missing
+            recommendation_type, preferred, worst, excluded, agents_missing, merged_points
         )
         major_hazard = None
         main_uncertainty = None
+
+    extra_findings = list((preferred or worst or {}).get("key_findings", [])[:2])
+    if preferred:
+        pref_meas = merged_points.get(preferred["point_id"], {}).get("measurements", {}) or {}
+        b_name = (pref_meas.get("nearest_boundary_name") or {}).get("value")
+        b_dist = (pref_meas.get("distance_to_boundary_km") or {}).get("value")
+        if b_name and b_dist is not None:
+            extra_findings.append(f"Nearest boundary: {b_name} ({b_dist} km)")
 
     # Section 58 - key_findings is a STRUCTURED OBJECT, not a string array.
     key_findings: Dict[str, Any] = {
@@ -259,14 +267,11 @@ async def build_decision(
         "highest_risk_point": worst["point_id"] if worst else None,
         "major_hazard": major_hazard or _derive_major_hazard(preferred or worst),
         "official_warning_status": _official_warning_status(assessments),
-        "gis_restriction": (
-            f"{sum(1 for e in excluded if e['reason'] == 'gis_prohibited')} point(s) excluded as prohibited"
-            if any(e["reason"] == "gis_prohibited" for e in excluded) else None
-        ),
-        "pfz_opportunity": None,
+        "gis_restriction": _derive_gis_restriction(excluded, merged_points),
+        "pfz_opportunity": _derive_pfz_opportunity(preferred, merged_points),
         "best_time": best_windows[0]["start"] if best_windows else None,
         "main_uncertainty": main_uncertainty or _derive_uncertainty(assessments, agents_missing),
-        "additional_findings": (preferred or worst or {}).get("key_findings", [])[:3],
+        "additional_findings": extra_findings,
     }
 
     return {
@@ -303,7 +308,12 @@ def _official_warning_status(assessments: List[Dict[str, Any]]) -> Optional[str]
     for a in assessments:
         if a.get("official_warnings"):
             w = a["official_warnings"][0]
-            return f"Active warning from {w.get('source')}"
+            authority = w.get("issuing_authority") or w.get("source") or "IMD"
+            bulletin = w.get("bulletin_id")
+            level = w.get("floor_level") or "DANGEROUS"
+            if bulletin:
+                return f"ACTIVE - {authority} {level} Warning (Bulletin: {bulletin})"
+            return f"Active {level} warning from {authority}"
     return None
 
 
@@ -343,12 +353,72 @@ def _fallback_one_line(recommendation_type: str, preferred: Optional[Dict[str, A
     return "Conditions are favourable for going out."
 
 
+def _derive_gis_restriction(
+    excluded: List[Dict[str, str]], merged_points: Dict[str, Dict[str, Any]]
+) -> Optional[str]:
+    prohibited_items = [e for e in excluded if e["reason"] == "gis_prohibited"]
+    if not prohibited_items:
+        return None
+    names = []
+    for e in prohibited_items:
+        pid = e["point_id"]
+        meas = merged_points.get(pid, {}).get("measurements", {}) or {}
+        z_name = (meas.get("zone_name") or {}).get("value")
+        z_cat = (meas.get("zone_category") or {}).get("value")
+        if z_name:
+            cat_desc = f" ({z_cat})" if z_cat else ""
+            names.append(f"{pid} inside {z_name}{cat_desc}")
+        else:
+            names.append(pid)
+    return f"Excluded: {', '.join(names)}"
+
+
+def _derive_pfz_opportunity(
+    preferred: Optional[Dict[str, Any]],
+    merged_points: Dict[str, Dict[str, Any]],
+) -> Optional[str]:
+    if not preferred:
+        return None
+    pid = preferred.get("point_id")
+    meas = merged_points.get(pid, {}).get("measurements", {}) or {}
+
+    pfz_score_obj = meas.get("pfz_suitability_score")
+    if not pfz_score_obj or pfz_score_obj.get("value") is None:
+        return None
+
+    score = pfz_score_obj.get("value")
+    dist_obj = meas.get("distance_to_pfz_km")
+    dist = dist_obj.get("value") if dist_obj else None
+
+    species_obj = meas.get("target_species")
+    species = species_obj.get("value") if species_obj else None
+
+    if score >= 0.70:
+        desc = f"High fish aggregation (score {score})"
+        if dist is not None:
+            desc += f" located {dist} km away"
+        if species and species != "No concentrated pelagic aggregation":
+            desc += f" (Target species: {species})"
+        return desc
+    elif score >= 0.35:
+        desc = f"Moderate fish aggregation (score {score})"
+        if dist is not None:
+            desc += f" located {dist} km away"
+        if species and species != "No concentrated pelagic aggregation":
+            desc += f" (Target species: {species})"
+        return desc
+    elif dist is not None:
+        return f"Nearest PFZ zone is {dist} km away (suitability score {score})"
+    return None
+
+
 def _fallback_detailed(
     recommendation_type: str,
     preferred: Optional[Dict[str, Any]],
     worst: Optional[Dict[str, Any]],
     excluded: List[Dict[str, str]],
     agents_missing: List[Dict[str, Any]],
+    merged_points: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> str:
     parts: List[str] = []
 
@@ -362,10 +432,15 @@ def _fallback_detailed(
     else:
         parts.append("No analysed point was both permitted and safe enough to recommend.")
 
-    prohibited_count = sum(1 for e in excluded if e["reason"] == "gis_prohibited")
-    if prohibited_count:
+    prohibited_items = [e for e in excluded if e["reason"] == "gis_prohibited"]
+    if prohibited_items:
+        details = []
+        for e in prohibited_items:
+            pid = e["point_id"]
+            z = (merged_points.get(pid, {}).get("measurements", {}).get("zone_name") or {}).get("value") if merged_points else None
+            details.append(f"{pid} ({z})" if z else pid)
         parts.append(
-            f"{prohibited_count} point(s) were excluded because they fall inside a restricted or prohibited zone."
+            f"The following point(s) were excluded because they fall inside protected/restricted zones: {', '.join(details)}."
         )
 
     if agents_missing:
@@ -388,14 +463,24 @@ def _build_decision_prompt(**kw) -> str:
     ]
 
     if preferred:
+        pref_pid = preferred["point_id"]
         lines.append(
             f"Recommended point {preferred['point_id']}: risk {preferred['final_score']}/100 "
             f"({preferred['risk_level']})"
         )
+        pref_meas = kw["merged_points"].get(pref_pid, {}).get("measurements", {}) or {}
+        pref_zone = (pref_meas.get("zone_name") or {}).get("value")
+        pref_dist = (pref_meas.get("distance_to_boundary_km") or {}).get("value")
+        pref_depth = (pref_meas.get("water_depth_m") or {}).get("value")
+        if pref_zone:
+            lines.append(f"  geography: {pref_zone} (depth: {pref_depth}m, distance to boundary: {pref_dist}km)")
         if preferred.get("reasoning"):
             lines.append(f"  evidence: {preferred['reasoning']}")
         for f in (preferred.get("key_findings") or [])[:4]:
             lines.append(f"  - {f}")
+        pfz_opp = _derive_pfz_opportunity(preferred, kw["merged_points"])
+        if pfz_opp:
+            lines.append(f"  fishing opportunity: {pfz_opp}")
     else:
         lines.append("NO point could be recommended - all were excluded or too dangerous.")
 
@@ -404,9 +489,19 @@ def _build_decision_prompt(**kw) -> str:
             f"Worst point {worst['point_id']}: risk {worst['final_score']}/100 ({worst['risk_level']})"
         )
 
-    prohibited = [e["point_id"] for e in kw["excluded"] if e["reason"] == "gis_prohibited"]
-    if prohibited:
-        lines.append(f"Excluded as inside a prohibited/restricted zone: {', '.join(prohibited)}")
+    prohibited_details = []
+    for e in kw["excluded"]:
+        if e["reason"] == "gis_prohibited":
+            pid = e["point_id"]
+            meas = kw["merged_points"].get(pid, {}).get("measurements", {}) or {}
+            z_name = (meas.get("zone_name") or {}).get("value")
+            z_cat = (meas.get("zone_category") or {}).get("value")
+            if z_name:
+                prohibited_details.append(f"{pid} (inside {z_name} - {z_cat or 'restricted'})")
+            else:
+                prohibited_details.append(pid)
+    if prohibited_details:
+        lines.append(f"Excluded as inside a prohibited/restricted zone: {', '.join(prohibited_details)}")
 
     if kw["best_windows"]:
         w = kw["best_windows"][0]

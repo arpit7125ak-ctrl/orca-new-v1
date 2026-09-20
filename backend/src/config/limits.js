@@ -50,6 +50,9 @@ module.exports = Object.freeze({
   // How often the worker process wakes up to evaluate subscriptions.
   ALERT_SCHEDULER_CRON: process.env.ALERT_SCHEDULER_CRON || '*/30 * * * *', // every 30 min
 
+  // Daily INCOIS PFZ satellite advisory synchronization cron (8:00 PM IST)
+  PFZ_SYNC_CRON: process.env.PFZ_SYNC_CRON || '0 20 * * *',
+
   // --- AI Service call budget --------------------------------------------
   // Backend does NOT block on execution (Section 103: 202 Accepted), so this
   // timeout only covers the handoff POST itself, not the analysis.

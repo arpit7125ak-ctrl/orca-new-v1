@@ -22,9 +22,9 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
   // Advanced structured overrides
   const [activity, setActivity] = useState('fishing');
   const [vesselType, setVesselType] = useState('motorized_country_craft');
-  const [lat, setLat] = useState('9.94');
-  const [lon, setLon] = useState('76.16');
-  const [durationHours, setDurationHours] = useState('4');
+  const [lat, setLat] = useState('');
+  const [lon, setLon] = useState('');
+  const [durationHours, setDurationHours] = useState('');
 
   // Quick preset chips
   const presets = [
@@ -44,6 +44,15 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
       lat: '20.89',
       lon: '70.36',
       vessel: 'mechanized_fishing_vessel',
+      act: 'fishing',
+    },
+    {
+      title: 'Rameswaram, Palk Bay',
+      detail: 'Motorized FRP Boat',
+      q: 'Is it safe to fish off Rameswaram coast tomorrow?',
+      lat: '9.288',
+      lon: '79.313',
+      vessel: 'motorized_country_craft',
       act: 'fishing',
     },
     {
@@ -328,6 +337,7 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
                 max="72"
                 value={durationHours}
                 onChange={(e) => setDurationHours(e.target.value)}
+                placeholder="e.g. 4"
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"
               />
             </div>

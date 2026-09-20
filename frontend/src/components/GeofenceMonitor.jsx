@@ -13,19 +13,20 @@ import {
 import { orcaApi } from '../api/client';
 
 export default function GeofenceMonitor() {
-  const [lat, setLat] = useState('9.94');
-  const [lon, setLon] = useState('76.16');
-  const [speed, setSpeed] = useState('8.5');
-  const [heading, setHeading] = useState('240');
+  const [lat, setLat] = useState('');
+  const [lon, setLon] = useState('');
+  const [speed, setSpeed] = useState('');
+  const [heading, setHeading] = useState('');
   const [vesselType, setVesselType] = useState('motorized_country_craft');
   const [isChecking, setIsChecking] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
   const presets = [
-    { name: 'Kochi Offshore (Inside Safe Waters)', lat: '9.94', lon: '76.16', heading: '270', speed: '8.0' },
-    { name: 'Palk Strait (Near IMBL Boundary)', lat: '9.50', lon: '79.52', heading: '090', speed: '12.0' },
-    { name: 'Gulf of Kutch (Near Marine Sanctuary)', lat: '22.45', lon: '69.50', heading: '180', speed: '9.5' },
+    { name: 'Kochi Coastal (Safe Territorial Waters)', lat: '9.93', lon: '76.10', heading: '270', speed: '8.0' },
+    { name: 'Palk Bay (Sri Lanka IMBL Breach)', lat: '9.35', lon: '79.55', heading: '090', speed: '12.0' },
+    { name: 'Gulf of Mannar Marine National Park', lat: '9.15', lon: '79.10', heading: '180', speed: '7.5' },
+    { name: 'Mumbai High (ONGC ODAG 500m Exclusion)', lat: '19.42', lon: '71.33', heading: '320', speed: '9.5' },
   ];
 
   const handleCheck = async (e) => {
@@ -55,7 +56,9 @@ export default function GeofenceMonitor() {
     setSpeed(p.speed);
   };
 
-  const isSafe = !result?.alerts || result.alerts.length === 0;
+  const isInside = result?.state === 'INSIDE_EXCLUSION';
+  const isApproaching = result?.state === 'APPROACHING_EXCLUSION';
+  const isSafe = result?.state === 'CLEAR' || (!isInside && !isApproaching);
 
   return (
     <div className="space-y-6">
@@ -114,6 +117,7 @@ export default function GeofenceMonitor() {
                   step="0.0001"
                   value={lat}
                   onChange={(e) => setLat(e.target.value)}
+                  placeholder="e.g. 9.94"
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"
                   required
                 />
@@ -125,6 +129,7 @@ export default function GeofenceMonitor() {
                   step="0.0001"
                   value={lon}
                   onChange={(e) => setLon(e.target.value)}
+                  placeholder="e.g. 76.16"
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"
                   required
                 />
@@ -139,6 +144,7 @@ export default function GeofenceMonitor() {
                   step="0.1"
                   value={speed}
                   onChange={(e) => setSpeed(e.target.value)}
+                  placeholder="e.g. 8.5"
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"
                 />
               </div>
@@ -150,6 +156,7 @@ export default function GeofenceMonitor() {
                   max="360"
                   value={heading}
                   onChange={(e) => setHeading(e.target.value)}
+                  placeholder="e.g. 240"
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"
                 />
               </div>
@@ -204,64 +211,84 @@ export default function GeofenceMonitor() {
             <div className="space-y-4">
               {/* Status Banner */}
               <div className={`p-4 rounded-xl border flex items-start space-x-3 ${
-                isSafe 
-                  ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300' 
-                  : 'bg-rose-950/40 border-rose-500/50 text-rose-300'
+                isInside
+                  ? 'bg-rose-950/60 border-rose-500 text-rose-200 ring-2 ring-rose-500/30 animate-pulse'
+                  : isApproaching
+                  ? 'bg-amber-950/50 border-amber-500/60 text-amber-200'
+                  : 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
               }`}>
-                {isSafe ? (
-                  <CheckCircle2 className="w-6 h-6 text-emerald-400 flex-shrink-0" />
+                {isInside ? (
+                  <AlertTriangle className="w-6 h-6 text-rose-400 flex-shrink-0 mt-0.5" />
+                ) : isApproaching ? (
+                  <AlertTriangle className="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5" />
                 ) : (
-                  <AlertTriangle className="w-6 h-6 text-rose-400 flex-shrink-0" />
+                  <CheckCircle2 className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
                 )}
                 <div>
                   <h4 className="text-sm font-bold uppercase tracking-wider">
-                    {isSafe ? 'Clear Zone: Safe Operations Permitted' : 'Boundary Alert: Violation / Hazard Proximity'}
+                    {isInside
+                      ? 'CRITICAL: INSIDE PROHIBITED MARITIME BOUNDARY'
+                      : isApproaching
+                      ? 'WARNING: APPROACHING RESTRICTED EXCLUSION ZONE'
+                      : 'CLEAR: SAFE DOMESTIC WATERS'}
                   </h4>
-                  <p className="text-xs text-slate-300 mt-0.5">
-                    {result.summary || (isSafe ? 'Vessel is operating within authorized domestic territorial waters with no restricted zone infringements.' : 'Warning: Action required to avoid crossing restricted maritime limits.')}
+                  <p className="text-xs mt-1 leading-relaxed text-slate-200 font-medium">
+                    {result.warning_text ||
+                      (isSafe
+                        ? 'Vessel GPS coordinate is operating safely within authorized Indian waters with no restricted maritime boundaries breached.'
+                        : 'Action required: alter course immediately to avoid crossing surveyed boundary lines.')}
                   </p>
                 </div>
               </div>
 
-              {/* Distances to Key Lines */}
+              {/* Real Telemetry to Boundary Line */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">IMBL Distance</span>
-                  <span className="text-base font-black text-cyan-400 font-mono">
-                    {result.imbl_distance_km ? `${result.imbl_distance_km} km` : '42.8 km'}
+                <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Boundary / Zone Target</span>
+                  <span className="text-xs font-bold text-cyan-400 truncate block mt-0.5" title={result.layer_name || 'Mainland Indian Waters'}>
+                    {result.layer_name || 'Mainland Indian Waters'}
                   </span>
-                  <span className="text-[10px] text-slate-400 block mt-0.5">Safe margin maintained</span>
+                  <span className="text-[10px] text-slate-500 block mt-0.5 capitalize">
+                    {result.constraint_type ? result.constraint_type.replace(/_/g, ' ') : 'Open Navigation'}
+                  </span>
                 </div>
 
-                <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Nearest Marine Park</span>
-                  <span className="text-base font-black text-emerald-400 font-mono">
-                    {result.protected_area_distance_km ? `${result.protected_area_distance_km} km` : '19.4 km'}
+                <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Distance to Line</span>
+                  <span className={`text-base font-black font-mono mt-0.5 block ${isInside ? 'text-rose-400' : isApproaching ? 'text-amber-400' : 'text-emerald-400'}`}>
+                    {isInside
+                      ? '0.0 km (BREACH)'
+                      : result.distance_km !== null && result.distance_km !== undefined
+                      ? `${result.distance_km} km`
+                      : '> 50.0 km (Clear)'}
                   </span>
-                  <span className="text-[10px] text-slate-400 block mt-0.5">Clear of no-take zones</span>
+                  <span className="text-[10px] text-slate-500 block mt-0.5">
+                    {isInside ? 'Vessel is inside boundary' : isApproaching ? 'Within safety buffer' : 'Safe separation maintained'}
+                  </span>
                 </div>
 
-                <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Depth / Shallow Shoal</span>
-                  <span className="text-base font-black text-blue-400 font-mono">
-                    {result.depth_m ? `${result.depth_m} m` : '28.5 m'}
+                <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Bearing to Hazard</span>
+                  <span className="text-base font-black text-blue-400 font-mono mt-0.5 block">
+                    {result.bearing_deg !== null && result.bearing_deg !== undefined ? `${result.bearing_deg}°` : 'N/A'}
                   </span>
-                  <span className="text-[10px] text-slate-400 block mt-0.5">Adequate draft clearance</span>
+                  <span className="text-[10px] text-slate-500 block mt-0.5">
+                    {result.bearing_deg !== null && result.bearing_deg !== undefined ? 'Relative angle to barrier' : 'No barrier in heading'}
+                  </span>
                 </div>
               </div>
 
-              {/* Action Directives */}
-              {result.directives && result.directives.length > 0 && (
-                <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-1.5">
-                  <h5 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Operational Directives</h5>
-                  {result.directives.map((dir, i) => (
-                    <p key={i} className="text-xs text-slate-300 flex items-start space-x-1.5">
-                      <span className="text-cyan-400 font-bold">•</span>
-                      <span>{dir}</span>
-                    </p>
-                  ))}
-                </div>
-              )}
+              {/* Directive Card */}
+              <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-1">
+                <h5 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Safety Action Directive</h5>
+                <p className="text-xs text-slate-200">
+                  {isInside
+                    ? 'IMMEDIATE ACTION REQUIRED: Reverse vessel heading immediately to return to authorized Indian territorial waters. Violations of international maritime boundaries or Marine National Parks carry strict legal penalties under UNCLOS and the Wildlife Protection Act.'
+                    : isApproaching
+                    ? 'ADVISORY: You are within 5 km of an active maritime boundary or restricted area. Monitor vessel radar and GPS heading; do not set nets or cross demarcated lines.'
+                    : 'NORMAL NAVIGATION: Safe to operate authorized fishing gear and vessel navigation in current quadrant. Continue monitoring VHF channel 16.'}
+                </p>
+              </div>
             </div>
           )}
         </div>

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   Bell, 
   ShieldAlert, 
@@ -16,11 +16,11 @@ import {
 import { orcaApi } from '../api/client';
 
 export default function AlertsPage() {
-  const [locationName, setLocationName] = useState('Kochi Coastal Sector');
-  const [lat, setLat] = useState('9.94');
-  const [lon, setLon] = useState('76.16');
+  const [locationName, setLocationName] = useState('');
+  const [lat, setLat] = useState('');
+  const [lon, setLon] = useState('');
   const [minLevel, setMinLevel] = useState('CAUTION');
-  const [quietHours, setQuietHours] = useState('22:00 - 06:00');
+  const [quietHours, setQuietHours] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const [alertTypes, setAlertTypes] = useState({
@@ -70,12 +70,12 @@ export default function AlertsPage() {
     e.preventDefault();
     const payload = {
       location: {
-        place_name: locationName,
+        place_name: locationName.trim() || 'Monitored Coastal Sector',
         coordinate: { lat: parseFloat(lat) || 9.94, lon: parseFloat(lon) || 76.16 },
       },
       min_severity: minLevel,
       alert_types: Object.keys(alertTypes).filter((k) => alertTypes[k]),
-      quiet_hours: quietHours,
+      ...(quietHours.trim() ? { quiet_hours: quietHours.trim() } : {}),
     };
 
     try {
@@ -85,7 +85,7 @@ export default function AlertsPage() {
 
     const newSub = {
       id: `sub_${Date.now()}`,
-      location: `${locationName} (${lat}°N, ${lon}°E)`,
+      location: locationName ? (lat && lon ? `${locationName} (${lat}°N, ${lon}°E)` : locationName) : 'Monitored Sector',
       minLevel,
       types: Object.keys(alertTypes).filter((k) => alertTypes[k]),
       status: 'active',

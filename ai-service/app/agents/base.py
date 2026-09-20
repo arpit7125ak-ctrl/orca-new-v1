@@ -35,9 +35,15 @@ produce a safe verdict (Section 50).
 import asyncio
 import time as _time
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.adapters import mock as mock_adapter
+from app.adapters import open_meteo as open_meteo_adapter
+from app.adapters import mongo_gis as mongo_gis_adapter
+from app.adapters import incois_pfz as incois_pfz_adapter
+from app.adapters import imd_cyclone as imd_cyclone_adapter
+from app.adapters import copernicus_ecosystem as copernicus_ecosystem_adapter
+from app.adapters import harmonic_tide as harmonic_tide_adapter
 from app.config.settings import settings
 from app.observability.logger import log
 
@@ -74,7 +80,22 @@ async def run_agent(
     started_at = _now_iso()
     t0 = _time.perf_counter()
 
-    fetcher = mock_adapter.FETCHERS.get(agent_name)
+    fetcher = None
+    if settings.ADAPTER_MODE == "real":
+        fetcher = open_meteo_adapter.FETCHERS.get(agent_name)
+        if fetcher is None and agent_name == "gis":
+            fetcher = mongo_gis_adapter.FETCHERS.get(agent_name)
+        if fetcher is None and agent_name == "pfz":
+            fetcher = incois_pfz_adapter.FETCHERS.get(agent_name)
+        if fetcher is None and agent_name == "cyclone":
+            fetcher = imd_cyclone_adapter.FETCHERS.get(agent_name)
+        if fetcher is None and agent_name == "ecosystem":
+            fetcher = copernicus_ecosystem_adapter.FETCHERS.get(agent_name)
+        if fetcher is None and agent_name == "tide":
+            fetcher = harmonic_tide_adapter.FETCHERS.get(agent_name)
+    if fetcher is None:
+        fetcher = mock_adapter.FETCHERS.get(agent_name)
+
     if fetcher is None:
         return _failed_result(
             agent_name, analysis_id, started_at, t0,
@@ -84,19 +105,21 @@ async def run_agent(
     try:
         by_point: Dict[str, Any] = {}
 
-        for point in points:
-            # Section 15: a not_applicable point (land inside the grid) is not
-            # queried at all. It stays in the points array so the gap is
-            # visible, but spending an upstream call on it would be waste.
-            if point.get("point_status") == "not_applicable":
-                continue
+        sem = asyncio.Semaphore(8)
 
-            measurements = await asyncio.to_thread(
-                fetcher, point["lat"], point["lon"], time_window_utc
-            )
-            # Measurements sit directly under the point_id - there is no
-            # intermediate "measurements" wrapper in the contract.
-            by_point[point["point_id"]] = measurements
+        async def _fetch_one_point(pt: Dict[str, Any]) -> Tuple[str, Optional[Dict[str, Any]]]:
+            if pt.get("point_status") == "not_applicable":
+                return pt["point_id"], None
+            async with sem:
+                res = await asyncio.to_thread(
+                    fetcher, pt["lat"], pt["lon"], time_window_utc
+                )
+                return pt["point_id"], res
+
+        results = await asyncio.gather(*[_fetch_one_point(p) for p in points])
+        for pid, measurements in results:
+            if measurements is not None:
+                by_point[pid] = measurements
 
         duration_ms = int((_time.perf_counter() - t0) * 1000)
 

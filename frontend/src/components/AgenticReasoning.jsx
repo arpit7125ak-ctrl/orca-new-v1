@@ -31,12 +31,14 @@ export default function AgenticReasoning({ analysis }) {
   const agentDescriptions = {
     backend_validation: 'Structural JSON Schema contract enforcement (Section 7)',
     planner: 'Autonomous NLP query interpretation and location snapping (Section 8)',
-    weather: 'IMD numerical weather prediction, wind gusts, and precipitation models',
-    ocean: 'INCOIS wave, primary swell period, and ocean surface current vectors',
-    cyclone: 'Regional Specialized Meteorological Centre (RSMC) cyclonic disturbance screening',
+    weather: 'IMD / Open-Meteo numerical weather prediction, wind gusts, and precipitation models',
+    ocean: 'Copernicus / INCOIS wave, primary swell period, and ocean surface current vectors',
+    tide: 'Astronomical harmonic tidal stream calculations (M2, S2, K1, O1) and SOI/INCOIS tidal curves',
+    cyclone: 'Regional Specialized Meteorological Centre (RSMC) & NDMA SACHET cyclonic disturbance screening',
+    ecosystem: 'Copernicus Marine CMEMS BGC chlorophyll-a, dissolved oxygen, and ISRO MOSDAC OCM-3 model',
     gis: 'Spatial geofence evaluation against IMBL, EEZ, and Marine Protected Areas',
-    pfz: 'Potential Fishing Zone and sea surface temperature analysis',
-    risk: 'Deterministic constraint floor enforcement and localized multi-quadrant risk synthesis',
+    pfz: 'INCOIS Potential Fishing Zone (PFZ) WFS satellite advisories and sea surface thermal fronts',
+    risk: 'Deterministic constraint floor enforcement and batched spatial multi-quadrant risk synthesis',
     decision: 'Operational action directive generation and preferred quadrant selection',
   };
 

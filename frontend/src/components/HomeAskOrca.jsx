@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Compass,
   Mic,
@@ -17,9 +17,14 @@ import {
   AlertTriangle,
   RotateCcw,
   Globe,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Navigation,
+  Layers
 } from 'lucide-react';
+import L from 'leaflet';
 import { createSpeechRecognizer } from '../utils/speech';
+import { getNearestCoastalPlace, resolvePlaceFromCoordinates } from '../utils/geo';
+import { ACTIVITIES, VESSEL_TYPES, normalizeActivity, normalizeVesselType } from '../utils/maritimeConfig';
 
 export default function HomeAskOrca({
   onStartAnalysis,
@@ -34,13 +39,13 @@ export default function HomeAskOrca({
   const [speechRecognizer, setSpeechRecognizer] = useState(null);
 
   // Refine parameters
-  const [placeName, setPlaceName] = useState('Kochi Offshore');
-  const [lat, setLat] = useState('9.94');
-  const [lon, setLon] = useState('76.16');
-  const [activity, setActivity] = useState('fishing');
-  const [vesselType, setVesselType] = useState('motorized_country_craft');
-  const [dateOption, setDateOption] = useState('tomorrow');
-  const [timeRange, setTimeRange] = useState('morning');
+  const [placeName, setPlaceName] = useState('');
+  const [lat, setLat] = useState('');
+  const [lon, setLon] = useState('');
+  const [activity, setActivity] = useState('');
+  const [vesselType, setVesselType] = useState('');
+  const [dateOption, setDateOption] = useState('');
+  const [timeRange, setTimeRange] = useState('');
   const [langOverride, setLangOverride] = useState(selectedLang);
 
   // Quick asks chips matching §5
@@ -82,6 +87,115 @@ export default function HomeAskOrca({
     }
   };
 
+  const [showMapPicker, setShowMapPicker] = useState(false);
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markerRef = useRef(null);
+
+  const handleLocationUpdate = async (cLat, cLon) => {
+    setLat(String(cLat));
+    setLon(String(cLon));
+    if (markerRef.current) {
+      markerRef.current.setLatLng([cLat, cLon]);
+    }
+    const immediatePlace = getNearestCoastalPlace(cLat, cLon);
+    setPlaceName(immediatePlace);
+
+    try {
+      const enriched = await resolvePlaceFromCoordinates(cLat, cLon);
+      if (enriched) setPlaceName(enriched);
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (!showMapPicker || !mapContainerRef.current) return;
+
+    let resizeObserver;
+    let timer1;
+    let timer2;
+
+    const initialLat = parseFloat(lat) || 9.94;
+    const initialLon = parseFloat(lon) || 76.16;
+
+    if (!mapInstanceRef.current) {
+      const map = L.map(mapContainerRef.current, {
+        center: [initialLat, initialLon],
+        zoom: 8,
+        zoomControl: true,
+      });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19,
+      }).addTo(map);
+
+      const customPin = L.divIcon({
+        className: 'custom-pin',
+        html: `
+          <div style="position:relative;">
+            <div style="background-color:#06b6d4;width:16px;height:16px;border-radius:50%;border:2px solid #ffffff;box-shadow:0 0 10px #06b6d4;"></div>
+          </div>
+        `,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+      });
+
+      const marker = L.marker([initialLat, initialLon], { icon: customPin, draggable: true }).addTo(map);
+      markerRef.current = marker;
+
+      map.on('click', (e) => {
+        const cLat = Number(e.latlng.lat.toFixed(4));
+        const cLon = Number(e.latlng.lng.toFixed(4));
+        map.panTo([cLat, cLon]);
+        handleLocationUpdate(cLat, cLon);
+      });
+
+      marker.on('dragend', (e) => {
+        const pos = e.target.getLatLng();
+        const cLat = Number(pos.lat.toFixed(4));
+        const cLon = Number(pos.lng.toFixed(4));
+        map.panTo([cLat, cLon]);
+        handleLocationUpdate(cLat, cLon);
+      });
+
+      mapInstanceRef.current = map;
+
+      // Invalidate size immediately on next tick and after animations complete
+      requestAnimationFrame(() => {
+        if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
+      });
+      timer1 = setTimeout(() => {
+        if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
+      }, 100);
+      timer2 = setTimeout(() => {
+        if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
+      }, 350);
+
+      // Auto-refresh tiles whenever container expands or resizes
+      if (typeof ResizeObserver !== 'undefined' && mapContainerRef.current) {
+        resizeObserver = new ResizeObserver(() => {
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.invalidateSize();
+          }
+        });
+        resizeObserver.observe(mapContainerRef.current);
+      }
+    } else {
+      // Map instance already exists, refresh size
+      mapInstanceRef.current.invalidateSize();
+    }
+
+    return () => {
+      if (timer1) clearTimeout(timer1);
+      if (timer2) clearTimeout(timer2);
+      if (resizeObserver) resizeObserver.disconnect();
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [showMapPicker]);
+
   const handleUseMyLocation = () => {
     if (!navigator.geolocation) {
       alert('Geolocation is not available.');
@@ -91,9 +205,10 @@ export default function HomeAskOrca({
       (pos) => {
         const cLat = Number(pos.coords.latitude.toFixed(4));
         const cLon = Number(pos.coords.longitude.toFixed(4));
-        setLat(String(cLat));
-        setLon(String(cLon));
-        setPlaceName('Current GPS Position');
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.setView([cLat, cLon], 10);
+        }
+        handleLocationUpdate(cLat, cLon);
       },
       (err) => alert('GPS location failed: ' + err.message)
     );
@@ -101,39 +216,63 @@ export default function HomeAskOrca({
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
-    const finalQuery = query.trim() || `Is it safe for a ${vesselType.replace(/_/g, ' ')} to conduct ${activity} at ${placeName}?`;
 
-    // Format ISO date (YYYY-MM-DD) per AnalysisRequest.json contract
-    const d = new Date();
-    if (dateOption === 'tomorrow') {
-      d.setDate(d.getDate() + 1);
-    } else if (dateOption === 'day_after') {
-      d.setDate(d.getDate() + 2);
+    // Format ISO date (YYYY-MM-DD) per AnalysisRequest.json contract (only if chosen)
+    let isoDate = undefined;
+    if (dateOption) {
+      const d = new Date();
+      if (dateOption === 'tomorrow') {
+        d.setDate(d.getDate() + 1);
+      } else if (dateOption === 'day_after') {
+        d.setDate(d.getDate() + 2);
+      }
+      isoDate = d.toISOString().split('T')[0];
     }
-    const isoDate = d.toISOString().split('T')[0];
 
-    // Format structured time range object { start, end } per AnalysisRequest.json
+    // Format structured time range object { start, end } (only if chosen)
     const timeRangeMap = {
       morning: { start: '06:00', end: '11:00' },
       afternoon: { start: '12:00', end: '16:00' },
       evening: { start: '16:00', end: '20:00' },
       night: { start: '20:00', end: '04:00' },
     };
-    const structuredTimeRange = timeRangeMap[timeRange] || { start: '06:00', end: '11:00' };
+    const structuredTimeRange = timeRange ? timeRangeMap[timeRange] : undefined;
 
-    onStartAnalysis({
+    const trimmedPlace = placeName ? placeName.trim() : '';
+    const trimmedQuery = query ? query.trim() : '';
+    let finalQuery = trimmedQuery;
+    if (!finalQuery) {
+      const actText = activity ? activity.replace(/_/g, ' ') : 'marine operations';
+      const vesText = vesselType ? `for a ${vesselType.replace(/_/g, ' ')} ` : '';
+      const locText = trimmedPlace ? `at ${trimmedPlace}` : 'off coast';
+      finalQuery = `Is it safe ${vesText}to conduct ${actText} ${locText}?`;
+    }
+
+    const pLat = parseFloat(lat);
+    const pLon = parseFloat(lon);
+    const hasValidCoords = !isNaN(pLat) && !isNaN(pLon) && pLat >= -90 && pLat <= 90 && pLon >= -180 && pLon <= 180;
+
+    const canonicalActivity = activity ? normalizeActivity(activity) : undefined;
+    const canonicalVessel = vesselType ? normalizeVesselType(vesselType) : undefined;
+
+    const payload = {
       query: finalQuery,
-      coordinate: {
-        lat: parseFloat(lat) || 9.94,
-        lon: parseFloat(lon) || 76.16,
-      },
-      place_name: placeName,
-      activity,
-      vessel_type: vesselType,
+      activity: canonicalActivity || undefined,
+      vessel_type: canonicalVessel || undefined,
       date: isoDate,
       time_range: structuredTimeRange,
-      language_override: langOverride || selectedLang || null,
-    });
+      coordinate: hasValidCoords ? { lat: pLat, lon: pLon } : { lat: 9.94, lon: 76.16 },
+    };
+
+    if (trimmedPlace) {
+      payload.place_name = trimmedPlace;
+    }
+    const chosenLang = langOverride || selectedLang;
+    if (chosenLang && chosenLang !== 'en') {
+      payload.language_override = chosenLang;
+    }
+
+    onStartAnalysis(payload);
   };
 
   return (
@@ -249,42 +388,96 @@ export default function HomeAskOrca({
 
             {isRefineOpen && (
               <div className="mt-3 p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4 animate-fade-in">
-                {/* Location + GPS */}
+                {/* Location + GPS + Map Picker */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-semibold text-slate-300">Target Location</label>
-                    <button
-                      type="button"
-                      onClick={handleUseMyLocation}
-                      className="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold flex items-center space-x-1 cursor-pointer"
-                    >
-                      <MapPin className="w-3 h-3" />
-                      <span>Use my GPS</span>
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowMapPicker(!showMapPicker)}
+                        className={`text-[11px] font-semibold flex items-center space-x-1 px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                          showMapPicker
+                            ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400'
+                            : 'text-cyan-400 hover:text-cyan-300 border-cyan-900/60 bg-cyan-950/40'
+                        }`}
+                      >
+                        <Navigation className="w-3 h-3" />
+                        <span>{showMapPicker ? 'Hide Map' : 'Pin on Map'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleUseMyLocation}
+                        className="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold flex items-center space-x-1 cursor-pointer"
+                      >
+                        <MapPin className="w-3 h-3" />
+                        <span>Use GPS</span>
+                      </button>
+                    </div>
                   </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <input
                       type="text"
                       value={placeName}
                       onChange={(e) => setPlaceName(e.target.value)}
-                      placeholder="Place name"
+                      placeholder="Place name (auto-filled on map)"
                       className="sm:col-span-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                     />
                     <input
-                      type="text"
+                      type="number"
+                      step="0.0001"
                       value={lat}
-                      onChange={(e) => setLat(e.target.value)}
+                      onChange={(e) => {
+                        const newLat = e.target.value;
+                        setLat(newLat);
+                        const pL = parseFloat(newLat);
+                        const pLon = parseFloat(lon);
+                        if (!isNaN(pL) && !isNaN(pLon) && pL >= -90 && pL <= 90) {
+                          setPlaceName(getNearestCoastalPlace(pL, pLon));
+                        }
+                      }}
                       placeholder="Latitude (e.g. 9.94)"
                       className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono"
                     />
                     <input
-                      type="text"
+                      type="number"
+                      step="0.0001"
                       value={lon}
-                      onChange={(e) => setLon(e.target.value)}
+                      onChange={(e) => {
+                        const newLon = e.target.value;
+                        setLon(newLon);
+                        const pL = parseFloat(lat);
+                        const pLon = parseFloat(newLon);
+                        if (!isNaN(pL) && !isNaN(pLon) && pLon >= -180 && pLon <= 180) {
+                          setPlaceName(getNearestCoastalPlace(pL, pLon));
+                        }
+                      }}
                       placeholder="Longitude (e.g. 76.16)"
                       className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono"
                     />
                   </div>
+
+                  {/* Interactive Embedded Leaflet Map */}
+                  {showMapPicker && (
+                    <div className="mt-3 rounded-2xl overflow-hidden border border-slate-700 relative shadow-inner">
+                      <div className="bg-slate-900/90 px-3 py-1.5 border-b border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
+                        <span className="font-semibold text-cyan-300 flex items-center space-x-1">
+                          <Layers className="w-3.5 h-3.5" />
+                          <span>Click anywhere on water to select origin</span>
+                        </span>
+                        <span className="font-mono text-slate-400">
+                          {lat && lon ? `${lat}°N, ${lon}°E` : 'No pin set'}
+                        </span>
+                      </div>
+                      <div
+                        ref={mapContainerRef}
+                        className="w-full bg-slate-950 relative z-0"
+                        style={{ height: '250px', minHeight: '250px' }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Activity & Vessel */}
@@ -296,13 +489,12 @@ export default function HomeAskOrca({
                       onChange={(e) => setActivity(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                     >
-                      <option value="fishing">🎣 Coastal Fishing</option>
-                      <option value="trawling">🚢 Deep Sea Trawling</option>
-                      <option value="tourism">🚤 Tourism & Ferry</option>
-                      <option value="recreation">🏄 Recreational Boating</option>
-                      <option value="cargo">📦 Coastal Cargo Transit</option>
-                      <option value="diving">🤿 Scuba & Marine Survey</option>
-                      <option value="research">🔬 Oceanographic Research</option>
+                      <option value="">-- Select Maritime Activity (Optional) --</option>
+                      {ACTIVITIES.map((act) => (
+                        <option key={act.id} value={act.id}>
+                          {act.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -313,12 +505,12 @@ export default function HomeAskOrca({
                       onChange={(e) => setVesselType(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                     >
-                      <option value="motorized_country_craft">FRP Motorized Craft (&lt;10m)</option>
-                      <option value="mechanized_fishing_vessel">Mechanized Trawler (&gt;15m)</option>
-                      <option value="traditional_non_motorized">Traditional Non-Motorized Canoe</option>
-                      <option value="recreational_boat">Speedboat / Recreational</option>
-                      <option value="cargo_coaster">Coastal Cargo Coaster</option>
-                      <option value="passenger_ferry">Passenger Coastal Ferry</option>
+                      <option value="">-- Select Vessel Classification (Optional) --</option>
+                      {VESSEL_TYPES.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -332,8 +524,9 @@ export default function HomeAskOrca({
                       onChange={(e) => setDateOption(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                     >
-                      <option value="tomorrow">📅 Tomorrow (Forecast)</option>
+                      <option value="">-- Select Date (Optional) --</option>
                       <option value="today">📅 Today (Immediate)</option>
+                      <option value="tomorrow">📅 Tomorrow (Forecast)</option>
                       <option value="day_after">📅 Day After Tomorrow</option>
                     </select>
                   </div>
@@ -345,6 +538,7 @@ export default function HomeAskOrca({
                       onChange={(e) => setTimeRange(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                     >
+                      <option value="">-- Select Operational Window (Optional) --</option>
                       <option value="morning">🌅 Morning (06:00 - 11:00 IST)</option>
                       <option value="afternoon">☀️ Afternoon (12:00 - 16:00 IST)</option>
                       <option value="evening">🌇 Evening (16:00 - 20:00 IST)</option>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import HomeAskOrca from './components/HomeAskOrca';
 import AnalysisInputPage from './components/AnalysisInputPage';
@@ -30,11 +30,11 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState(null);
 
   const [inputDefaults, setInputDefaults] = useState({
-    place_name: 'Kochi Offshore',
-    lat: 9.94,
-    lon: 76.16,
-    activity: 'fishing',
-    vessel_type: 'motorized_country_craft',
+    place_name: '',
+    lat: '',
+    lon: '',
+    activity: '',
+    vessel_type: '',
   });
 
   // Load the latest completed analysis from MongoDB on mount
@@ -94,6 +94,8 @@ export default function App() {
       console.error('Analysis execution failed:', err);
       setErrorMessage(err.message || 'Error occurred during multi-agent analysis.');
       setIsLoading(false);
+      setActiveTab((prev) => (prev === 'loading' ? 'input' : prev));
+      setStatusInfo(null);
     }
   };
 

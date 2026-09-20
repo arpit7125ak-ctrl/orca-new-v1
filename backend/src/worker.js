@@ -13,12 +13,16 @@
 // in-flight alert evaluation pass, and vice versa.
 // ---------------------------------------------------------------------------
 
+const cron = require('node-cron');
 const { connect, disconnect } = require('./db/connection');
 const scheduler = require('./modules/alerts/scheduler');
+const { syncPfzFromIncois } = require('./modules/pfz/pfzSync.service');
 const { logger } = require('./observability/logger');
 const limits = require('./config/limits');
 
 require('./db/models'); // register models + indexes
+
+let pfzTask = null;
 
 async function start() {
   try {
@@ -31,6 +35,26 @@ async function start() {
 
     scheduler.start();
 
+    // Daily INCOIS Potential Fishing Zone (PFZ) sync scheduled at 20:00 (8:00 PM) IST
+    pfzTask = cron.schedule(
+      limits.PFZ_SYNC_CRON,
+      async () => {
+        logger.info('[worker] [pfz-sync] Starting scheduled daily INCOIS PFZ sync...');
+        try {
+          const res = await syncPfzFromIncois();
+          logger.info({ res }, '[worker] [pfz-sync] Daily INCOIS PFZ sync completed');
+        } catch (err) {
+          logger.error({ err: err.message }, '[worker] [pfz-sync] Daily INCOIS PFZ sync failed');
+        }
+      },
+      { timezone: 'Asia/Kolkata' }
+    );
+
+    logger.info(
+      { cron: limits.PFZ_SYNC_CRON, timezone: 'Asia/Kolkata' },
+      '[worker] [pfz-sync] Daily INCOIS PFZ sync registered'
+    );
+
     logger.info('[worker] Alert worker running. Press Ctrl+C to stop.');
   } catch (err) {
     logger.fatal({ err: err.message }, '[worker] Failed to start');
@@ -40,8 +64,10 @@ async function start() {
 
 async function shutdown(signal) {
   logger.info({ signal }, '[worker] Shutting down');
-  // Stop the cron FIRST so no new pass begins while we are tearing down the
-  // database connection underneath it.
+  // Stop the crons FIRST so no new pass begins while tearing down the DB connection
+  if (pfzTask) {
+    pfzTask.stop();
+  }
   scheduler.stop();
   await disconnect();
   process.exit(0);

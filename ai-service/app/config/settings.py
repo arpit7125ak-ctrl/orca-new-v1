@@ -46,6 +46,8 @@ class Settings:
 
     # --- Adapters ---------------------------------------------------------
     ADAPTER_MODE: str = os.getenv("ADAPTER_MODE", "mock")
+    MONGO_URI: str = os.getenv("MONGO_URI", "mongodb://127.0.0.1:27017")
+    MONGO_DB: str = os.getenv("MONGO_DB", "orca")
 
     # --- Paths ------------------------------------------------------------
     # contracts/ and shared-config/ are SIBLINGS of ai-service/, shared with the

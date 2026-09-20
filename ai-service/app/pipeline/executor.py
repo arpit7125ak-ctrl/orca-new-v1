@@ -223,26 +223,18 @@ async def _run(*, analysis_id: str, request: Dict[str, Any], log) -> None:
         for r in failed_agents
     ]
 
-    assessments: List[Dict[str, Any]] = []
-
-    for point in points:
-        # not_applicable points are never scored (Section 15) - they stay in
-        # the points array but receive no risk assessment.
-        if point.get("point_status") == "not_applicable":
-            continue
-
-        entry = merged.get(point["point_id"], {})
-        assessment = await risk_agent.assess_point(
-            point_id=point["point_id"],
-            measurements=entry.get("measurements", {}),
-            hourly_measurements=None,
-            agents_missing=agents_missing,
-            vessel_type=plan.get("vessel_type"),
-            activity=plan.get("activity"),
-            response_language=response_language,
-        )
-        if assessment:
-            assessments.append(assessment)
+    # Section 51 - Single Batched LLM call across all applicable grid points
+    applicable_points = [
+        p for p in points if p.get("point_status") != "not_applicable"
+    ]
+    assessments = await risk_agent.assess_points(
+        points=applicable_points,
+        merged_points=merged,
+        agents_missing=agents_missing,
+        vessel_type=plan.get("vessel_type"),
+        activity=plan.get("activity"),
+        response_language=response_language,
+    )
 
     if not assessments:
         # Nothing could be scored at all. Honest failure beats an invented

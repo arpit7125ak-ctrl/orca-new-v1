@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import { Compass, ShieldAlert, Layers, MapPin } from 'lucide-react';
+import { Compass, ShieldAlert, Layers, MapPin, Anchor } from 'lucide-react';
 import { orcaApi } from '../api/client';
 
 export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
@@ -9,6 +9,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
   const markersGroupRef = useRef(null);
   const layersGroupRef = useRef(null);
   const [showGeofence, setShowGeofence] = useState(true);
+  const [showPorts, setShowPorts] = useState(false);
   const [gisLayers, setGisLayers] = useState([]);
 
   const plan = analysis?.plan || {};
@@ -185,19 +186,34 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
 
       territorialCircle.bindPopup('<b>12 NM Territorial Water Baseline</b><br>State Fisheries Maritime Limits');
 
-      // Add real boundary polygons from GIS layers
+      // Add real boundary polygons from GIS layers (both Polygon and MultiPolygon)
       gisLayers.forEach((layer) => {
-        if (layer.geometry && layer.geometry.type === 'Polygon') {
+        if (layer.geometry && (layer.geometry.type === 'Polygon' || layer.geometry.type === 'MultiPolygon')) {
           try {
+            const isHard = layer.constraint_type === 'hard_exclusion';
+            const isMonsoon = layer.constraint_type === 'conditional_permit';
+            const color = isHard ? '#ef4444' : isMonsoon ? '#f59e0b' : '#0ea5e9';
+
             L.geoJSON(layer.geometry, {
               style: {
-                color: layer.constraint_type === 'hard_exclusion' ? '#ef4444' : '#0ea5e9',
-                weight: 1.5,
-                dashArray: '4, 4',
-                fillOpacity: 0.05,
+                color: color,
+                weight: isHard ? 2 : 1.5,
+                dashArray: isMonsoon ? '6, 6' : isHard ? '4, 4' : '2, 4',
+                fillOpacity: isHard ? 0.08 : 0.04,
+                fillColor: color,
               },
             })
-              .bindPopup(`<b>${layer.layer_name}</b><br>Source: ${layer.source}`)
+              .bindPopup(`
+                <div style="font-family:sans-serif; min-width: 190px; color:#f8fafc;">
+                  <strong style="color: ${color}; font-size:12px;">${layer.layer_name}</strong>
+                  <div style="font-size:11px; margin-top:3px; color:#cbd5e1;">
+                    <b>Safety Directive:</b> <span style="text-transform:capitalize;">${layer.constraint_type ? layer.constraint_type.replace(/_/g, ' ') : 'Advisory'}</span>
+                  </div>
+                  <div style="font-size:10px; margin-top:3px; color:#94a3b8;">
+                    Source: ${layer.source}
+                  </div>
+                </div>
+              `)
               .addTo(group);
           } catch (e) {
             console.warn('Error adding layer geojson:', e);
@@ -205,7 +221,40 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
         }
       });
     }
-  }, [showGeofence, gisLayers, validLat, validLon]);
+
+    // Render Surveyed Ports & Emergency Storm Shelters
+    if (showPorts) {
+      gisLayers.forEach((layer) => {
+        if (layer.layer_type === 'port' && layer.geometry && layer.geometry.type === 'Point') {
+          const [lon, lat] = layer.geometry.coordinates;
+          const isShelter = layer.properties?.shelter_suitable;
+          const portType = layer.properties?.port_type || 'port';
+          const stateName = layer.properties?.state || '';
+
+          const portIcon = L.divIcon({
+            className: 'custom-port-marker',
+            html: `<div style="background-color:${isShelter ? '#10b981' : '#38bdf8'};width:10px;height:10px;border-radius:50%;border:2px solid #ffffff;box-shadow:0 0 6px ${isShelter ? '#10b981' : '#38bdf8'};"></div>`,
+            iconSize: [10, 10],
+            iconAnchor: [5, 5],
+          });
+
+          L.marker([lat, lon], { icon: portIcon })
+            .bindPopup(`
+              <div style="font-family:sans-serif; min-width:180px; color:#f8fafc;">
+                <strong style="color:#38bdf8; font-size:12px;">⚓ ${layer.layer_name}</strong>
+                <div style="font-size:11px; margin-top:3px; color:#cbd5e1;">
+                  <b>Category:</b> <span style="text-transform:capitalize;">${portType.replace(/_/g, ' ')}</span> (${stateName})
+                </div>
+                <div style="font-size:11px; margin-top:2px; font-weight:600; color:${isShelter ? '#34d399' : '#94a3b8'};">
+                  ${isShelter ? '🛡️ Emergency Storm Shelter Available' : 'Landing / Transit Facility'}
+                </div>
+              </div>
+            `)
+            .addTo(group);
+        }
+      });
+    }
+  }, [showGeofence, showPorts, gisLayers, validLat, validLon]);
 
   const handleRecenter = () => {
     if (mapInstanceRef.current && validLat && validLon) {
@@ -234,17 +283,31 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
           )}
         </div>
 
-        <button
-          onClick={() => setShowGeofence(!showGeofence)}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-md backdrop-blur-md border ${
-            showGeofence
-              ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50'
-              : 'bg-slate-900/80 text-slate-400 border-slate-700'
-          }`}
-        >
-          <ShieldAlert className="w-3.5 h-3.5" />
-          <span>{showGeofence ? '12 NM Boundary: ON' : 'Show 12 NM Boundary'}</span>
-        </button>
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setShowGeofence(!showGeofence)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-md backdrop-blur-md border ${
+              showGeofence
+                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50'
+                : 'bg-slate-900/80 text-slate-400 border-slate-700'
+            }`}
+          >
+            <ShieldAlert className="w-3.5 h-3.5" />
+            <span>{showGeofence ? '12 NM Boundary: ON' : 'Show 12 NM Boundary'}</span>
+          </button>
+
+          <button
+            onClick={() => setShowPorts(!showPorts)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-md backdrop-blur-md border ${
+              showPorts
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                : 'bg-slate-900/80 text-slate-400 border-slate-700'
+            }`}
+          >
+            <Anchor className="w-3.5 h-3.5" />
+            <span>{showPorts ? 'Harbors: ON' : 'Show Harbors'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Legend */}

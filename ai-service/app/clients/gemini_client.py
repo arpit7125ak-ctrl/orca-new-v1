@@ -17,6 +17,7 @@ callers get available=False and must degrade honestly.
 """
 
 import json
+import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
@@ -186,33 +187,45 @@ async def generate_json(
                 reason="empty_response",
             )
 
-        # Strip markdown fences if the model wrapped the JSON.
-        if text.startswith("```"):
-            parts = text.split("```")
+        # Robust JSON extraction from LLM response
+        clean_text = text
+        if "```" in clean_text:
+            match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", clean_text)
+            if match:
+                clean_text = match.group(1).strip()
+            else:
+                parts = clean_text.split("```")
+                if len(parts) >= 2:
+                    clean_text = parts[1]
+                    if clean_text.startswith("json"):
+                        clean_text = clean_text[4:]
+                    clean_text = clean_text.strip()
 
-            if len(parts) >= 2:
-                text = parts[1]
+        # Extract outer JSON object if model included conversational preamble/suffix
+        first_brace = clean_text.find("{")
+        last_brace = clean_text.rfind("}")
+        if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+            clean_text = clean_text[first_brace : last_brace + 1]
 
-                if text.startswith("json"):
-                    text = text[4:]
-
-                text = text.strip()
+        # Strip trailing commas before closing braces/brackets (common LLM generation issue)
+        clean_text = re.sub(r",\s*([\]}])", r"\1", clean_text)
 
         try:
-            data = json.loads(text)
-
-        except json.JSONDecodeError as exc:
-            log.warning(
-                "[gemini] non-JSON response (purpose=%s): %s",
-                purpose,
-                exc,
-            )
-
-            return LLMResult(
-                available=False,
-                raw_text=text[:1000],
-                reason=f"invalid_json: {exc}",
-            )
+            data = json.loads(clean_text)
+        except json.JSONDecodeError:
+            try:
+                data = json.loads(clean_text, strict=False)
+            except json.JSONDecodeError as exc:
+                log.warning(
+                    "[gemini] non-JSON response (purpose=%s): %s",
+                    purpose,
+                    exc,
+                )
+                return LLMResult(
+                    available=False,
+                    raw_text=text[:1000],
+                    reason=f"invalid_json: {exc}",
+                )
 
         if not isinstance(data, dict):
             return LLMResult(

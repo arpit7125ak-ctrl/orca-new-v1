@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   User, 
   Settings, 
@@ -12,15 +12,17 @@ import {
   MapPin 
 } from 'lucide-react';
 
+import { ACTIVITIES, VESSEL_TYPES } from '../utils/maritimeConfig';
+
 export default function ProfileSettingsPage({
   sunlightMode,
   setSunlightMode,
   selectedLang,
   setSelectedLang,
 }) {
-  const [name, setName] = useState('K. R. Murugan');
+  const [name, setName] = useState('');
   const [role, setRole] = useState('fisherman');
-  const [homePort, setHomePort] = useState('Kochi Fisheries Harbor, Kerala');
+  const [homePort, setHomePort] = useState('');
   const [defaultVessel, setDefaultVessel] = useState('motorized_country_craft');
   const [defaultActivity, setDefaultActivity] = useState('fishing');
   const [offlineDownloaded, setOfflineDownloaded] = useState(false);
@@ -72,6 +74,7 @@ export default function ProfileSettingsPage({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. K. R. Murugan"
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
             />
           </div>
@@ -105,10 +108,11 @@ export default function ProfileSettingsPage({
               onChange={(e) => setDefaultVessel(e.target.value)}
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
             >
-              <option value="motorized_country_craft">FRP Motorized Craft (&lt;10m)</option>
-              <option value="mechanized_fishing_vessel">Mechanized Trawler (&gt;15m)</option>
-              <option value="traditional_non_motorized">Traditional Non-Motorized Canoe</option>
-              <option value="recreational_boat">Speedboat / Recreational Boat</option>
+              {VESSEL_TYPES.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -121,10 +125,11 @@ export default function ProfileSettingsPage({
               onChange={(e) => setDefaultActivity(e.target.value)}
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
             >
-              <option value="fishing">🎣 Coastal Fishing</option>
-              <option value="trawling">🚢 Deep Sea Trawling</option>
-              <option value="tourism">🚤 Tourism & Ferry</option>
-              <option value="recreation">🏄 Recreational Boating</option>
+              {ACTIVITIES.map((act) => (
+                <option key={act.id} value={act.id}>
+                  {act.label}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -140,6 +145,7 @@ export default function ProfileSettingsPage({
               type="text"
               value={homePort}
               onChange={(e) => setHomePort(e.target.value)}
+              placeholder="e.g. Kochi Fisheries Harbor, Kerala"
               className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
             />
           </div>

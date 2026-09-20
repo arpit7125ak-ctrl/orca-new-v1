@@ -82,6 +82,46 @@ _RISK_RESPONSE_SCHEMA: Dict[str, Any] = {
     "required": ["reasoning", "key_findings", "llm_adjustment", "confidence"],
 }
 
+_RISK_BATCH_SYSTEM_PROMPT = """You are the Risk interpretation layer for ORCA, a marine safety advisory system for Indian fishermen.
+
+A deterministic engine has ALREADY calculated safety scores from measured data for multiple marine grid points. Your job is NOT to re-score them. Your job is to:
+1. Explain, in plain language, what the evidence means for this specific vessel and activity at each point.
+2. Identify the key findings a fisherman actually needs to know for each point.
+3. Compare conditions across points if relevant.
+4. Optionally suggest a SMALL adjustment to each score (-10 to +10).
+
+Hard rules you must obey:
+- You may adjust any score by at most +/-10 points. Larger suggestions will be clamped.
+- Any adjustment MUST cite specific measured values from the evidence given to you.
+- You may RAISE a score freely. You must NOT lower a score across a level boundary (e.g. from CAUTION into SAFE).
+- If a constraint floor is present, it exists because of an official warning or a hard safety limit. Never argue against it.
+- Reason ONLY from the evidence provided. If a parameter is missing, say it is missing - never estimate or assume a value.
+- Write for someone deciding whether to take a small boat to sea. Be direct and concrete, not hedged.
+
+Respond with JSON only containing an "assessments" array with an object for every point_id."""
+
+_RISK_BATCH_RESPONSE_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "assessments": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "point_id": {"type": "string"},
+                    "reasoning": {"type": "string"},
+                    "key_findings": {"type": "array", "items": {"type": "string"}},
+                    "llm_adjustment": {"type": "integer"},
+                    "adjustment_reason": {"type": "string"},
+                    "confidence": {"type": "number"},
+                },
+                "required": ["point_id", "reasoning", "key_findings", "llm_adjustment", "confidence"],
+            },
+        }
+    },
+    "required": ["assessments"],
+}
+
 
 def _check_hard_rules(measurements: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Section 50 - which absolute limits are breached at this point."""
@@ -208,6 +248,220 @@ def _clamp_adjustment(
     return adjustment
 
 
+def _build_batch_risk_prompt(
+    *,
+    items: List[Dict[str, Any]],
+    vessel_type: Optional[str],
+    activity: Optional[str],
+    agents_missing: List[Dict[str, Any]],
+    response_language: str,
+) -> str:
+    """Assemble a single batched evidence package for the Risk LLM across all grid points."""
+    lines = [
+        f"Vessel type: {vessel_type or 'not specified'}",
+        f"Activity: {activity or 'not specified'}",
+        f"Total points to evaluate: {len(items)}",
+        f"Write all reasoning and findings in language code: {response_language}",
+        "",
+    ]
+    if agents_missing:
+        lines.append("Data sources that failed entirely for this analysis:")
+        for a in agents_missing:
+            lines.append(f"  - {a['agent']}: {a.get('error_category') or a.get('status')}")
+        lines.append("")
+
+    lines.append("POINTS EVIDENCE MATRIX:")
+    for it in items:
+        pid = it["point_id"]
+        lines.append(f"--- Point {pid} ---")
+        lines.append(f"Deterministic baseline score: {it['baseline_score']}/100")
+        if it["constraint_floor"] is not None:
+            lines.append(f"CONSTRAINT FLOOR: {it['constraint_floor']}. Final score cannot drop below this.")
+        for w in it["official_warnings"]:
+            lines.append(f"OFFICIAL WARNING: from {w['issuing_authority']} (bulletin {w['bulletin_id']}, level {w['floor_level']})")
+        for r in it["hard_rules_applied"]:
+            lines.append(f"HARD RULE BREACHED [{r['rule_id']}]: {r['description']}")
+
+        lines.append("Measured evidence:")
+        any_avail = False
+        for parameter, m in sorted(it["measurements"].items()):
+            if not isinstance(m, dict):
+                continue
+            if m.get("status") in ("available", "derived"):
+                any_avail = True
+                src = m.get("source") or "unknown"
+                lines.append(f"  - {parameter} = {m.get('value')} {m.get('unit') or ''} (source: {src})")
+            else:
+                lines.append(f"  - {parameter}: NOT AVAILABLE (status: {m.get('status')})")
+        if not any_avail:
+            lines.append("  (no usable measurements at this point)")
+        lines.append("")
+
+    lines.append("Return JSON containing the assessments array for all points.")
+    return "\n".join(lines)
+
+
+async def assess_points(
+    *,
+    points: List[Dict[str, Any]],
+    merged_points: Dict[str, Any],
+    agents_missing: List[Dict[str, Any]],
+    vessel_type: Optional[str],
+    activity: Optional[str],
+    response_language: str,
+    hourly_measurements_by_point: Optional[Dict[str, Any]] = None,
+) -> List[Dict[str, Any]]:
+    """Produce contract-shaped RiskAssessments for all points in ONE single batched LLM call.
+
+    Section 51 & NEVER-FABRICATE:
+    1. Deterministic baselines and safety constraint floors are computed in Python for each point.
+    2. A single batched prompt is sent to Gemini to interpret all points simultaneously.
+    3. If LLM is unavailable or times out, every point falls back gracefully to deterministic logic.
+    """
+    items: List[Dict[str, Any]] = []
+
+    # --- Stage 1, 2, 3: Deterministic baseline & floors for all points in Python ---
+    for p in points:
+        point_id = p["point_id"]
+        entry = merged_points.get(point_id, {})
+        measurements = entry.get("measurements", {})
+        hourly = (hourly_measurements_by_point or {}).get(point_id)
+
+        base = baseline_mod.compute_baseline(
+            measurements=measurements,
+            hourly_measurements=hourly,
+            vessel_type=vessel_type,
+        )
+        baseline_score = base["baseline_score"]
+        if baseline_score is None:
+            log.warning("[risk] %s: no computable evidence - not scored", point_id)
+            continue
+
+        official_warnings = _check_official_warnings(measurements)
+        hard_rules_applied = _check_hard_rules(measurements)
+
+        floors = [w["floor_score"] for w in official_warnings]
+        floors += [r["floor_score"] for r in hard_rules_applied]
+        constraint_floor = max(floors) if floors else None
+
+        items.append({
+            "point_id": point_id,
+            "base": base,
+            "baseline_score": baseline_score,
+            "official_warnings": official_warnings,
+            "hard_rules_applied": hard_rules_applied,
+            "constraint_floor": constraint_floor,
+            "measurements": measurements,
+        })
+
+    if not items:
+        return []
+
+    # --- Stage 4: Single Batched LLM Call across all points (Section 51) ---
+    llm_data_by_point: Dict[str, Dict[str, Any]] = {}
+
+    try:
+        llm = await gemini_client.generate_json(
+            system_prompt=_RISK_BATCH_SYSTEM_PROMPT,
+            user_prompt=_build_batch_risk_prompt(
+                items=items,
+                vessel_type=vessel_type,
+                activity=activity,
+                agents_missing=agents_missing,
+                response_language=response_language,
+            ),
+            response_schema=_RISK_BATCH_RESPONSE_SCHEMA,
+            purpose="risk_batch",
+        )
+
+        if llm.available and isinstance(llm.data, dict):
+            raw_list = llm.data.get("assessments")
+            if isinstance(raw_list, list):
+                for it in raw_list:
+                    if isinstance(it, dict) and "point_id" in it:
+                        llm_data_by_point[it["point_id"]] = it
+            else:
+                for k, v in llm.data.items():
+                    if isinstance(v, dict):
+                        llm_data_by_point[k] = v
+            log.info(
+                "[risk] Batched LLM assessment completed for %d/%d points in 1 call",
+                len(llm_data_by_point), len(items),
+            )
+        else:
+            log.info(
+                "[risk] Batched LLM unavailable (%s) - using deterministic fallback",
+                getattr(llm, "reason", "unknown"),
+            )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("[risk] Batched LLM call exception: %s - using deterministic fallback", exc)
+
+    # --- Assemble final assessments for all points ---
+    assessments: List[Dict[str, Any]] = []
+
+    for item in items:
+        point_id = item["point_id"]
+        baseline_score = item["baseline_score"]
+        constraint_floor = item["constraint_floor"]
+        base = item["base"]
+        measurements = item["measurements"]
+
+        point_llm = llm_data_by_point.get(point_id)
+        pt_llm_avail = bool(point_llm)
+
+        if pt_llm_avail:
+            llm_adjustment = _clamp_adjustment(
+                point_llm.get("llm_adjustment", 0), baseline_score, constraint_floor
+            )
+            adjustment_reason = point_llm.get("adjustment_reason") if llm_adjustment != 0 else None
+            key_findings = [str(k) for k in (point_llm.get("key_findings") or [])][:6]
+        else:
+            llm_adjustment = 0
+            adjustment_reason = None
+            key_findings = _fallback_findings(base, measurements, agents_missing)
+
+        proposed = baseline_score + llm_adjustment
+        if constraint_floor is not None:
+            proposed = max(proposed, constraint_floor)
+        final_score = int(max(0, min(100, proposed)))
+
+        if pt_llm_avail and point_llm.get("reasoning"):
+            reasoning = point_llm.get("reasoning")
+        else:
+            reasoning = _fallback_reasoning(
+                base,
+                measurements,
+                final_score=final_score,
+                official_warnings=item["official_warnings"],
+                hard_rules=item["hard_rules_applied"],
+            )
+
+        assessments.append({
+            "point_id": point_id,
+            "baseline_score": int(baseline_score),
+            "llm_adjustment": llm_adjustment if llm_adjustment != 0 else None,
+            "adjustment_reason": adjustment_reason,
+            "official_warnings": item["official_warnings"],
+            "hard_rules_applied": item["hard_rules_applied"],
+            "constraint_floor": constraint_floor,
+            "final_score": final_score,
+            "risk_level": baseline_mod.level_for_score(final_score),
+            "risk_factors": base["risk_factors"],
+            "reasoning": reasoning,
+            "key_findings": key_findings,
+            "hourly_scores": base["hourly_scores"],
+            "confidence": _compute_confidence(
+                scoreable_count=base["scoreable_count"],
+                agents_missing=agents_missing,
+                llm_available=pt_llm_avail,
+            ),
+            "data_quality": _data_quality(measurements, agents_missing),
+            "llm_interpretation_unavailable": not pt_llm_avail,
+        })
+
+    return assessments
+
+
 async def assess_point(
     *,
     point_id: str,
@@ -218,99 +472,17 @@ async def assess_point(
     activity: Optional[str],
     response_language: str,
 ) -> Optional[Dict[str, Any]]:
-    """Produce one contract-shaped RiskAssessment.
-
-    Returns None when the point cannot be scored at all - the caller omits it
-    rather than publishing a fabricated score.
-    """
-    # --- Stage 1: deterministic baseline (Section 48) -------------------
-    base = baseline_mod.compute_baseline(
-        measurements=measurements,
-        hourly_measurements=hourly_measurements,
+    """Produce one contract-shaped RiskAssessment (backward-compatible single point caller)."""
+    res = await assess_points(
+        points=[{"point_id": point_id}],
+        merged_points={point_id: {"measurements": measurements}},
+        agents_missing=agents_missing,
         vessel_type=vessel_type,
+        activity=activity,
+        response_language=response_language,
+        hourly_measurements_by_point={point_id: hourly_measurements} if hourly_measurements else None,
     )
-    baseline_score = base["baseline_score"]
-
-    if baseline_score is None:
-        log.warning("[risk] %s: no computable evidence - not scored", point_id)
-        return None
-
-    # --- Stage 2 + 3: floors (Sections 49, 50) --------------------------
-    official_warnings = _check_official_warnings(measurements)
-    hard_rules_applied = _check_hard_rules(measurements)
-
-    floors = [w["floor_score"] for w in official_warnings]
-    floors += [r["floor_score"] for r in hard_rules_applied]
-    constraint_floor = max(floors) if floors else None
-
-    # --- Stage 4: bounded LLM interpretation (Section 51) ---------------
-    llm = await gemini_client.generate_json(
-        system_prompt=_RISK_SYSTEM_PROMPT,
-        user_prompt=_build_risk_prompt(
-            point_id=point_id,
-            measurements=measurements,
-            baseline_score=baseline_score,
-            constraint_floor=constraint_floor,
-            official_warnings=official_warnings,
-            hard_rules_applied=hard_rules_applied,
-            agents_missing=agents_missing,
-            vessel_type=vessel_type,
-            activity=activity,
-            response_language=response_language,
-        ),
-        response_schema=_RISK_RESPONSE_SCHEMA,
-        purpose="risk",
-    )
-
-    llm_available = bool(llm.available and llm.data)
-
-    if llm_available:
-        data = llm.data
-        llm_adjustment = _clamp_adjustment(
-            data.get("llm_adjustment", 0), baseline_score, constraint_floor
-        )
-        adjustment_reason = data.get("adjustment_reason") if llm_adjustment != 0 else None
-        reasoning = data.get("reasoning") or _fallback_reasoning(base, measurements)
-        key_findings = [str(k) for k in (data.get("key_findings") or [])][:6]
-    else:
-        # Section 56.5 - no LLM, no invented narrative. Fall back to a
-        # deterministic description of the same numbers.
-        llm_adjustment = 0
-        adjustment_reason = None
-        reasoning = _fallback_reasoning(base, measurements)
-        key_findings = _fallback_findings(base, measurements, agents_missing)
-        log.info("[risk] %s: LLM unavailable (%s) - deterministic only", point_id, llm.reason)
-
-    # --- Final score (Section 51.3) -------------------------------------
-    proposed = baseline_score + llm_adjustment
-    if constraint_floor is not None:
-        proposed = max(proposed, constraint_floor)
-    final_score = int(max(0, min(100, proposed)))
-
-    return {
-        "point_id": point_id,
-        "baseline_score": int(baseline_score),
-        "llm_adjustment": llm_adjustment if llm_adjustment != 0 else None,
-        "adjustment_reason": adjustment_reason,
-        "official_warnings": official_warnings,
-        "hard_rules_applied": hard_rules_applied,
-        "constraint_floor": constraint_floor,
-        "final_score": final_score,
-        "risk_level": baseline_mod.level_for_score(final_score),
-        "risk_factors": base["risk_factors"],
-        "reasoning": reasoning,
-        "key_findings": key_findings,
-        "hourly_scores": base["hourly_scores"],
-        "confidence": _compute_confidence(
-            scoreable_count=base["scoreable_count"],
-            agents_missing=agents_missing,
-            llm_available=llm_available,
-        ),
-        "data_quality": _data_quality(measurements, agents_missing),
-        # Section 56.5 - recorded so the Frontend can say the explanation is
-        # deterministic rather than model-written.
-        "llm_interpretation_unavailable": not llm_available,
-    }
+    return res[0] if res else None
 
 
 def _build_risk_prompt(**kw) -> str:
@@ -370,21 +542,46 @@ def _build_risk_prompt(**kw) -> str:
     return "\n".join(lines)
 
 
-def _fallback_reasoning(base: Dict[str, Any], measurements: Dict[str, Any]) -> str:
+def _fallback_reasoning(
+    base: Dict[str, Any],
+    measurements: Dict[str, Any],
+    final_score: Optional[int] = None,
+    official_warnings: Optional[List[Dict[str, Any]]] = None,
+    hard_rules: Optional[List[Dict[str, Any]]] = None,
+) -> str:
     """Deterministic explanation when the LLM is unavailable.
 
-    Describes only the actual numbers - no interpretation beyond what the
-    thresholds already encode.
+    Describes only the actual numbers and binding official warnings/constraints.
     """
     parts = []
     for parameter, score in sorted(base["contributing"].items(), key=lambda kv: -kv[1])[:3]:
         m = measurements.get(parameter, {})
         parts.append(f"{parameter.replace('_', ' ')} at {m.get('value')} {m.get('unit') or ''}".strip())
 
+    local_conds = f"Local conditions: {', '.join(parts)}." if parts else "Local sensor readings unavailable."
+
+    effective_score = final_score if final_score is not None else base["baseline_score"]
+    level = baseline_mod.level_for_score(effective_score)
+
+    if official_warnings:
+        w = official_warnings[0]
+        auth = w.get("issuing_authority") or "Official Disaster Authority"
+        bulletin = f" (Bulletin: {w['bulletin_id']})" if w.get("bulletin_id") else ""
+        return (
+            f"Assessed as {level} (Score {effective_score}) due to active official {w.get('warning_type', 'marine warning')} "
+            f"from {auth}{bulletin}. {local_conds} This assessment is deterministic; narrative interpretation was unavailable."
+        )
+
+    if hard_rules:
+        r = hard_rules[0]
+        return (
+            f"Assessed as {level} (Score {effective_score}) due to safety constraint '{r.get('rule_id', 'rule')}'. "
+            f"{local_conds} This assessment is deterministic; narrative interpretation was unavailable."
+        )
+
     if not parts:
         return "No usable measurements were available to assess this point."
 
-    level = baseline_mod.level_for_score(base["baseline_score"])
     return (
         f"Assessed as {level} based on {', '.join(parts)}. "
         "This assessment is deterministic; narrative interpretation was unavailable."
