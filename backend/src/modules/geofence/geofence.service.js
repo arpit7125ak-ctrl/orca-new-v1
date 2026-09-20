@@ -25,6 +25,18 @@ const i18n = require('../../i18n');
 const { generateDedupKey } = require('../../utils/ids');
 const { logger } = require('../../observability/logger');
 
+function isSeasonActive(layer, now = new Date()) {
+  if (!layer.season_start || !layer.season_end) return true; // year-round
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const today = `${mm}-${dd}`;
+
+  if (layer.season_start <= layer.season_end) {
+    return today >= layer.season_start && today <= layer.season_end;
+  }
+  return today >= layer.season_start || today <= layer.season_end;
+}
+
 /**
  * Check a GPS position against all active constraint layers.
  *
@@ -53,7 +65,7 @@ async function checkPosition({ lat, lon, deviceId = null, language = 'en', vesse
     constraint_type: { $ne: null },
     geometry_full: { $geoIntersects: { $geometry: point } },
   })
-    .select('layer_name layer_type constraint_type allowed_vessel_types source version')
+    .select('layer_name layer_type constraint_type allowed_vessel_types season_start season_end source version')
     .maxTimeMS(limits.GEOFENCE_QUERY_TIMEOUT_MS) // Section 66.3 sub-second target
     .lean();
 
@@ -70,7 +82,7 @@ async function checkPosition({ lat, lon, deviceId = null, language = 'en', vesse
       },
     },
   })
-    .select('layer_name layer_type constraint_type allowed_vessel_types geometry_full source version')
+    .select('layer_name layer_type constraint_type allowed_vessel_types season_start season_end geometry_full source version')
     .limit(10)
     .maxTimeMS(limits.GEOFENCE_QUERY_TIMEOUT_MS)
     .lean();
@@ -81,31 +93,58 @@ async function checkPosition({ lat, lon, deviceId = null, language = 'en', vesse
   let distanceKm = null;
   let bearing = null;
 
-  if (insideLayers.length > 0) {
+  // Actual exclusionary layers that forbid entry (prohibited or unpermitted conditional in active season)
+  const restrictiveInside = insideLayers.filter((l) => {
+    if (l.constraint_type === 'prohibited') return true;
+    if (l.constraint_type === 'conditional') {
+      if (!isSeasonActive(l)) return false;
+      if (vesselType && Array.isArray(l.allowed_vessel_types)) {
+        return !l.allowed_vessel_types.includes(vesselType);
+      }
+      return true;
+    }
+    // warning_only layers (like Indian EEZ or territorial waters) are lawful domestic waters
+    return false;
+  });
+
+  if (restrictiveInside.length > 0) {
     state = 'inside';
 
-    // If inside several overlapping layers, report the most restrictive.
-    // prohibited > conditional > warning_only - never soften a warning by
-    // reporting the mildest overlapping zone.
+    // Prioritize prohibited over conditional
     triggeringLayer =
-      insideLayers.find((l) => l.constraint_type === 'prohibited') ||
-      insideLayers.find((l) => l.constraint_type === 'conditional') ||
-      insideLayers[0];
+      restrictiveInside.find((l) => l.constraint_type === 'prohibited') ||
+      restrictiveInside.find((l) => l.constraint_type === 'conditional') ||
+      restrictiveInside[0];
 
-    distanceKm = 0; // genuinely zero - we are inside, not "unknown"
+    distanceKm = 0; // genuinely zero - we are inside
   } else if (nearbyLayers.length > 0) {
-    const nearest = nearbyLayers[0];
-    const nearestPoint = nearestPointOnGeometry(nearest.geometry_full, lat, lon);
+    // Only warn about approaching prohibited or unpermitted conditional zones
+    const relevantNearby = nearbyLayers.filter((l) => {
+      if (l.constraint_type === 'prohibited') return true;
+      if (l.constraint_type === 'conditional') {
+        if (!isSeasonActive(l)) return false;
+        if (vesselType && Array.isArray(l.allowed_vessel_types)) {
+          return !l.allowed_vessel_types.includes(vesselType);
+        }
+        return true;
+      }
+      return false;
+    });
 
-    if (nearestPoint) {
-      const d = geo.haversineKm(lat, lon, nearestPoint.lat, nearestPoint.lon);
+    if (relevantNearby.length > 0) {
+      const nearest = relevantNearby[0];
+      const nearestPoint = nearestPointOnGeometry(nearest.geometry_full, lat, lon);
 
-      // Section 66.2: "approaching" = within GEOFENCE_WARNING_KM.
-      if (d <= limits.GEOFENCE_WARNING_KM) {
-        state = 'approaching';
-        triggeringLayer = nearest;
-        distanceKm = Number(d.toFixed(2));
-        bearing = Number(geo.bearingDeg(lat, lon, nearestPoint.lat, nearestPoint.lon).toFixed(1));
+      if (nearestPoint) {
+        const d = geo.haversineKm(lat, lon, nearestPoint.lat, nearestPoint.lon);
+
+        // Section 66.2: "approaching" = within GEOFENCE_WARNING_KM
+        if (d <= limits.GEOFENCE_WARNING_KM) {
+          state = 'approaching';
+          triggeringLayer = nearest;
+          distanceKm = Number(d.toFixed(2));
+          bearing = Number(geo.bearingDeg(lat, lon, nearestPoint.lat, nearestPoint.lon).toFixed(1));
+        }
       }
     }
   }
@@ -152,10 +191,22 @@ async function checkPosition({ lat, lon, deviceId = null, language = 'en', vesse
   let fellBack = false;
 
   if (state === 'clear') {
-    const resolved = i18n.geofenceMessage('clear', language);
-    message = resolved.message;
-    languageUsed = resolved.languageUsed;
-    fellBack = resolved.fellBack;
+    const isInIndianDomain = lat >= 4.0 && lat <= 25.0 && lon >= 65.0 && lon <= 96.0;
+    if (!isInIndianDomain) {
+      triggeringLayer = {
+        layer_name: 'Beyond Indian EEZ (Foreign / High Seas)',
+        layer_type: 'exclusive_economic_zone',
+        constraint_type: 'warning_only',
+        source: 'UNCLOS Sovereign Maritime Limits / Maritime Zones of India Act',
+        version: 'EEZ-200NM-Limit',
+      };
+      message = `Advisory: Vessel GPS coordinate (${lat}°N, ${lon}°E) is outside the Indian Exclusive Economic Zone. Standard domestic coastal fishing permits apply only within sovereign Indian waters.`;
+    } else {
+      const resolved = i18n.geofenceMessage('clear', language);
+      message = resolved.message;
+      languageUsed = resolved.languageUsed;
+      fellBack = resolved.fellBack;
+    }
   } else if (triggeringLayer) {
     const localisedLayer = i18n.layerName(triggeringLayer.layer_type, language);
     const resolved = i18n.geofenceMessage(state, language, {

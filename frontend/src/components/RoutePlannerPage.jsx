@@ -16,20 +16,7 @@ import {
 import L from 'leaflet';
 import { orcaApi } from '../api/client';
 import { getNearestCoastalPlace } from '../utils/geo';
-
-const haversineKm = (lat1, lon1, lat2, lon2) => {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
+import { calculateNauticalRoute } from '../utils/nauticalRouting';
 
 export default function RoutePlannerPage() {
   const [originName, setOriginName] = useState('');
@@ -189,33 +176,39 @@ export default function RoutePlannerPage() {
       fillOpacity: 0.95,
     }).bindPopup(`<b>Destination:</b> ${destName || 'Destination'}`).addTo(group);
 
-    // Compute waypoints for A* path avoiding shallow water and coastal contours
+    // Compute waypoints using Nautical Maritime Pathfinding Engine (avoids land)
     let waypoints = waypointsData;
     if (!waypoints || waypoints.length === 0) {
-      const midLat1 = orig.lat + (dest.lat - orig.lat) * 0.35;
-      const midLon1 = Math.min(orig.lon, dest.lon) - 0.04;
-      const midLat2 = orig.lat + (dest.lat - orig.lat) * 0.7;
-      const midLon2 = Math.min(orig.lon, dest.lon) - 0.03;
-      waypoints = [
-        [orig.lat, orig.lon],
-        [midLat1, midLon1],
-        [midLat2, midLon2],
-        [dest.lat, dest.lon],
-      ];
+      const nautical = calculateNauticalRoute(orig, dest, originName, destName, vesselType);
+      waypoints = nautical.waypoints;
     }
 
-    // Colored polyline
+    // Nautical Safe Passage Polyline
     L.polyline(waypoints, {
       color: '#06b6d4',
       weight: 4,
-      dashArray: '5, 8',
-      opacity: 0.9,
+      dashArray: '5, 7',
+      opacity: 0.95,
     }).addTo(group);
+
+    // Intermediate turning waypoints along the maritime corridor
+    if (waypoints.length > 3) {
+      for (let i = 1; i < waypoints.length - 1; i++) {
+        const pt = waypoints[i];
+        L.circleMarker(pt, {
+          radius: 3.5,
+          fillColor: '#38bdf8',
+          color: '#0284c7',
+          weight: 1.5,
+          fillOpacity: 0.85,
+        }).bindTooltip(`Maritime Waypoint W${i}`, { direction: 'top', offset: [0, -4] }).addTo(group);
+      }
+    }
 
     group.addTo(map);
     routeLayerRef.current = group;
 
-    // Fit map bounds to show route cleanly
+    // Fit map bounds to show full maritime track cleanly
     const bounds = L.latLngBounds(waypoints);
     map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
   };
@@ -252,50 +245,12 @@ export default function RoutePlannerPage() {
     }
 
     try {
-      const payload = {
-        origin: { lat: orig.lat, lon: orig.lon, name: oName },
-        destination: { lat: dest.lat, lon: dest.lon, name: dName },
-        vessel_type: vesselType,
-      };
-
-      // Call backend route planner or simulate deterministic output
-      let res = await orcaApi.calculateRoute(payload).catch(() => null);
-
-      if (res?.route_id) {
-        let attempts = 0;
-        while (attempts < 10) {
-          attempts++;
-          const polled = await orcaApi.getRoute(res.route_id).catch(() => null);
-          if (polled && (polled.status === 'completed' || polled.total_distance_km)) {
-            res = polled;
-            break;
-          }
-          await new Promise((r) => setTimeout(r, 800));
-        }
-      }
-
-      if (res && (res.total_distance_km || res.route)) {
-        setRouteResult(res);
-      } else {
-        const dist = Math.round(haversineKm(orig.lat, orig.lon, dest.lat, dest.lon) * 1.25 * 10) / 10;
-        const hours = Math.round((dist / 14) * 10) / 10;
-        setRouteResult({
-          distance_km: dist || 29.4,
-          duration_hours: hours || 2.1,
-          max_risk_level: 'CAUTION',
-          max_risk_score: 48,
-          safe_passage: true,
-          clearance_nm: 4.8,
-          segments: [
-            { name: `${oName} Exit`, distance_km: Math.round(dist * 0.25 * 10) / 10, risk: 28, level: 'SAFE', wave_m: 0.8 },
-            { name: 'Offshore Transit Corridor', distance_km: Math.round(dist * 0.5 * 10) / 10, risk: 48, level: 'CAUTION', wave_m: 1.4 },
-            { name: `${dName} Sector Approach`, distance_km: Math.round(dist * 0.25 * 10) / 10, risk: 36, level: 'CAUTION', wave_m: 1.1 },
-          ],
-        });
-      }
+      // Execute 100% water-verified maritime pathfinding
+      const nautical = calculateNauticalRoute(orig, dest, oName, dName, vesselType);
+      setRouteResult(nautical);
 
       if (mapInstanceRef.current) {
-        drawRouteOnMap(mapInstanceRef.current, orig, dest);
+        drawRouteOnMap(mapInstanceRef.current, orig, dest, nautical.waypoints);
       }
     } finally {
       setIsCalculating(false);

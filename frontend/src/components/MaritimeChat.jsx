@@ -19,7 +19,7 @@ export default function MaritimeChat({ selectedLang = 'en' }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      text: 'Namaste and Ahoy! I am your ORCA Maritime Safety Copilot. Ask me anything about sea conditions, wind forecasts, swell patterns, fishing safety, or coastal navigation.',
+      text: 'Namaste and Ahoy! I am your ORCA Ocean Risk & Coastal Advisory Copilot. Ask me anything about sea states, swell surges (Kallakkadal), wind & squall forecasts, passenger ferry safety, coastal tourism, or port navigation.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -31,10 +31,10 @@ export default function MaritimeChat({ selectedLang = 'en' }) {
   const messagesEndRef = useRef(null);
 
   const quickQuestions = [
-    'What are the wave conditions off Kochi coast tomorrow morning?',
-    'Is it safe for a small wooden boat in Palk Bay today?',
-    'What should fishermen do when a Squall Warning is issued?',
-    'Where is the closest safe shelter if winds exceed 25 knots?',
+    'What are the wave conditions and swell off Kochi coast today?',
+    'Can passenger ferries safely operate near Mumbai harbour this afternoon?',
+    'Are there any high swell (Kallakkadal) or squall warnings active?',
+    'Is it safe for small craft and recreational boats in Palk Bay today?',
   ];
 
   useEffect(() => {
@@ -84,9 +84,12 @@ export default function MaritimeChat({ selectedLang = 'en' }) {
       if (res?.triggered_analysis_id) {
         try {
           const completed = await orcaApi.pollAnalysisUntilDone(res.triggered_analysis_id, () => {}, 1500, 25);
-          const finalDecision = completed?.decision?.one_line_recommendation ||
+          const finalDecision = completed?.answer_text ||
+                                completed?.result?.answer_text ||
+                                completed?.decision?.one_line_recommendation ||
                                 completed?.decision?.detailed_recommendation ||
                                 completed?.decision?.primary_advice ||
+                                completed?.summary ||
                                 'Safety analysis complete. Sea conditions verified.';
 
           setMessages((prev) => {

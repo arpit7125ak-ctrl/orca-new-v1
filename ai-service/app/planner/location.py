@@ -98,6 +98,7 @@ def resolve(
     *,
     coordinate: Optional[Dict[str, float]],
     place_name: Optional[str],
+    query: Optional[str] = None,
 ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
     """Resolve input into a contract-shaped Location.
 
@@ -119,6 +120,23 @@ def resolve(
             log.warning("[location] could not resolve place name: %r", place_name)
             return None, "unresolvable_place"
         original_lat, original_lon = hit["lat"], hit["lon"]
+    elif query and isinstance(query, str) and query.strip():
+        # Natural language extraction: check if any gazetteer place is mentioned in query
+        q_lower = query.lower()
+        matched = None
+        for name, entry in _GAZETTEER.items():
+            if name in q_lower:
+                matched = (name, entry)
+                break
+        if matched:
+            original_name = matched[0].title()
+            original_lat, original_lon = matched[1]["lat"], matched[1]["lon"]
+            log.info("[location] Resolved place %r from query text: %r", original_name, query)
+        else:
+            # Fallback for general maritime queries (e.g., safety advice, general sea state)
+            original_name = "Indian Coastal Waters (Baseline)"
+            original_lat, original_lon = _GAZETTEER["kochi"]["lat"], _GAZETTEER["kochi"]["lon"]
+            log.info("[location] Used baseline Indian coastal location for general query: %r", query)
     else:
         return None, "invalid_location"
 

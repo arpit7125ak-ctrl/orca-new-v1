@@ -73,11 +73,51 @@ async function handleMessage({
   const context = buildContext(conversation, { content: message });
   const inherited = context.inherited_context || {};
 
-  // --- Build a contract-conformant AnalysisRequest -----------------------
-  // Only fields contracts/AnalysisRequest.json permits. Coordinates are
-  // inherited from the previous turn when present - this is what makes a
-  // follow-up like "what about tomorrow?" work without the user repeating
-  // everything.
+  // --- Resolve location from message or fallback to coastal baseline ---
+  let resolvedPlace = inherited.place_name ?? null;
+  if (!resolvedPlace && message) {
+    const qLower = message.toLowerCase();
+    const coastalPlaces = [
+      'kochi', 'chennai', 'mumbai', 'visakhapatnam', 'vizag', 'paradip',
+      'kolkata', 'goa', 'mangalore', 'kozhikode', 'calicut', 'tuticorin',
+      'thoothukudi', 'rameswaram', 'veraval', 'kandla', 'port blair',
+      'digha', 'gopalpur', 'kasimedu', 'puducherry', 'pondicherry', 'palk bay'
+    ];
+    for (const p of coastalPlaces) {
+      if (qLower.includes(p)) {
+        resolvedPlace = p === 'palk bay' ? 'rameswaram' : p;
+        break;
+      }
+    }
+  }
+  if (!resolvedPlace && (inherited.lat === null || inherited.lat === undefined)) {
+    resolvedPlace = 'Kochi'; // Default baseline for coastal queries
+  }
+
+  // --- Detect activity and vessel neutrally or inherit ---
+  let detectedActivity = inherited.activity;
+  if (!detectedActivity && message) {
+    const qLower = message.toLowerCase();
+    if (/\b(surf|surfing|board)\b/.test(qLower)) detectedActivity = 'surfing';
+    else if (/\b(dive|diving|scuba)\b/.test(qLower)) detectedActivity = 'diving';
+    else if (/\b(touris[mt]|beach|ferry|passenger|sightseeing)\b/.test(qLower)) detectedActivity = 'tourism';
+    else if (/\b(ship|shipping|cargo|tanker|transport|freight)\b/.test(qLower)) detectedActivity = 'shipping';
+    else if (/\b(research|survey|marine science|sample)\b/.test(qLower)) detectedActivity = 'marine_research';
+    else if (/\b(fish|fishing|catch|trawl|angler|gillnet)\b/.test(qLower)) detectedActivity = 'fishing';
+    else detectedActivity = 'boating'; // Default neutral general coastal/marine activity
+  }
+
+  let detectedVessel = inherited.vessel_type;
+  if (!detectedVessel && message) {
+    const qLower = message.toLowerCase();
+    if (/\b(ship|tanker|cargo|container|freighter)\b/.test(qLower)) detectedVessel = 'large_commercial_vessel';
+    else if (/\b(research vessel|survey ship)\b/.test(qLower)) detectedVessel = 'research_vessel';
+    else if (/\b(trawler|mechanized fishing)\b/.test(qLower)) detectedVessel = 'mechanized_fishing_vessel';
+    else if (/\b(tourist|ferry|launch|yacht|recreational|passenger)\b/.test(qLower)) detectedVessel = 'recreational_boat';
+    else if (/\b(canoe|kayak|traditional|catamaran|non-motorized)\b/.test(qLower)) detectedVessel = 'traditional_non_motorized';
+    else detectedVessel = 'motorized_country_craft';
+  }
+
   const analysisBody = {
     query: message,
     coordinate:
@@ -85,9 +125,9 @@ async function handleMessage({
       inherited.lon !== null && inherited.lon !== undefined
         ? { lat: inherited.lat, lon: inherited.lon }
         : null,
-    place_name: inherited.place_name ?? null,
-    activity: inherited.activity ?? null,
-    vessel_type: inherited.vessel_type ?? null,
+    place_name: resolvedPlace,
+    activity: detectedActivity ?? 'boating',
+    vessel_type: detectedVessel ?? 'motorized_country_craft',
     language_override: languageOverride,
     conversation_id: conversation.conversation_id,
     parent_analysis_id: parentAnalysisId || inherited.last_analysis_id || null,

@@ -266,6 +266,7 @@ async def build_plan(
     loc, loc_error = location_mod.resolve(
         coordinate=request.get("coordinate"),
         place_name=request.get("place_name"),
+        query=query,
     )
     if loc_error:
         return {
