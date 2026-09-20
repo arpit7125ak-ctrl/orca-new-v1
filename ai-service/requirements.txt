@@ -25,3 +25,7 @@ jsonschema==4.23.0
 
 # Gemini via LangChain
 langchain-google-genai==2.1.0
+
+# MongoDB Atlas GIS & PFZ queries
+pymongo==4.5.0
+dnspython==2.8.0
