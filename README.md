@@ -1,57 +1,95 @@
-# ORCA — Backend Delivery (contract-reconciled)
+# ORCA — Ocean Risk & Coastal Advisory Platform 🌊🛡️
+> **Smart India Hackathon (SIH 26176)** · Intelligent Multi-Agent Marine Safety, Coastal Advisory, and Navigational Decision Support System.
 
-**Team Nautilus · SIH 26176**
+---
 
-## What is in this zip
+## 🌐 Live Production Cloud Deployment
+
+The complete ORCA platform is deployed in production on **Render** paired with a cloud **MongoDB Atlas** cluster:
+
+| Component | Status | Production URL | Technology Stack |
+| :--- | :--- | :--- | :--- |
+| **Frontend Web App** | 🟢 Live | [`https://orca-frontend-27li.onrender.com`](https://orca-frontend-27li.onrender.com) | React 19, Vite, Tailwind CSS, Leaflet GIS, Web Speech API |
+| **Backend API Gateway** | 🟢 Live | [`https://orca-backend-anp5.onrender.com`](https://orca-backend-anp5.onrender.com) | Node.js 20+, Express, Mongoose, JWT auth |
+| **AI Multi-Agent Service** | 🟢 Live | [`https://orca-ai-service-b0fx.onrender.com`](https://orca-ai-service-b0fx.onrender.com) | Python 3.11.9, FastAPI, Uvicorn, LangChain, Google Gemini |
+| **Database Cluster** | 🟢 Live | `MongoDB Atlas Cluster0 (AWS Mumbai)` | 299 Maritime Boundary/Port Layers, 230 PFZ Hotspot Lines |
+
+---
+
+## 🧭 Multi-Activity Platform Scope
+
+ORCA is engineered as a **General Ocean Risk and Coastal Advisory System** serving all marine sectors with neutral, customized risk modeling:
+- 🏖️ **Coastal Tourism**: Beach excursions, shallow water safety, sun/wind exposure.
+- ⛵ **Recreational Boating**: Pleasure craft, sailing yachts, harbor navigation, marina approaches.
+- 🤿 **Diving & Snorkeling**: Underwater visibility, thermoclines, subsurface currents, wave surge.
+- 🏄 **Surfing & Watersports**: Wave period, breaking wave height, onshore/offshore wind balance.
+- 🚢 **Commercial Shipping & Cargo**: Vessel draft restrictions, approach corridors, channel depth.
+- 🔬 **Marine Scientific Research**: Oceanographic expeditions, hydrographic sampling, sensor buoys.
+- 🐟 **Fisheries & Aquaculture**: INCOIS PFZ line opportunities, SST gradients, chlorophyll-a upwelling.
+
+---
+
+## 📁 Repository Layout
 
 ```
 orca/
-├── backend/          the complete backend service
-│   ├── src/          82 source files
-│   ├── scripts/      setup + verification scripts
-│   ├── tests/        unit + contract suites
-│   ├── docs/         build notes + Postman guide
-│   └── ORCA_Backend.postman_collection.json   (43 requests)
-├── contracts/        the locked 44-file contract set
-└── shared-config/    activities, vessel types, languages, canonical units
+├── frontend/         # React 19 + Vite coastal GIS interface & Deck Mode UI
+├── backend/          # Public API gateway (Port 4000) & Internal listener (:4100)
+├── ai-service/       # Python 3.11 FastAPI service with 7 live domain agents & risk engine
+├── contracts/        # 44 locked JSON Schema specifications enforcing strict contracts
+├── shared-config/    # Canonical units, activities, vessel specs, and multilingual data
+├── render.yaml       # Official Render 1-click infrastructure blueprint
+└── scripts/          # Database seeding, Atlas migration, and contract validation tools
 ```
 
-## Keep this folder layout
+---
 
-All three folders must stay siblings:
-- `backend/src/config/registry.js` reads `../../shared-config`
-- `backend/src/middleware/validateContract.js` reads `../../contracts`
-- The AI Service will read the same two folders
+## ⚡ Quick Start (Local Development)
 
-## AI Service execute path — RESOLVED
+### 1. Prerequisites
+- Node.js 20+ and npm 10+
+- Python 3.11.9 with pip
+- MongoDB Atlas cluster or local MongoDB 7.0
 
-`clients/aiService.client.js` posts to `POST {AI_SERVICE_URL}/v1/analysis/execute`,
-per `contracts/api/AnalysisExecutionRequest.json`. Architecture doc §103 said
-`/internal/v1/execute`, but the contract's own description notes §103 never
-actually specified this route — contracts win. **Confirm the AI Service is
-built to listen on `/v1/analysis/execute`.**
-
-## This build is reconciled against the contracts
-
-- 15/15 emitted payload shapes conform
-- 19/19 Postman request bodies conform
-
-```bash
-cd backend && npm run check
+### 2. Start Python AI Service (Port 8000)
+```powershell
+cd ai-service
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-## Read these first
-
-1. `backend/docs/ORCA_BACKEND_POSTMAN_GUIDE.md`
-2. `backend/docs/ORCA_BACKEND_BUILD_NOTES.md` (section 2a: the reconciliation)
-
-## One-minute start
-
-```bash
+### 3. Start Backend Services (Ports 4000 & 4100)
+```powershell
 cd backend
 npm install
-cp .env.example .env      # set INTERNAL_SECRET and JWT_SECRET
-npm run create-indexes
-npm run seed:gis && npm run seed:ports
+npm run seed:zones && npm run seed:ports && npm run create-indexes
+node src/server.js
+```
+
+### 4. Start Frontend Client (Port 5173)
+```powershell
+cd frontend
+npm install
 npm run dev
 ```
+
+---
+
+## 🛡️ Contract Compliance & Health Checks
+
+Verify zero schema drift and full contract integrity across all endpoints:
+
+```powershell
+# Backend contract verification (15/15 tests)
+python backend/scripts/check-contracts.py
+
+# AI Service multi-agent contract verification (26/26 tests)
+python ai-service/scripts/verify_contracts.py
+```
+
+---
+
+*Authored by Team Nautilus for SIH 26176.*
+

@@ -145,6 +145,12 @@ npm run create-indexes
 # Direct node alternative: node scripts/create-indexes.js
 ```
 
+### 5. Migrate Local Data to MongoDB Atlas
+Migrates all local INCOIS PFZ features and geospatial documents into your remote MongoDB Atlas cluster:
+```powershell
+node scripts/migrate-local-pfz-to-atlas.js
+```
+
 ---
 
 ## 4. Contract Verification & Code Health

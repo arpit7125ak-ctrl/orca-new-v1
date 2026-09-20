@@ -48,12 +48,48 @@ git push origin main
 
 ---
 
-## What Happens Automatically:
+## Step 4: Verify Cross-Service Environment Linking
 
-- Render automatically generates secure, matching random keys for `INTERNAL_SECRET` and `JWT_SECRET`.
-- Render automatically connects the Frontend to the Backend's live URL.
-- Render automatically connects the AI Service to the Backend's callback endpoint.
-- Free SSL certificates (HTTPS) are provisioned for all services.
+Render free tier web services have unique assigned subdomains. Confirm the following environment variables are set in each service's **Environment** tab:
 
-When the build completes (approx. 3–4 minutes), your dashboard will show green checkmarks and your live frontend link:
-👉 **`https://orca-frontend.onrender.com`**
+### 1. `orca-backend`:
+- **`MONGO_URI`**: Your MongoDB Atlas connection string with username and password.
+- **`AI_SERVICE_URL`**: `https://orca-ai-service-b0fx.onrender.com` (or internal hostname)
+- **`ALLOWED_ORIGINS`**: `*`
+
+### 2. `orca-ai-service`:
+- **`PYTHON_VERSION`**: `3.11.9` (pins pre-compiled binary wheels)
+- **`BACKEND_INTERNAL_URL`**: `https://orca-backend-anp5.onrender.com`
+- **`MONGO_URI`**: Same MongoDB Atlas connection string.
+- **`ADAPTER_MODE`**: `real`
+- **`USE_MOCK_LLM`**: `false` (or auto-fallback to true if `GEMINI_API_KEY` is not provided)
+
+### 3. `orca-frontend`:
+- **`VITE_API_BASE_URL`**: `https://orca-backend-anp5.onrender.com/api/v1`
+
+---
+
+## Live Production Deployment Reference
+
+| Component | Status | Live Public URL | Health Check Endpoint |
+| :--- | :--- | :--- | :--- |
+| **Frontend UI** | 🟢 Live | `https://orca-frontend-27li.onrender.com` | `https://orca-frontend-27li.onrender.com` |
+| **Backend Gateway** | 🟢 Live | `https://orca-backend-anp5.onrender.com` | `https://orca-backend-anp5.onrender.com/health` (also `/api/v1/health` and `/health/ready`) |
+| **AI Multi-Agent Service** | 🟢 Live | `https://orca-ai-service-b0fx.onrender.com` | `https://orca-ai-service-b0fx.onrender.com/health` |
+| **MongoDB Atlas** | 🟢 Live | `Cluster0 (AWS Mumbai)` | 299 GIS boundary/port layers + 230 PFZ line advisories |
+
+---
+
+## Troubleshooting & Common Pitfalls
+
+1. **`ModuleNotFoundError: No module named 'pymongo'`**:
+   - Ensure `pymongo==4.5.0` and `dnspython==2.8.0` are listed in `ai-service/requirements.txt`.
+2. **`error: can't find Rust compiler` for `pydantic-core`**:
+   - Render defaults to Python 3.14 on Linux if unspecified. Keep `.python-version` pinned to `3.11.9` in the repository root and `rootDir: ai-service`.
+3. **Frontend Displays `🔴 Offline`**:
+   - Click the status badge in the top navigation bar of the web app.
+   - Enter your live backend URL (`https://orca-backend-anp5.onrender.com/api/v1`) and click **Save & Connect**.
+   - Or set `VITE_API_BASE_URL` in the `orca-frontend` Environment tab on Render.
+4. **`ENOTFOUND orca-ai-service` in Backend `/health/ready`**:
+   - Set `AI_SERVICE_URL=https://orca-ai-service-b0fx.onrender.com` in `orca-backend` Environment tab.
+
