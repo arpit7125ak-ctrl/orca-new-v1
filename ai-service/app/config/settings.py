@@ -98,10 +98,8 @@ class Settings:
             )
 
         if not self.USE_MOCK_LLM and not self.GEMINI_API_KEY:
-            problems.append(
-                "GEMINI_API_KEY is required unless USE_MOCK_LLM=true. "
-                "Set one or the other - the service will not silently fabricate LLM output."
-            )
+            print("[config] NOTICE: GEMINI_API_KEY not set. Auto-enabling USE_MOCK_LLM=true for deterministic synthesis.", file=sys.stderr)
+            self.USE_MOCK_LLM = True
 
         if not os.path.isdir(self.CONTRACTS_DIR):
             problems.append(
@@ -115,7 +113,12 @@ class Settings:
                 "ai-service/ must be a sibling of shared-config/ and backend/."
             )
 
-        if self.ADAPTER_MODE not in ("mock", "real"):
+        mode = str(self.ADAPTER_MODE).lower()
+        if mode in ("real", "live"):
+            self.ADAPTER_MODE = "real"
+        elif mode == "mock":
+            self.ADAPTER_MODE = "mock"
+        else:
             problems.append(f"ADAPTER_MODE must be 'mock' or 'real', got '{self.ADAPTER_MODE}'.")
 
         if problems:

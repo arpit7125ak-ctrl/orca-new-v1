@@ -77,7 +77,11 @@ services:
       - key: MONGO_DB
         value: orca
       - key: ADAPTER_MODE
-        value: live
+        value: real
+      - key: USE_MOCK_LLM
+        value: "false"
+      - key: GEMINI_API_KEY
+        sync: false
       - key: OPEN_METEO_WEATHER_URL
         value: https://api.open-meteo.com/v1/forecast
       - key: OPEN_METEO_MARINE_URL

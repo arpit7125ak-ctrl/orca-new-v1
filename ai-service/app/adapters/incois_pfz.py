@@ -145,9 +145,11 @@ def pfz(lat: float, lon: float, time_window_utc: str) -> Dict[str, Any]:
             geom = nearest.get("geometry", {})
 
             dist_km = _distance_to_geometry(geom, lat, lon)
-            suitability = float(props.get("suitability_score", 0.85))
-            sst_grad = float(props.get("sst_gradient_c", 0.45))
-            species_list = props.get("target_species", ["Pelagic Fish"])
+            raw_suitability = props.get("suitability_score")
+            suitability = float(raw_suitability) if raw_suitability is not None else 0.85
+            raw_sst = props.get("sst_gradient_c")
+            sst_grad = float(raw_sst) if raw_sst is not None else 0.45
+            species_list = props.get("target_species") or ["Pelagic Fish"]
             species_str = ", ".join(species_list) if isinstance(species_list, list) else str(species_list)
 
             # Decay suitability score if boat is far from the PFZ line
