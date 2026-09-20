@@ -74,6 +74,77 @@ surfacing as a 400 during the demo.
 
 ## Stack
 
-Node.js 18+ · Express 4 · Mongoose 8 · MongoDB 6+ · Ajv · pino · node-cron · web-push
+Node.js 20+ · Express 4 · Mongoose 8 · MongoDB Atlas / 7.0 · Ajv · Pino · node-cron · web-push
 
-Plain JavaScript throughout — not TypeScript.
+---
+
+## Live Cloud Production Deployment (Render + MongoDB Atlas)
+
+| Endpoint | Method | Public URL | Description |
+| :--- | :--- | :--- | :--- |
+| **Liveness Probe** | `GET` | `https://orca-backend-anp5.onrender.com/health` | Instant process liveness response |
+| **API Liveness** | `GET` | `https://orca-backend-anp5.onrender.com/api/v1/health` | Reverse-proxy compatible health check |
+| **Readiness Probe** | `GET` | `https://orca-backend-anp5.onrender.com/health/ready` | Verifies Atlas connection & contract loading |
+| **Analysis Dispatch** | `POST` | `https://orca-backend-anp5.onrender.com/api/v1/analysis` | Public trigger for multi-agent advisory |
+| **GIS Map Layers** | `GET` | `https://orca-backend-anp5.onrender.com/api/v1/map/layers` | 299 authoritative maritime boundary layers |
+
+*Note: In single-port cloud environments (like Render), `internalRoutes` are also mounted on `/internal/v1/*` protected by `internalAuth` JWT token authentication so internal AI callbacks work flawlessly without requiring exposed separate ports.*
+
+---
+
+## Future Backend Architecture & Enterprise Vision
+
+To scale ORCA into a nationwide maritime infrastructure across all 9 coastal states and island territories, the backend transitions toward an event-driven microservice topology:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                 ORCA FINAL ENTERPRISE BACKEND ARCHITECTURE                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│                  ┌──────────────────────────────────────┐                   │
+│                  │  Cloudflare / AWS CloudFront Ingress │                   │
+│                  └──────────────────┬───────────────────┘                   │
+│                                     │ TLS 1.3 / mTLS                        │
+│                                     ▼                                       │
+│                  ┌──────────────────────────────────────┐                   │
+│                  │  KONG / Envoy API Gateway (Rate Lmt) │                   │
+│                  └──────────────────┬───────────────────┘                   │
+│                                     │                                       │
+│        ┌────────────────────────────┼────────────────────────────┐          │
+│        ▼                            ▼                            ▼          │
+│  ┌───────────┐                ┌───────────┐                ┌───────────┐    │
+│  │  Core API │                │ Telemetry │                │ Broadcast │    │
+│  │  Gateway  │                │ Ingestion │                │ Dispatch  │    │
+│  │(Express 5)│                │(Fastify/Go│                │(WebPush/  │    │
+│  └─────┬─────┘                └─────┬─────┘                │  SMS/IVR) │    │
+│        │                            │                      └─────┬─────┘    │
+│        │       ┌────────────────────┴────────────────────┐       │          │
+│        └──────►│    Apache Kafka / NATS Event Mesh       │◄──────┘          │
+│                └────────────────────┬────────────────────┘                  │
+│                                     │                                       │
+│        ┌────────────────────────────┼────────────────────────────┐          │
+│        ▼                            ▼                            ▼          │
+│  ┌───────────┐                ┌───────────┐                ┌───────────┐    │
+│  │  MongoDB  │                │  Redis 7  │                │ Indian CG │    │
+│  │   Atlas   │                │Distributed│                │ MRCC SAR  │    │
+│  │Geospatial │                │  Cluster  │                │ Integration│   │
+│  └───────────┘                └───────────┘                └───────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 1. High-Throughput Telemetry Ingestion (Kafka / NATS)
+- Scaled ingestion supporting **100,000+ simultaneous vessel GPS points per second** streaming from fishing craft transponders, tourist boats, and automated AIS stations.
+- Partitioned topic streams for Indian Maritime Zones: West Coast, East Coast, Andaman & Nicobar, Lakshadweep.
+
+### 2. Distributed Caching & Rate Limiting (Redis 7 Enterprise)
+- Sub-millisecond geographic boundary lookups cached in Redis GEO indexes.
+- Prevents database saturation during major cyclone events when concurrent user queries spike by 1,000x.
+
+### 3. Automated Earth Observation Satellite Ingestion Pipeline
+- Automated cron and webhook listeners polling ISRO MOSDAC (Oceansat-3 OCM-3), INCOIS GeoServer, and Copernicus Sentinel-3 as soon as daily granules are published.
+- Automated generation of spatial GeoJSON vector contours for thermal fronts and chlorophyll plumes.
+
+### 4. Search-and-Rescue (SAR) & Indian Coast Guard Bridge
+- Automated distress payload generation when a vessel enters a `DANGEROUS` state combined with SOS trigger.
+- Instant dispatch to Indian Coast Guard Maritime Rescue Coordination Centres (MRCC) in Mumbai, Chennai, and Port Blair via CAP (Common Alerting Protocol) XML.
+

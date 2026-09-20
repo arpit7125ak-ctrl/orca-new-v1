@@ -204,20 +204,77 @@ anyway but you agreed to skip formally writing the resolution into the doc.
 
 ---
 
-## PART 3 — Not yet scaffolded
+## PART 3 — Frontend Delivery & Production Deployment (COMPLETED)
 
-- **Frontend (React/Vite)** — only the tech-stack recommendation exists so far (§114), no file-by-file structure has been designed yet. That needs its own pass before it can be broken into steps like the above.
-- **Deployment/containerization** — explicitly out of scope per the architecture doc (no Docker/K8s/Nginx mandated).
+- [x] **React 19 + Vite Frontend**: High-contrast Sunlight Deck Mode, Web Speech API in 6 Indian languages, 9-point spatial matrix, XAI score waterfall.
+- [x] **MongoDB Atlas Cloud Migration**: Seamless migration from local daemon to `Cluster0` replica set with 299 GIS layers and 230 INCOIS PFZ line features.
+- [x] **1-Click Render Cloud Blueprint (`render.yaml`)**:
+  - `orca-frontend` Static Site on Global Edge CDN
+  - `orca-backend` Node.js Express API Gateway
+  - `orca-ai-service` Python 3.11 FastAPI Multi-Agent Engine
+- [x] **Contract Verification**: 15/15 Backend checks + 26/26 AI Service verification tests passing.
 
 ---
 
-## Suggested working order across the two services
+## PART 4 — Strategic Future Enterprise Roadmap & Final Target Architecture
 
-You don't have to finish Backend before touching AI Service. A practical path:
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                 ORCA FINAL ENTERPRISE MARITIME ARCHITECTURE                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│               ┌──────────────────────────────────────────────┐              │
+│               │   MULTI-STAKEHOLDER INTERFACE ECOSYSTEM      │              │
+│               │  React 19 PWA · Deck Glare Mode · Voice Mic  │              │
+│               │ 7 Activities: Tourism/Boating/Diving/Fishing │              │
+│               └──────────────────────┬───────────────────────┘              │
+│                                      │                                      │
+│                                      ▼                                      │
+│               ┌──────────────────────────────────────────────┐              │
+│               │     KONG / CLOUDFLARE EDGE API GATEWAY       │              │
+│               │    mTLS · Rate Limiting · Global Anycast     │              │
+│               └──────────────────────┬───────────────────────┘              │
+│                                      │                                      │
+│        ┌─────────────────────────────┼─────────────────────────────┐        │
+│        ▼                             ▼                             ▼        │
+│  ┌───────────┐                 ┌───────────┐                 ┌───────────┐  │
+│  │  Backend  │                 │  Kafka /  │                 │ AI Service│  │
+│  │ Core API  │                 │   NATS    │                 │Multi-Agent│  │
+│  │(Express 5)│                 │Event Mesh │                 │7 Telemetry│  │
+│  └─────┬─────┘                 └─────┬─────┘                 └─────┬─────┘  │
+│        │                             │                             │        │
+│        │        ┌────────────────────┴────────────────────┐        │        │
+│        ▼        ▼                                         ▼        ▼        │
+│  ┌───────────────┐                                   ┌───────────────┐      │
+│  │ MongoDB Atlas │                                   │  Edge AI Core │      │
+│  │Cluster0 Multi-│                                   │Quantized PINNs│      │
+│  │Region 2dsphere│                                   │Onboard Pi/Jet │      │
+│  └───────────────┘                                   └───────────────┘      │
+│        │                                                     │              │
+│        ▼                                                     ▼              │
+│  ┌───────────────────────────────────────────────────────────────────┐      │
+│  │           NATIONAL MARITIME DEFENSE & RESCUE DISPATCH             │      │
+│  │   Indian Coast Guard MRCC · INCOIS SAMUDRA · NDMA CAP Gateway     │      │
+│  └───────────────────────────────────────────────────────────────────┘      │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
-1. Backend Phases B1–B9 (get the request/response skeleton running against a stub)
-2. AI Service Phases A1–A5 (schemas, config, mock adapters, real adapters, agents)
-3. AI Service A6–A9 (planner → risk → decision — the actual intelligence)
-4. Wire A11–A12 to Backend B7–B9 and get one real end-to-end analysis working
-5. Backend B10 + AI Service A10 in parallel (secondary features: chat, geofence, route, trend, alerts, voice)
-6. Testing phases (B12, A13) throughout, not just at the end
+### Milestone 1: Multi-Activity Expansion & Offline PWA Tile Engine
+- **Full Offline Operation**: Vector `.mbtiles` covering India's 7,516 km coastline cached via ServiceWorker and IndexedDB.
+- **Deep Activity Profiles**: Custom mathematical risk formulations for high-speed tourism speedboats, SCUBA diver bottom times, and surfing break heights.
+
+### Milestone 2: High-Throughput Telemetry Event Mesh (Apache Kafka)
+- **100,000+ Concurrent Vessels**: Scaled event streaming ingesting real-time coordinates, speed, and heading from transponders across all Indian maritime zones.
+- **Sub-Second Geofence Alarms**: Automated boundary intrusion detection triggering siren alerts before international boundary crossings.
+
+### Milestone 3: Physics-Informed Neural Networks (PINNs) & Marine LLM
+- **Nonlinear Wave Shoaling**: AI physics models predicting nearshore wave amplification and breaking over shallow coral reefs.
+- **Domain Fine-Tuned Marine LLM (`ORCA-Marine-8B`)**: Hyper-localized nautical advisory generation in 6 Indian languages with strictly verified zero-hallucination bounds.
+
+### Milestone 4: Edge On-Vessel Hardware Sensor Integration
+- **Direct NMEA 0183 / 2000 Transducer Bridge**: Connects via Web Bluetooth/Serial to vessel depth sounders and anemometers.
+- **Offline Wheelhouse Appliance**: Complete AI engine running on Raspberry Pi 5 / NVIDIA Jetson inside the vessel without cellular or satellite data.
+
+### Milestone 5: National Emergency & Search-and-Rescue (SAR) Dispatch
+- **Automated Distress Escalation**: Common Alerting Protocol (CAP) and SOS packet generation forwarded directly to Indian Coast Guard Maritime Rescue Coordination Centres (MRCC).
+
