@@ -45,6 +45,10 @@ services:
       - MONGO_DB=orca
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - ADAPTER_MODE=${ADAPTER_MODE:-live}
+      - OPEN_METEO_WEATHER_URL=${OPEN_METEO_WEATHER_URL:-https://api.open-meteo.com/v1/forecast}
+      - OPEN_METEO_MARINE_URL=${OPEN_METEO_MARINE_URL:-https://marine-api.open-meteo.com/v1/marine}
+      - SACHET_ALERTS_URL=${SACHET_ALERTS_URL:-https://sachet.ndma.gov.in/cap_public_website/FetchAllAlertDetails}
+      - GEBCO_BATHYMETRY_URL=${GEBCO_BATHYMETRY_URL:-https://api.opentopodata.org/v1/gebco2020}
     depends_on:
       mongo:
         condition: service_healthy
@@ -69,6 +73,9 @@ services:
       - MONGO_URI=mongodb://mongo:27017/orca
       - AI_SERVICE_URL=http://ai-service:8000
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost,http://localhost:80,http://localhost:5173}
+      - INCOIS_WFS_URL=${INCOIS_WFS_URL:-https://incois.gov.in/geoserver/PFZ_Automation/wfs?service=WFS&version=1.0.0&request=GetFeature&typeName=PFZ_Automation:pfzlines&outputFormat=application/json}
+      - BHASHINI_API_URL=${BHASHINI_API_URL:-}
+      - BHASHINI_API_KEY=${BHASHINI_API_KEY:-}
     ports:
       - "4000:4000"
     expose:

@@ -12,10 +12,11 @@
 
 const https = require('https');
 const axios = require('axios');
+const env = require('../../config/env');
 const PfzAdvisory = require('../../db/models/pfzAdvisory.model');
 const { logger } = require('../../observability/logger');
 
-const INCOIS_WFS_URL = 'https://incois.gov.in/geoserver/PFZ_Automation/wfs?service=WFS&version=1.0.0&request=GetFeature&typeName=PFZ_Automation:pfzlines&outputFormat=application/json';
+const INCOIS_WFS_URL = env.INCOIS_WFS_URL || 'https://incois.gov.in/geoserver/PFZ_Automation/wfs?service=WFS&version=1.0.0&request=GetFeature&typeName=PFZ_Automation:pfzlines&outputFormat=application/json';
 
 const STATE_SPECIES_MAP = {
   'KERALA': ['Indian Mackerel', 'Yellowfin Tuna', 'Oil Sardine', 'Carangids', 'Ribbonfish'],

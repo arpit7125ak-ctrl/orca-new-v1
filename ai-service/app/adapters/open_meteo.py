@@ -30,10 +30,11 @@ import httpx
 
 from app.adapters.mock import _hours, _measurement
 from app.adapters import mock as mock_adapter
+from app.config.settings import settings
 from app.observability.logger import log
 
-OPEN_METEO_WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
-OPEN_METEO_MARINE_URL = "https://marine-api.open-meteo.com/v1/marine"
+OPEN_METEO_WEATHER_URL = settings.OPEN_METEO_WEATHER_URL
+OPEN_METEO_MARINE_URL = settings.OPEN_METEO_MARINE_URL
 TIMEOUT_SECONDS = 8.0
 
 

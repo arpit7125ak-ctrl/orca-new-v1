@@ -111,7 +111,7 @@ def _fetch_gebco_depth(lat: float, lon: float) -> Tuple[float, str, str, str]:
         return _gebco_cache[key]
 
     if not _gebco_unavailable:
-        url = f"https://api.opentopodata.org/v1/gebco2020?locations={lat:.4f},{lon:.4f}"
+        url = f"{settings.GEBCO_BATHYMETRY_URL}?locations={lat:.4f},{lon:.4f}"
         try:
             resp = httpx.get(url, timeout=0.8)
             if resp.status_code == 200:

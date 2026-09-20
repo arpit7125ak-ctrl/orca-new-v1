@@ -75,6 +75,12 @@ const env = Object.freeze({
 
   // Logging
   LOG_LEVEL: optionalEnv('LOG_LEVEL', 'info'),
+
+  // External Data Feeds (Overridable via .env)
+  INCOIS_WFS_URL: optionalEnv(
+    'INCOIS_WFS_URL',
+    'https://incois.gov.in/geoserver/PFZ_Automation/wfs?service=WFS&version=1.0.0&request=GetFeature&typeName=PFZ_Automation:pfzlines&outputFormat=application/json'
+  ),
 });
 
 module.exports = env;

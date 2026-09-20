@@ -29,9 +29,10 @@ from typing import Any, Dict, List, Optional, Tuple
 import httpx
 
 from app.adapters.mock import _hours, _measurement
+from app.config.settings import settings
 from app.observability.logger import log
 
-OPEN_METEO_MARINE_URL = "https://marine-api.open-meteo.com/v1/marine"
+OPEN_METEO_MARINE_URL = settings.OPEN_METEO_MARINE_URL
 TIMEOUT_SECONDS = 7.0
 
 # Astronomical tidal constituent speeds in radians per hour

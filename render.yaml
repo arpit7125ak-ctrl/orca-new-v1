@@ -1,0 +1,95 @@
+# ===========================================================================
+# ORCA Maritime Platform — Official Render Infrastructure Blueprint
+# Deploy all 3 services automatically with 1-click on https://render.com
+# ===========================================================================
+
+services:
+  # --- 1. Frontend: React 19 + Vite Static Site (Global Edge CDN) ---------
+  - type: web
+    name: orca-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: orca-backend
+          property: url
+
+  # --- 2. Backend Gateway: Node.js Express API ----------------------------
+  - type: web
+    name: orca-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci --omit=dev
+    startCommand: node src/server.js
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: INTERNAL_PORT
+        value: 4000
+      - key: INTERNAL_SECRET
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGO_URI
+        sync: false # Enter your free MongoDB Atlas connection string in Render Dashboard
+      - key: AI_SERVICE_URL
+        fromService:
+          type: web
+          name: orca-ai-service
+          property: url
+      - key: ALLOWED_ORIGINS
+        value: "*"
+
+  # --- 3. AI Service: Python FastAPI & Multi-Agent Planner ----------------
+  - type: web
+    name: orca-ai-service
+    runtime: python
+    rootDir: ai-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ENV
+        value: production
+      - key: AI_SERVICE_PORT
+        value: 8000
+      - key: BACKEND_INTERNAL_URL
+        fromService:
+          type: web
+          name: orca-backend
+          property: url
+      - key: INTERNAL_SECRET
+        fromService:
+          type: web
+          name: orca-backend
+          envVarKey: INTERNAL_SECRET
+      - key: MONGO_URI
+        fromService:
+          type: web
+          name: orca-backend
+          envVarKey: MONGO_URI
+      - key: MONGO_DB
+        value: orca
+      - key: ADAPTER_MODE
+        value: live
+      - key: OPEN_METEO_WEATHER_URL
+        value: https://api.open-meteo.com/v1/forecast
+      - key: OPEN_METEO_MARINE_URL
+        value: https://marine-api.open-meteo.com/v1/marine
+      - key: SACHET_ALERTS_URL
+        value: https://sachet.ndma.gov.in/cap_public_website/FetchAllAlertDetails
+      - key: GEBCO_BATHYMETRY_URL
+        value: https://api.opentopodata.org/v1/gebco2020

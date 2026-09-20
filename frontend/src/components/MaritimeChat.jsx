@@ -84,7 +84,8 @@ export default function MaritimeChat({ selectedLang = 'en' }) {
       if (res?.triggered_analysis_id) {
         try {
           const completed = await orcaApi.pollAnalysisUntilDone(res.triggered_analysis_id, () => {}, 1500, 25);
-          const finalDecision = completed?.answer_text ||
+          const finalDecision = completed?.quick_information_result?.answer_text ||
+                                completed?.answer_text ||
                                 completed?.result?.answer_text ||
                                 completed?.decision?.one_line_recommendation ||
                                 completed?.decision?.detailed_recommendation ||

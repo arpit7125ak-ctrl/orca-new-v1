@@ -162,6 +162,10 @@ function createApp() {
   app.use('/api/v1/voice', voiceRoutes);
   app.use('/api/v1/auth', authRoutes); // PROPOSED
 
+  // Internal routes (Protected by internalAuth token verification)
+  const internalRoutes = require('./modules/internal/internal.routes');
+  app.use('/internal/v1', internalRoutes);
+
   // --- 9 & 10: 404 then the central error handler ------------------------
   app.use(notFound);
   app.use(errorHandler);

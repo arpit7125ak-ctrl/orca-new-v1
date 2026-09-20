@@ -44,10 +44,24 @@ class Settings:
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
     USE_MOCK_LLM: bool = os.getenv("USE_MOCK_LLM", "false").lower() == "true"
 
-    # --- Adapters ---------------------------------------------------------
+    # --- Adapters & Data Feeds --------------------------------------------
     ADAPTER_MODE: str = os.getenv("ADAPTER_MODE", "mock")
     MONGO_URI: str = os.getenv("MONGO_URI", "mongodb://127.0.0.1:27017")
     MONGO_DB: str = os.getenv("MONGO_DB", "orca")
+
+    # --- External Data Feeds & APIs (Overridable via .env) ----------------
+    OPEN_METEO_WEATHER_URL: str = os.getenv(
+        "OPEN_METEO_WEATHER_URL", "https://api.open-meteo.com/v1/forecast"
+    )
+    OPEN_METEO_MARINE_URL: str = os.getenv(
+        "OPEN_METEO_MARINE_URL", "https://marine-api.open-meteo.com/v1/marine"
+    )
+    SACHET_ALERTS_URL: str = os.getenv(
+        "SACHET_ALERTS_URL", "https://sachet.ndma.gov.in/cap_public_website/FetchAllAlertDetails"
+    )
+    GEBCO_BATHYMETRY_URL: str = os.getenv(
+        "GEBCO_BATHYMETRY_URL", "https://api.opentopodata.org/v1/gebco2020"
+    )
 
     # --- Paths ------------------------------------------------------------
     # contracts/ and shared-config/ are SIBLINGS of ai-service/, shared with the

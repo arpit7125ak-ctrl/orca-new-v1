@@ -38,10 +38,11 @@ import httpx
 
 from app.adapters.mock import _hours, _measurement
 from app.adapters import mock as mock_adapter
+from app.config.settings import settings
 from app.observability.logger import log
 
-SACHET_ALERTS_URL = "https://sachet.ndma.gov.in/cap_public_website/FetchAllAlertDetails"
-OPEN_METEO_WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
+SACHET_ALERTS_URL = settings.SACHET_ALERTS_URL
+OPEN_METEO_WEATHER_URL = settings.OPEN_METEO_WEATHER_URL
 CACHE_TTL_SECONDS = 900.0  # 15 minutes
 
 _alerts_cache: Optional[List[Dict[str, Any]]] = None
