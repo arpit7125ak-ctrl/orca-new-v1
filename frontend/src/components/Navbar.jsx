@@ -26,6 +26,8 @@ export default function Navbar({
   setSelectedLang 
 }) {
   const [backendStatus, setBackendStatus] = useState('checking');
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [customApiUrl, setCustomApiUrl] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -116,9 +118,14 @@ export default function Navbar({
           {/* Right Controls */}
           <div className="flex items-center space-x-3">
             {/* Backend Connectivity Status */}
-            <div 
-              className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-[11px] font-medium"
-              title={backendStatus === 'connected' ? 'Backend Port 4000 Active' : 'Backend Disconnected'}
+            <button 
+              type="button"
+              onClick={() => {
+                setCustomApiUrl(orcaApi.getApiBase());
+                setShowConfigModal(true);
+              }}
+              className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-[11px] font-medium hover:border-cyan-500/50 transition cursor-pointer"
+              title="Click to inspect or configure Backend API URL"
             >
               <span className={`w-2 h-2 rounded-full ${
                 backendStatus === 'connected' 
@@ -128,9 +135,9 @@ export default function Navbar({
                   : 'bg-rose-500'
               }`} />
               <span className="text-slate-300 hidden sm:inline">
-                {backendStatus === 'connected' ? 'Port 4000' : backendStatus === 'checking' ? 'Checking...' : 'Offline'}
+                {backendStatus === 'connected' ? 'Online' : backendStatus === 'checking' ? 'Checking...' : 'Offline'}
               </span>
-            </div>
+            </button>
 
             {/* Language Selector */}
             <div className="relative flex items-center">
@@ -186,6 +193,79 @@ export default function Navbar({
           })}
         </div>
       </div>
+
+      {/* Backend Configuration Modal */}
+      {showConfigModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Activity className="w-4 h-4 text-cyan-400" />
+                Backend Gateway Connection
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowConfigModal(false)}
+                className="text-slate-400 hover:text-white text-xs px-2 py-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-300 space-y-2">
+              <div className="flex items-center justify-between p-2 rounded bg-slate-950 border border-slate-800">
+                <span>Status:</span>
+                <span className={`font-bold ${backendStatus === 'connected' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {backendStatus === 'connected' ? '● Connected (Online)' : '● Disconnected (Offline)'}
+                </span>
+              </div>
+              <label className="block text-slate-400 text-[11px] pt-1">
+                API URL (Render Backend endpoint):
+              </label>
+              <input
+                type="text"
+                value={customApiUrl}
+                onChange={(e) => setCustomApiUrl(e.target.value)}
+                placeholder="https://orca-backend-xxxx.onrender.com/api/v1"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-cyan-300 focus:outline-none focus:border-cyan-500"
+              />
+              <p className="text-[10px] text-slate-400 leading-normal">
+                Paste your Render backend URL (including <code className="text-cyan-400">/api/v1</code>). Saved directly in your browser.
+              </p>
+            </div>
+
+            <div className="flex justify-between items-center pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  orcaApi.setApiBase('');
+                  setCustomApiUrl(orcaApi.getApiBase());
+                }}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 cursor-pointer"
+              >
+                Reset Default
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  orcaApi.setApiBase(customApiUrl);
+                  setBackendStatus('checking');
+                  setShowConfigModal(false);
+                  try {
+                    const res = await orcaApi.checkHealth();
+                    setBackendStatus(res && res.status === 'ok' ? 'connected' : 'offline');
+                  } catch {
+                    setBackendStatus('offline');
+                  }
+                }}
+                className="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-950 bg-cyan-400 hover:bg-cyan-300 shadow-md shadow-cyan-500/20 cursor-pointer"
+              >
+                Save & Connect
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

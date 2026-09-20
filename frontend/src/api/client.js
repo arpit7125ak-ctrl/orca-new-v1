@@ -6,10 +6,41 @@
 
 import { normalizeActivity, normalizeVesselType } from '../utils/maritimeConfig';
 
-const API_BASE = import.meta.env.VITE_API_BASE || import.meta.env.VITE_API_BASE_URL || '/api/v1';
+export function getApiBase() {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const saved = window.localStorage.getItem('ORCA_API_BASE');
+    if (saved) return saved.replace(/\/+$/, '');
+  }
+  const envBase = import.meta.env.VITE_API_BASE || import.meta.env.VITE_API_BASE_URL;
+  if (envBase) return envBase.replace(/\/+$/, '');
+
+  // Auto-detection for Render blueprint deployments
+  if (typeof window !== 'undefined' && window.location.hostname.includes('onrender.com')) {
+    const host = window.location.hostname;
+    const match = host.match(/orca-frontend(-[a-z0-9]+)?\.onrender\.com/i);
+    if (match && match[1]) {
+      return `https://orca-backend${match[1]}.onrender.com/api/v1`;
+    }
+    return 'https://orca-backend.onrender.com/api/v1';
+  }
+
+  return '/api/v1';
+}
+
+export function setApiBase(newUrl) {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    if (newUrl && newUrl.trim()) {
+      window.localStorage.setItem('ORCA_API_BASE', newUrl.trim().replace(/\/+$/, ''));
+    } else {
+      window.localStorage.removeItem('ORCA_API_BASE');
+    }
+  }
+}
 
 async function request(endpoint, options = {}) {
-  const url = `${API_BASE}${endpoint}`;
+  const base = getApiBase();
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${base}${cleanEndpoint}`;
   const config = {
     headers: {
       'Content-Type': 'application/json',
@@ -39,12 +70,17 @@ async function request(endpoint, options = {}) {
 }
 
 export const orcaApi = {
+  getApiBase,
+  setApiBase,
+
   /**
    * Health check on backend
    */
   async checkHealth() {
     try {
-      const res = await fetch('/health');
+      const base = getApiBase();
+      const healthUrl = `${base}/health`;
+      const res = await fetch(healthUrl);
       return await res.json();
     } catch {
       return { status: 'offline' };

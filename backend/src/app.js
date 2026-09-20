@@ -90,7 +90,7 @@ function createApp() {
    * GET /health - liveness. Answers "is this process up?"
    * Always 200 if the process can respond at all.
    */
-  app.get('/health', (req, res) => {
+  const healthHandler = (req, res) => {
     res.status(200).json({
       status: 'ok',
       service: 'orca-backend',
@@ -98,7 +98,9 @@ function createApp() {
       uptime_seconds: Math.floor(process.uptime()),
       timestamp: new Date().toISOString(),
     });
-  });
+  };
+  app.get('/health', healthHandler);
+  app.get('/api/v1/health', healthHandler);
 
   /**
    * GET /health/ready - readiness. Answers "can this process do useful work?"
