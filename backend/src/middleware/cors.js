@@ -19,7 +19,9 @@ const corsOptions = {
     // work. Real authorisation is handled by auth middleware, not CORS.
     if (!origin) return callback(null, true);
 
-    if (env.ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    if (env.ALLOWED_ORIGINS.includes('*') || env.ALLOWED_ORIGINS.includes(origin)) {
+      return callback(null, true);
+    }
 
     // Log rather than silently reject - a blocked origin during the demo is
     // otherwise a very confusing "it just doesn't work" in the browser console.
