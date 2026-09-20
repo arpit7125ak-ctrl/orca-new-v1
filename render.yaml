@@ -17,10 +17,7 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_BASE_URL
-        fromService:
-          type: web
-          name: orca-backend
-          property: url
+        value: /api/v1
 
   # --- 2. Backend Gateway: Node.js Express API ----------------------------
   - type: web
@@ -43,12 +40,9 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: MONGO_URI
-        sync: false # Enter your free MongoDB Atlas connection string in Render Dashboard
+        sync: false # Enter your MongoDB Atlas connection string in Render Dashboard
       - key: AI_SERVICE_URL
-        fromService:
-          type: web
-          name: orca-ai-service
-          property: url
+        value: http://orca-ai-service:8000
       - key: ALLOWED_ORIGINS
         value: "*"
 
@@ -67,10 +61,7 @@ services:
       - key: AI_SERVICE_PORT
         value: 8000
       - key: BACKEND_INTERNAL_URL
-        fromService:
-          type: web
-          name: orca-backend
-          property: url
+        value: http://orca-backend:4000
       - key: INTERNAL_SECRET
         fromService:
           type: web
