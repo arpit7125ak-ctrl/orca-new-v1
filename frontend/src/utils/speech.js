@@ -1,55 +1,114 @@
 /**
  * Browser-native Speech Utilities for Fisherman Accessibility
  * Meets Section 77 specifications (Audio playback and voice transcription)
+ * 10 Canonical Indian Maritime Regional Languages per shared-config/languages.json
  */
 
-export function speakText(text, lang = 'en') {
-  if (!('speechSynthesis' in window)) {
+export const SPEECH_LOCALES = {
+  en: 'en-IN',
+  hi: 'hi-IN',
+  bn: 'bn-IN',
+  ta: 'ta-IN',
+  te: 'te-IN',
+  or: 'or-IN',
+  mr: 'mr-IN',
+  ml: 'ml-IN',
+  kn: 'kn-IN',
+  gu: 'gu-IN',
+};
+
+/**
+ * Resolves canonical BCP 47 speech locale for a given language code.
+ * For 'auto': detects from navigator.language if mapped, else defaults to 'en-IN'.
+ * @param {string} lang
+ * @returns {string}
+ */
+export function localeFor(lang) {
+  if (!lang || lang === 'auto') {
+    if (typeof navigator !== 'undefined' && navigator.language) {
+      const nav = navigator.language.toLowerCase();
+      // Check exact match (e.g. 'ta-in' or 'hi-in')
+      for (const [code, locale] of Object.entries(SPEECH_LOCALES)) {
+        if (nav === locale.toLowerCase() || nav.startsWith(code)) {
+          return locale;
+        }
+      }
+    }
+    return 'en-IN';
+  }
+  return SPEECH_LOCALES[lang] || 'en-IN';
+}
+
+export function isSpeechRecognitionSupported() {
+  if (typeof window === 'undefined') return false;
+  return Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
+}
+
+export function isSpeechSynthesisSupported() {
+  if (typeof window === 'undefined') return false;
+  return 'speechSynthesis' in window;
+}
+
+export function hasVoiceForLocale(locale) {
+  if (!isSpeechSynthesisSupported()) return false;
+  const voices = window.speechSynthesis.getVoices();
+  const target = (locale || '').toLowerCase();
+  return voices.some((v) => v.lang && v.lang.toLowerCase().replace('_', '-') === target);
+}
+
+/**
+ * Text-to-speech output using the specific response language.
+ * @param {string} text
+ * @param {string} lang Language code (e.g. 'hi', 'ta') or locale (e.g. 'hi-IN')
+ * @param {Function} [onVoiceMissing] Optional callback if no voice matches the locale
+ */
+export function speakText(text, lang = 'en', onVoiceMissing = null) {
+  if (!isSpeechSynthesisSupported()) {
     console.warn('Speech synthesis not supported in this browser.');
-    return;
+    return false;
   }
 
   window.speechSynthesis.cancel(); // stop any ongoing speech
 
+  const targetLocale = localeFor(lang);
   const utterance = new SpeechSynthesisUtterance(text);
-  
-  // Map our language codes to BCP 47
-  const langMap = {
-    en: 'en-IN',
-    hi: 'hi-IN',
-    ta: 'ta-IN',
-    te: 'te-IN',
-    ml: 'ml-IN',
-    bn: 'bn-IN',
-    mr: 'mr-IN',
-    gu: 'gu-IN',
-    kn: 'kn-IN',
-    or: 'or-IN',
-  };
-
-  utterance.lang = langMap[lang] || 'en-IN';
+  utterance.lang = targetLocale;
   utterance.rate = 0.95; // slightly slower for better maritime comprehension
   utterance.pitch = 1.0;
 
+  const voices = window.speechSynthesis.getVoices();
+  const matchingVoice = voices.find((v) => v.lang && v.lang.toLowerCase().replace('_', '-') === targetLocale.toLowerCase());
+  if (matchingVoice) {
+    utterance.voice = matchingVoice;
+  } else if (voices.length > 0 && onVoiceMissing) {
+    onVoiceMissing(targetLocale);
+  }
+
   window.speechSynthesis.speak(utterance);
+  return true;
 }
 
 export function stopSpeaking() {
-  if ('speechSynthesis' in window) {
+  if (isSpeechSynthesisSupported()) {
     window.speechSynthesis.cancel();
   }
 }
 
-export function createSpeechRecognizer({ onResult, onError, onEnd }) {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
+/**
+ * Speech-to-text recognition configured with the user's selected language.
+ */
+export function createSpeechRecognizer({ lang = 'auto', onResult, onError, onEnd }) {
+  if (!isSpeechRecognitionSupported()) {
     return null;
   }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const targetLocale = localeFor(lang);
 
   const recognition = new SpeechRecognition();
   recognition.continuous = false;
   recognition.interimResults = true;
-  recognition.lang = 'en-IN';
+  recognition.lang = targetLocale;
 
   recognition.onresult = (event) => {
     let transcript = '';

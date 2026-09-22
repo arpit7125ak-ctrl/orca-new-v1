@@ -451,9 +451,13 @@ async function applyResult(analysisId, payload) {
 
     case 'route':
       if (payload.route_result) {
+        const existingRoute = await Route.findOne({
+          $or: [{ analysis_id: analysisId }, { route_id: payload.route_result.route_id }],
+        });
+        const preservedRouteId = existingRoute ? existingRoute.route_id : payload.route_result.route_id;
         await Route.findOneAndUpdate(
-          { route_id: payload.route_result.route_id },
-          { ...payload.route_result, analysis_id: analysisId },
+          { $or: [{ analysis_id: analysisId }, { route_id: preservedRouteId }] },
+          { ...payload.route_result, route_id: preservedRouteId, analysis_id: analysisId },
           { upsert: true, new: true, setDefaultsOnInsert: true }
         );
       }
@@ -492,6 +496,28 @@ async function applyResult(analysisId, payload) {
 
   await analysis.save();
   log.info({ status: analysis.status, final_stage: finalStage }, '[analysis] Final result recorded');
+
+  // If this analysis was triggered from chat, persist the assistant's reply into the conversation thread
+  if (analysis.conversation_id) {
+    try {
+      const chatService = require('../chat/chat.service');
+      const content =
+        payload.decision?.advisory_text ||
+        payload.decision?.explanation ||
+        payload.report_content ||
+        payload.error?.message ||
+        'Sea condition safety analysis complete.';
+      await chatService.appendAssistantMessage(analysis.conversation_id, {
+        content,
+        language: analysis.response_language || analysis.detected_language || 'en',
+        analysisId: analysis.analysis_id,
+        suggestedFollowups: payload.decision?.recommended_actions || [],
+      });
+      log.info({ conversation_id: analysis.conversation_id }, '[analysis] Persisted assistant reply to conversation');
+    } catch (chatErr) {
+      log.warn({ err: chatErr.message }, '[analysis] Failed to append assistant message to conversation');
+    }
+  }
 
   return analysis;
 }

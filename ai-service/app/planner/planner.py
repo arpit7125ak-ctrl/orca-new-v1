@@ -269,15 +269,26 @@ async def build_plan(
         query=query,
     )
     if loc_error:
+        coord = request.get("coordinate")
+        if loc_error == "invalid_location":
+            if coord and coord.get("lat") is not None and coord.get("lon") is not None:
+                msg = "The requested coordinate is located inland (> 25 km from coastal water) and cannot be evaluated by maritime safety models."
+            else:
+                msg = "No usable location was supplied - provide a coordinate or a place name."
+        elif loc_error == "unresolvable_place":
+            msg = f"Could not resolve the place name: {request.get('place_name')!r}"
+        elif loc_error == "unsupported_region":
+            msg = "That location is outside ORCA's supported marine region."
+        elif loc_error == "upstream_unavailable":
+            msg = "The bathymetry/elevation service is temporarily unavailable."
+        else:
+            msg = "Location could not be resolved."
+
         return {
             "ok": False,
             "error": {
                 "error_category": loc_error,
-                "message": {
-                    "unresolvable_place": f"Could not resolve the place name: {request.get('place_name')!r}",
-                    "unsupported_region": "That location is outside ORCA's supported marine region.",
-                    "invalid_location": "No usable location was supplied - provide a coordinate or a place name.",
-                }.get(loc_error, "Location could not be resolved."),
+                "message": msg,
             },
         }
 

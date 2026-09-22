@@ -42,7 +42,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
 
   // Quick Preset Locations
   const presets = [
-    { name: 'Kochi, Kerala', lat: 9.94, lon: 76.16, query: 'Motorized fishing 15km off Kochi coast tomorrow morning' },
+    { name: 'Kochi Port, Kerala', lat: 9.93, lon: 76.26, query: 'Motorized fishing 15km off Kochi coast tomorrow morning' },
     { name: 'Mumbai, Maharashtra', lat: 18.96, lon: 72.82, query: 'Trawler coastal operations off Mumbai harbour tomorrow morning' },
     { name: 'Veraval, Gujarat', lat: 20.89, lon: 70.36, query: 'Deep sea mechanized fishing 30km off Veraval coast' },
     { name: 'Rameswaram / Palk Bay', lat: 9.288, lon: 79.313, query: 'Motorized fishing operations in Palk Bay near Rameswaram' },
@@ -86,8 +86,8 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
     if (!mapContainerRef.current) return;
 
     if (!mapInstanceRef.current) {
-      const initialLat = parseFloat(lat) || 9.94;
-      const initialLon = parseFloat(lon) || 76.16;
+      const initialLat = parseFloat(lat) || 15.0;
+      const initialLon = parseFloat(lon) || 75.0;
 
       const map = L.map(mapContainerRef.current, {
         center: [initialLat, initialLon],
@@ -300,7 +300,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
       vessel_type: canonicalVessel || undefined,
       date: isoDate,
       time_range: structuredTimeRange,
-      coordinate: hasValidCoords ? { lat: pLat, lon: pLon } : { lat: 9.94, lon: 76.16 },
+      coordinate: hasValidCoords ? { lat: pLat, lon: pLon } : undefined,
     };
 
     if (trimmedPlace) {
@@ -398,7 +398,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                         setLocationName(nearest);
                       }
                     }}
-                    placeholder="e.g. 9.9400"
+                    placeholder="e.g. 12.5000"
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono"
                   />
                 </div>
@@ -420,7 +420,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                         setLocationName(nearest);
                       }
                     }}
-                    placeholder="e.g. 76.1600"
+                    placeholder="e.g. 74.8000"
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono"
                   />
                 </div>

@@ -32,8 +32,8 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
       title: 'Offshore Kochi',
       detail: 'Motorized FRP Boat',
       q: 'Can I go motorized fishing 15km off Kochi tomorrow morning?',
-      lat: '9.94',
-      lon: '76.16',
+      lat: '9.93',
+      lon: '76.26',
       vessel: 'motorized_country_craft',
       act: 'fishing',
     },
@@ -137,7 +137,7 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
     if (query.trim()) {
       payload.query = query.trim();
     }
-    if (selectedLang) {
+    if (selectedLang && selectedLang !== 'auto') {
       payload.language_override = selectedLang;
     }
 

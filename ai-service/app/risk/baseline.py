@@ -173,18 +173,23 @@ def score_point(
     if weight_total == 0:
         return {"score": None, "contributing": {}, "risk_factors": [], "scoreable_count": 0}
 
-    combined = weighted_sum / weight_total
+    # Spec Section 48.3 Combining Factors:
+    # dominant   = max(factor sub-scores)
+    # elevated   = number of other factors with sub-score >= 35
+    # uplift     = min(3 * elevated, 10)
+    # baseline   = min(dominant + uplift, 100)
+    sorted_factors = sorted(contributing.items(), key=lambda kv: -kv[1])
+    dominant_param, dominant_score = sorted_factors[0]
 
-    # The single worst parameter also pulls the score up: a combined average
-    # should never hide one genuinely dangerous reading.
-    worst = max(contributing.values())
-    combined = max(combined, worst * 0.85)
+    elevated = sum(1 for _, s in sorted_factors[1:] if s >= 35)
+    uplift = min(3.0 * elevated, 10.0)
+    score_base = round(min(100.0, dominant_score + uplift), 1)
 
     # Section 54 - the parameters actually driving this score, for explanation.
-    risk_factors = [p for p, s in sorted(contributing.items(), key=lambda kv: -kv[1]) if s >= 50]
+    risk_factors = [p for p, s in sorted_factors if s >= 45]
 
     return {
-        "score": round(min(combined, 100.0), 1),
+        "score": score_base,
         "contributing": contributing,
         "risk_factors": risk_factors[:4],
         "scoreable_count": len(contributing),

@@ -27,6 +27,7 @@ const PfzAdvisory = require('./db/models/pfzAdvisory.model');
 require('./db/models');
 
 let server = null;
+let internalServer = null;
 let pfzCronTask = null;
 
 async function start() {
@@ -47,6 +48,19 @@ async function start() {
       logger.info(`[server] Readiness check: http://localhost:${env.PORT}/health/ready`);
       logger.info(`[server] Config:          http://localhost:${env.PORT}/api/v1/config`);
     });
+
+    if (env.INTERNAL_PORT && env.INTERNAL_PORT !== env.PORT) {
+      const { createInternalApp } = require('./internal-server');
+      const internalApp = createInternalApp();
+      internalServer = internalApp.listen(env.INTERNAL_PORT, () => {
+        logger.info(
+          { port: env.INTERNAL_PORT },
+          `[server] ORCA Backend Internal API listening on http://localhost:${env.INTERNAL_PORT}`
+        );
+      });
+      internalServer.headersTimeout = 65000;
+      internalServer.keepAliveTimeout = 60000;
+    }
 
     // Node's default header timeout can cut off slow mobile uploads (voice
     // audio over a weak connection), so it is raised here.
@@ -106,6 +120,16 @@ async function start() {
         logger.warn({ err: e.message }, '[server] [gis-sync] Background GIS check warning');
       }
     }, 2000);
+
+    // --- 5. Proactive Alert Surveillance Scheduler -------------------------
+    if (process.env.ENABLE_EMBEDDED_WORKER !== 'false') {
+      const alertScheduler = require('./modules/alerts/scheduler');
+      alertScheduler.start();
+      logger.info(
+        { cron: limits.ALERT_SCHEDULER_CRON },
+        '[server] [alerts] Proactive alert surveillance scheduler active'
+      );
+    }
   } catch (err) {
     logger.fatal({ err: err.message, stack: err.stack }, '[server] Failed to start');
     process.exit(1);
@@ -131,6 +155,14 @@ async function shutdown(signal) {
   try {
     if (pfzCronTask) {
       pfzCronTask.stop();
+    }
+    try {
+      const alertScheduler = require('./modules/alerts/scheduler');
+      alertScheduler.stop();
+    } catch (_) {}
+    if (internalServer) {
+      await new Promise((resolve) => internalServer.close(resolve));
+      logger.info('[server] Internal HTTP server closed');
     }
     if (server) {
       await new Promise((resolve) => server.close(resolve));

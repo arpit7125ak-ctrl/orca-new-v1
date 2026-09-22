@@ -18,31 +18,26 @@ export default function ExplainableAi({ analysis }) {
   const p0 = analysis.points?.find(p => p.point_id === 'P0') || analysis.points?.[0] || {};
   const p0Risk = p0.risk || decision.point_summaries?.[0] || {};
 
-  const baselineScore = explainability.baseline_score ?? p0Risk.baseline_score ?? 28;
-  const llmAdjustment = explainability.llm_adjustment ?? p0Risk.llm_adjustment ?? 0;
+  const rawBaseline = explainability.baseline_score ?? p0Risk.baseline_score ?? null;
+  const llmAdjustment = explainability.llm_adjustment ?? p0Risk.llm_adjustment ?? null;
   const constraintFloor = p0Risk.constraint_floor !== null && p0Risk.constraint_floor !== undefined;
   const officialWarning = Array.isArray(p0Risk.official_warnings) && p0Risk.official_warnings.length > 0 ? p0Risk.official_warnings[0] : null;
   const constraintReason = officialWarning
     ? `Enforced by official ${officialWarning.issuing_authority || 'IMD'} ${officialWarning.warning_type || 'warning'} (${officialWarning.bulletin_id || 'IMD-Active'}) at score ${officialWarning.floor_score}`
     : explainability.constraint_floor_reason || 'No overriding safety floor triggered';
   
-  const finalScore = Math.round(p0Risk.final_score ?? decision.overall_risk_score ?? 28);
+  const rawFinal = p0Risk.final_score ?? decision.overall_risk_score ?? null;
+  const finalScore = rawFinal !== null ? Math.round(rawFinal) : null;
 
-  const dimensionScores = explainability.dimension_scores || {
-    oceanographic: Math.min(100, Math.round(baselineScore * 0.95)),
-    meteorological: Math.min(100, Math.round(baselineScore * 1.05)),
-    coastal_bathymetric: 25,
-    regulatory_geofence: 15,
-  };
+  // Real dimension scores if available
+  const dimensionScores = explainability.dimension_scores || null;
 
   const rawFindings = p0Risk.key_findings || explainability.key_findings;
   const keyFindings = Array.isArray(rawFindings) && rawFindings.length > 0
     ? (typeof rawFindings[0] === 'string'
         ? rawFindings.map((f, i) => ({ factor: `Safety Factor 0${i+1}`, value: 'Evaluated', impact: f }))
         : rawFindings)
-    : [
-        { factor: 'Operational Envelope', value: 'Verified', impact: 'Sea state metrics synthesized against vessel craft capabilities.' },
-      ];
+    : [];
 
   const dataQuality = (p0Risk.data_quality && typeof p0Risk.data_quality === 'object') ? p0Risk.data_quality : {};
 
@@ -83,7 +78,13 @@ export default function ExplainableAi({ analysis }) {
             <Activity className="w-3.5 h-3.5 text-blue-400" />
           </div>
           <div className="text-2xl font-black text-white font-mono">
-            {Math.round(baselineScore)}<span className="text-xs text-slate-400">/100</span>
+            {rawBaseline !== null ? (
+              <>
+                {Math.round(rawBaseline)}<span className="text-xs text-slate-400">/100</span>
+              </>
+            ) : (
+              <span className="text-sm text-slate-500 font-normal">Unavailable</span>
+            )}
           </div>
           <p className="text-[10px] text-slate-400 mt-1">
             Raw numerical model score from INCOIS & IMD
@@ -117,10 +118,14 @@ export default function ExplainableAi({ analysis }) {
             <Cpu className="w-3.5 h-3.5 text-purple-400" />
           </div>
           <div className="text-2xl font-black font-mono text-purple-300">
-            {llmAdjustment ? (llmAdjustment > 0 ? `+${llmAdjustment}` : llmAdjustment) : '0'}
+            {llmAdjustment !== null ? (
+              llmAdjustment > 0 ? `+${llmAdjustment}` : `${llmAdjustment}`
+            ) : (
+              '0'
+            )}
           </div>
           <p className="text-[10px] text-slate-400 mt-1">
-            Gemini 2.5 Flash contextual adjustment
+            Gemini contextual adjustment
           </p>
         </div>
 
@@ -131,7 +136,13 @@ export default function ExplainableAi({ analysis }) {
             <BarChart3 className="w-3.5 h-3.5 text-cyan-400" />
           </div>
           <div className="text-2xl font-black font-mono text-cyan-300">
-            {finalScore}<span className="text-xs text-slate-400">/100</span>
+            {finalScore !== null ? (
+              <>
+                {finalScore}<span className="text-xs text-slate-400">/100</span>
+              </>
+            ) : (
+              <span className="text-sm text-slate-500 font-normal">Unavailable</span>
+            )}
           </div>
           <p className="text-[10px] text-cyan-400/80 mt-1">
             Binding operational risk score
@@ -139,24 +150,46 @@ export default function ExplainableAi({ analysis }) {
         </div>
       </div>
 
+      {/* Dimension breakdown if provided by model */}
+      {dimensionScores && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {Object.entries(dimensionScores).map(([dim, val]) => (
+            <div key={dim} className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+              <span className="text-[10px] text-slate-400 uppercase font-semibold block capitalize truncate">
+                {dim.replace(/_/g, ' ')}
+              </span>
+              <span className="text-sm font-bold text-white font-mono mt-0.5 block">
+                {val !== null && val !== undefined ? `${val}/100` : '—'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Key Auditable Findings */}
       <div>
         <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2.5">
           Auditable Model Findings (Point P0)
         </h4>
-        <div className="space-y-2">
-          {keyFindings.map((finding, idx) => (
-            <div key={idx} className="flex items-start justify-between bg-slate-950/50 p-3 rounded-xl border border-slate-800/80 text-xs">
-              <div className="space-y-0.5 flex-1 pr-2">
-                <div className="font-bold text-slate-200">{finding.factor}</div>
-                <p className="text-slate-400 text-[11px]">{finding.impact}</p>
+        {keyFindings.length > 0 ? (
+          <div className="space-y-2">
+            {keyFindings.map((finding, idx) => (
+              <div key={idx} className="flex items-start justify-between bg-slate-950/50 p-3 rounded-xl border border-slate-800/80 text-xs">
+                <div className="space-y-0.5 flex-1 pr-2">
+                  <div className="font-bold text-slate-200">{finding.factor}</div>
+                  <p className="text-slate-400 text-[11px]">{finding.impact}</p>
+                </div>
+                <span className="px-2 py-1 rounded bg-slate-800 text-cyan-300 font-mono font-semibold text-[11px] whitespace-nowrap">
+                  {finding.value}
+                </span>
               </div>
-              <span className="px-2 py-1 rounded bg-slate-800 text-cyan-300 font-mono font-semibold text-[11px] whitespace-nowrap">
-                {finding.value}
-              </span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-3 bg-slate-950/40 rounded-xl border border-slate-800 text-slate-500 text-xs text-center">
+            No specific safety factor highlights recorded for this point.
+          </div>
+        )}
       </div>
 
       {/* Real Data Quality & Source Citations */}

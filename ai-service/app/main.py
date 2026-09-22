@@ -40,6 +40,8 @@ from app.config.settings import settings
 from app.contracts import validator
 from app.observability.logger import log
 from app.pipeline import executor
+from app.planner import router
+from app.risk import trends
 
 
 @asynccontextmanager
@@ -192,6 +194,38 @@ async def execute_analysis(request: Request) -> JSONResponse:
         status_code=202,
         content={"accepted": True, "analysis_id": analysis_id},
     )
+
+
+@app.post("/v1/route/analyze")
+@app.post("/api/v1/route/analyze")
+async def analyze_route(request: Request) -> JSONResponse:
+    """Deterministic Route Analysis endpoint conforming to RouteResult.json."""
+    body = await request.json()
+    route_id = body.get("route_id") or f"route_{int(asyncio.get_event_loop().time())}"
+    result = router.evaluate_route(
+        route_id=route_id,
+        analysis_id=body.get("analysis_id"),
+        origin=body.get("origin", {}),
+        destination=body.get("destination", {}),
+        vessel_type=body.get("vessel_type", "motorized_country_craft"),
+        departure_time=body.get("departure_time"),
+    )
+    return JSONResponse(status_code=200, content=result)
+
+
+@app.post("/v1/trends/analyze")
+@app.post("/api/v1/trends/analyze")
+async def analyze_trends(request: Request) -> JSONResponse:
+    """Deterministic Historical Trend endpoint conforming to TrendResult.json."""
+    body = await request.json()
+    trend_id = body.get("trend_id") or f"trend_{int(asyncio.get_event_loop().time())}"
+    result = trends.evaluate_trends(
+        trend_id=trend_id,
+        analysis_id=body.get("analysis_id"),
+        location=body.get("location", {}),
+        parameter=body.get("parameter", "sst"),
+    )
+    return JSONResponse(status_code=200, content=result)
 
 
 if __name__ == "__main__":

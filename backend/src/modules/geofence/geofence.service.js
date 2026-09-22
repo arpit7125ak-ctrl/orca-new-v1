@@ -65,7 +65,7 @@ async function checkPosition({ lat, lon, deviceId = null, language = 'en', vesse
     constraint_type: { $ne: null },
     geometry_full: { $geoIntersects: { $geometry: point } },
   })
-    .select('layer_name layer_type constraint_type allowed_vessel_types season_start season_end source version')
+    .select('layer_name layer_type constraint_type verification allowed_vessel_types season_start season_end source version')
     .maxTimeMS(limits.GEOFENCE_QUERY_TIMEOUT_MS) // Section 66.3 sub-second target
     .lean();
 
@@ -82,7 +82,7 @@ async function checkPosition({ lat, lon, deviceId = null, language = 'en', vesse
       },
     },
   })
-    .select('layer_name layer_type constraint_type allowed_vessel_types season_start season_end geometry_full source version')
+    .select('layer_name layer_type constraint_type verification allowed_vessel_types season_start season_end geometry_full source version')
     .limit(10)
     .maxTimeMS(limits.GEOFENCE_QUERY_TIMEOUT_MS)
     .lean();
@@ -93,9 +93,14 @@ async function checkPosition({ lat, lon, deviceId = null, language = 'en', vesse
   let distanceKm = null;
   let bearing = null;
 
-  // Actual exclusionary layers that forbid entry (prohibited or unpermitted conditional in active season)
+  // Actual exclusionary layers that forbid entry (authoritative prohibited or unpermitted conditional in active season)
   const restrictiveInside = insideLayers.filter((l) => {
-    if (l.constraint_type === 'prohibited') return true;
+    if (l.constraint_type === 'prohibited') {
+      // Unverified prohibited is treated as WARN-ONLY (never 'inside')
+      // Treat missing/null/undefined/unknown verification as approximate (fail safe)
+      if (!l.verification || l.verification !== 'authoritative') return false;
+      return true;
+    }
     if (l.constraint_type === 'conditional') {
       if (!isSeasonActive(l)) return false;
       if (vesselType && Array.isArray(l.allowed_vessel_types)) {
@@ -103,9 +108,12 @@ async function checkPosition({ lat, lon, deviceId = null, language = 'en', vesse
       }
       return true;
     }
-    // warning_only layers (like Indian EEZ or territorial waters) are lawful domestic waters
     return false;
   });
+
+  const unverifiedInside = insideLayers.find(
+    (l) => l.constraint_type === 'prohibited' && (!l.verification || l.verification !== 'authoritative')
+  );
 
   if (restrictiveInside.length > 0) {
     state = 'inside';
@@ -117,6 +125,16 @@ async function checkPosition({ lat, lon, deviceId = null, language = 'en', vesse
       restrictiveInside[0];
 
     distanceKm = 0; // genuinely zero - we are inside
+  } else if (unverifiedInside) {
+    // Unverified prohibited treated as WARN-ONLY (never 'inside')
+    state = 'approaching';
+    const cleanName = unverifiedInside.layer_name.replace(' (approximate boundary, unverified)', '');
+    triggeringLayer = {
+      ...unverifiedInside,
+      constraint_type: 'warning_only',
+      layer_name: `${cleanName} (approximate boundary, unverified)`,
+    };
+    distanceKm = 0.0;
   } else if (nearbyLayers.length > 0) {
     // Only warn about approaching prohibited or unpermitted conditional zones
     const relevantNearby = nearbyLayers.filter((l) => {
@@ -208,15 +226,21 @@ async function checkPosition({ lat, lon, deviceId = null, language = 'en', vesse
       fellBack = resolved.fellBack;
     }
   } else if (triggeringLayer) {
-    const localisedLayer = i18n.layerName(triggeringLayer.layer_type, language);
-    const resolved = i18n.geofenceMessage(state, language, {
-      layer: localisedLayer,
-      distance: distanceKm !== null ? distanceKm.toFixed(1) : '?',
-      direction: bearing !== null ? geo.bearingToCompass(bearing) : '',
-    });
-    message = resolved.message;
-    languageUsed = resolved.languageUsed;
-    fellBack = resolved.fellBack;
+    if (unverifiedInside) {
+      message = `Warning: Vessel GPS position is within an approximate, unverified maritime boundary corridor for ${triggeringLayer.layer_name}. Note that this boundary is approximate and not verified against official survey charts; navigate with caution.`;
+      languageUsed = language;
+      fellBack = false;
+    } else {
+      const localisedLayer = i18n.layerName(triggeringLayer.layer_type, language);
+      const resolved = i18n.geofenceMessage(state, language, {
+        layer: localisedLayer,
+        distance: distanceKm !== null ? distanceKm.toFixed(1) : '?',
+        direction: bearing !== null ? geo.bearingToCompass(bearing) : '',
+      });
+      message = resolved.message;
+      languageUsed = resolved.languageUsed;
+      fellBack = resolved.fellBack;
+    }
   }
 
   // --- Step 7: audit log (Section 66.3) ---------------------------------

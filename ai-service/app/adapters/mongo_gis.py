@@ -100,39 +100,43 @@ def _is_season_active(season_start: Optional[str], season_end: Optional[str]) ->
     return today_str >= season_start or today_str <= season_end
 
 
-_gebco_cache: Dict[Tuple[float, float], Tuple[float, str, str, str]] = {}
-_gebco_unavailable = False
+import time as _time
+
+_gebco_cache: Dict[Tuple[float, float], Tuple[Optional[float], str, str, str]] = {}
+_gebco_cooldown_until: float = 0.0
 
 
-def _fetch_gebco_depth(lat: float, lon: float) -> Tuple[float, str, str, str]:
-    global _gebco_unavailable
+def _fetch_gebco_depth(lat: float, lon: float) -> Tuple[Optional[float], str, str, str]:
+    global _gebco_cooldown_until
     key = (round(lat, 2), round(lon, 2))
     if key in _gebco_cache:
         return _gebco_cache[key]
 
-    if not _gebco_unavailable:
+    now_ts = _time.time()
+    if now_ts >= _gebco_cooldown_until:
         url = f"{settings.GEBCO_BATHYMETRY_URL}?locations={lat:.4f},{lon:.4f}"
         try:
-            resp = httpx.get(url, timeout=0.8)
+            resp = httpx.get(url, timeout=1.5)
             if resp.status_code == 200:
                 data = resp.json()
                 results = data.get("results", [])
                 if results and "elevation" in results[0]:
-                    elev = float(results[0]["elevation"])
-                    depth = abs(elev) if elev < 0 else 1.0
-                    res = (round(depth, 2), "GEBCO", "gebco2020", "available")
-                    _gebco_cache[key] = res
-                    return res
+                    elev = results[0]["elevation"]
+                    if elev is not None:
+                        elev = float(elev)
+                        depth = abs(elev) if elev < 0 else 1.0
+                        res = (round(depth, 2), "GEBCO", "gebco2020", "available")
+                        _gebco_cache[key] = res
+                        return res
             elif resp.status_code == 429:
-                log.warning("[mongo_gis] GEBCO rate limit encountered. Falling back to bathymetric model.")
-                _gebco_unavailable = True
+                log.warning("[mongo_gis] GEBCO rate limit encountered. Cooldown 30s.")
+                _gebco_cooldown_until = now_ts + 30.0
         except Exception as exc:
-            log.warning("[mongo_gis] GEBCO API call failed or timed out: %s. Using bathymetric model.", exc)
-            _gebco_unavailable = True
+            log.warning("[mongo_gis] GEBCO API call failed or timed out: %s. Cooldown 30s.", exc)
+            _gebco_cooldown_until = now_ts + 30.0
 
-    derived_depth = round(15.0 + abs(math.sin(lat * 10) * math.cos(lon * 10)) * 65.0, 2)
-    res = (derived_depth, "GEBCO (bathymetric grid)", "GEBCO-2024", "derived")
-    _gebco_cache[key] = res
+    # If GEBCO fails, report water_depth_m as status "missing" without sine formula
+    res = (None, "GEBCO", "gebco2020", "missing")
     return res
 
 
@@ -189,12 +193,21 @@ def gis(lat: float, lon: float, time_window_utc: str) -> Dict[str, Any]:
         })
 
         if prohibited_match:
-            is_prohibited = True
+            is_auth = prohibited_match.get("verification") == "authoritative"
             prohibited_source = prohibited_match.get("source", "WDPA")
             prohibited_product = prohibited_match.get("layer_name", "prohibited_zone")
-            matched_zone_name = prohibited_match.get("layer_name", "Prohibited Maritime Zone")
             matched_zone_category = prohibited_match.get("layer_type", "marine_protected_area")
-            matched_constraint_type = prohibited_match.get("constraint_type", "prohibited")
+
+            if is_auth:
+                is_prohibited = True
+                matched_constraint_type = "prohibited"
+                matched_zone_name = prohibited_match.get("layer_name", "Prohibited Maritime Zone")
+            else:
+                is_prohibited = False
+                matched_constraint_type = "warning_only"
+                raw_name = prohibited_match.get("layer_name", "Prohibited Maritime Zone")
+                clean_name = raw_name.replace(" (approximate boundary, unverified)", "")
+                matched_zone_name = f"{clean_name} (approximate boundary, unverified)"
         else:
             # Check seasonal fishing ban zones
             seasonal_matches = db.gis_layers.find({
@@ -205,12 +218,22 @@ def gis(lat: float, lon: float, time_window_utc: str) -> Dict[str, Any]:
             seasonal_found = False
             for s_match in seasonal_matches:
                 if _is_season_active(s_match.get("season_start"), s_match.get("season_end")):
-                    is_prohibited = True
+                    is_auth = s_match.get("verification") == "authoritative"
                     prohibited_source = s_match.get("source", "Department of Fisheries")
                     prohibited_product = s_match.get("layer_name", "seasonal_ban")
-                    matched_zone_name = s_match.get("layer_name", "Seasonal Fishing Ban Area")
                     matched_zone_category = "seasonal_fishing_ban_area"
-                    matched_constraint_type = "prohibited"
+
+                    if is_auth:
+                        is_prohibited = True
+                        matched_constraint_type = "prohibited"
+                        matched_zone_name = s_match.get("layer_name", "Seasonal Fishing Ban Area")
+                    else:
+                        is_prohibited = False
+                        matched_constraint_type = "warning_only"
+                        raw_name = s_match.get("layer_name", "Seasonal Fishing Ban Area")
+                        clean_name = raw_name.replace(" (approximate boundary, unverified)", "")
+                        matched_zone_name = f"{clean_name} (approximate boundary, unverified)"
+
                     seasonal_found = True
                     break
 
@@ -285,11 +308,12 @@ def gis(lat: float, lon: float, time_window_utc: str) -> Dict[str, Any]:
         "water_depth_m": _measurement(
             parameter="water_depth_m",
             value=depth_m,
-            unit="m",
+            unit="m" if depth_m is not None else None,
             source=depth_source,
             product_id=depth_product,
             valid_time=valid_time,
             status=depth_status,
+            confidence=0.95 if depth_status == "available" else None,
         ),
         "distance_to_boundary_km": _measurement(
             parameter="distance_to_boundary_km",

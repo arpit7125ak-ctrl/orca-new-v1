@@ -108,9 +108,9 @@ async function syncLiveFeatures(features) {
         type: 'LineString',
         coordinates: primaryCoords
       },
-      depth_contour_m: props.DEPTH ? parseInt(props.DEPTH, 10) : 50,
+      depth_contour_m: props.DEPTH ? parseInt(props.DEPTH, 10) : null,
       sst_celsius: sst,
-      chlorophyll_mg_m3: 1.25,
+      chlorophyll_mg_m3: props.CHLOROPHYLL ? parseFloat(props.CHLOROPHYLL) : null,
       target_species: species,
       confidence_score: 0.90,
       valid_from: dateIssued,
@@ -132,17 +132,19 @@ async function syncLiveFeatures(features) {
   return { inserted, updated, total: features.length };
 }
 
-async function extendLatestExistingAdvisories() {
+async function handleStaleAdvisoriesFallback() {
   const count = await PfzAdvisory.countDocuments({ active: true });
   if (count > 0) {
-    const extendedUntil = new Date(Date.now() + 48 * 3600 * 1000);
-    const res = await PfzAdvisory.updateMany(
-      { active: true },
-      { $set: { valid_to: extendedUntil } }
+    // In accordance with Never-Fabricate: do NOT artificially extend validity into the future.
+    // Retain genuine timestamps. Advisories that have passed valid_to naturally render as expired.
+    const now = new Date();
+    const expiredRes = await PfzAdvisory.updateMany(
+      { active: true, valid_to: { $lt: now } },
+      { $set: { active: false, status: 'expired' } }
     );
-    logger.info(
-      { modifiedCount: res.modifiedCount, extendedUntil: extendedUntil.toISOString() },
-      '[pfz-sync] INCOIS unreachable: extended latest existing advisories'
+    logger.warn(
+      { totalExisting: count, markedExpired: expiredRes.modifiedCount },
+      '[pfz-sync] INCOIS fetch unavailable: retaining un-extended records with genuine timestamps (never-fabricate)'
     );
     return count;
   }
@@ -163,11 +165,11 @@ async function syncPfzFromIncois() {
       logger.info(stats, '[pfz-sync] Synchronization successful');
       return { success: true, ...stats };
     }
-    await extendLatestExistingAdvisories();
+    await handleStaleAdvisoriesFallback();
     return { success: true, fallback: true };
   } catch (err) {
-    logger.warn({ error: err.message }, '[pfz-sync] Live fetch failed, using fallback');
-    await extendLatestExistingAdvisories();
+    logger.warn({ error: err.message }, '[pfz-sync] Live fetch failed, preserving genuine timestamps without artificial extension');
+    await handleStaleAdvisoriesFallback();
     return { success: true, fallback: true, error: err.message };
   }
 }
@@ -176,5 +178,5 @@ module.exports = {
   syncPfzFromIncois,
   fetchLiveIncoisPfz,
   syncLiveFeatures,
-  extendLatestExistingAdvisories
+  handleStaleAdvisoriesFallback
 };

@@ -194,7 +194,7 @@ async function evaluateOne(analysis) {
   }
 
   // --- Pick the alert type ----------------------------------------------
-  const alertType = inferAlertType(analysis, decision);
+  const alertType = inferAlertType(analysis, decision, riskResult);
 
   // Respect the subscriber's chosen alert types when they set any.
   if (subscription.alert_types?.length && !subscription.alert_types.includes(alertType)) {
@@ -301,22 +301,47 @@ async function evaluateOne(analysis) {
 }
 
 /**
- * Infer which alert type best describes this analysis.
- * Conservative ordering: cyclone and official warnings outrank everything, so
- * the most serious label wins when several apply.
+ * Infer which alert type best describes this analysis using structured fields.
+ * Inspects official_warnings, hard_rules_applied, and contributing risk factors.
  */
-function inferAlertType(analysis, decision) {
-  const haystack = JSON.stringify({
-    findings: decision?.key_findings || [],
-    recommendation: decision?.one_line_recommendation || '',
-    statuses: analysis.agent_statuses || {},
-  }).toLowerCase();
+function inferAlertType(analysis, decision, riskResult) {
+  // 1. Check structured official warnings
+  for (const point of riskResult?.results || []) {
+    for (const w of point.official_warnings || []) {
+      const auth = (w.issuing_authority || '').toLowerCase();
+      const bId = (w.bulletin_id || '').toLowerCase();
+      if (bId.includes('cyclone') || auth.includes('cyclone') || w.warning_type === 'cyclone') {
+        return 'cyclone';
+      }
+      return 'official_warning';
+    }
+  }
 
-  if (haystack.includes('cyclone')) return 'cyclone';
-  if (haystack.includes('warning') || haystack.includes('imd')) return 'official_warning';
-  if (haystack.includes('lightning') || haystack.includes('thunder')) return 'lightning';
-  if (haystack.includes('wave') || haystack.includes('swell')) return 'high_waves';
-  return 'adverse_weather';
+  // 2. Check structured hard rules applied
+  for (const point of riskResult?.results || []) {
+    for (const r of point.hard_rules_applied || []) {
+      const rid = (r.rule_id || '').toLowerCase();
+      if (rid.includes('cyclone')) return 'cyclone';
+      if (rid.includes('wave') || rid.includes('swell')) return 'high_wave';
+      if (rid.includes('lightning') || rid.includes('thunder')) return 'lightning';
+      if (rid.includes('wind') || rid.includes('gale') || rid.includes('squall')) return 'strong_wind';
+    }
+  }
+
+  // 3. Check structured primary risk factors
+  for (const point of riskResult?.results || []) {
+    const factors = point.risk_factors || [];
+    if (factors.some((f) => f.includes('wave') || f.includes('swell'))) return 'high_wave';
+    if (factors.some((f) => f.includes('wind') || f.includes('gust'))) return 'strong_wind';
+    if (factors.some((f) => f.includes('cyclone'))) return 'cyclone';
+  }
+
+  // 4. Check structured decision properties
+  if (decision?.safety_rules_applied?.some((r) => (r.rule_id || '').includes('cyclone'))) {
+    return 'cyclone';
+  }
+
+  return 'other_hazard';
 }
 
 let dispatchTask = null;

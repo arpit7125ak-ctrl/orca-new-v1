@@ -37,6 +37,10 @@
         "end": { "type": "string" }
       },
       "additionalProperties": false
+    },
+    "push_subscription": {
+      "type": ["object", "null"],
+      "description": "Browser Web Push subscription payload from PushManager.toJSON()."
     }
   },
   "additionalProperties": false

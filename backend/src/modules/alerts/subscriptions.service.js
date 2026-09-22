@@ -192,7 +192,33 @@ async function deleteSubscription(subscriptionId) {
   return subscription;
 }
 
+async function getSubscriptionEvents(subscriptionId) {
+  const AlertEvent = require('../../db/models/alertEvent.model');
+  const events = await AlertEvent.find({ subscription_id: subscriptionId })
+    .sort({ created_at: -1 })
+    .limit(50)
+    .lean();
+
+  return events.map((ev) => ({
+    event_id: ev._id ? ev._id.toString() : ev.event_id,
+    alert_type: ev.alert_type,
+    level: ev.level,
+    message_text: ev.message_text,
+    language: ev.language,
+    channel: ev.channel,
+    status: ev.status,
+    delivered: ev.status === 'sent',
+    delivery_error: ev.delivery_error,
+    created_at: ev.created_at ? (ev.created_at.toISOString ? ev.created_at.toISOString() : ev.created_at) : null,
+  }));
+}
+
 module.exports = {
-  createSubscription, getSubscription, updateSubscription, deleteSubscription,
-  validateSubscriptionBody, MINIMUM_LEVEL_VALUES,
+  createSubscription,
+  getSubscription,
+  updateSubscription,
+  deleteSubscription,
+  getSubscriptionEvents,
+  validateSubscriptionBody,
+  MINIMUM_LEVEL_VALUES,
 };

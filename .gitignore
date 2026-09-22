@@ -2,3 +2,8 @@ current.md
 mongo_data/
 mongod.log
 mongod.log.*
+.env
+ai-service/.env
+backend/.env
+result.md
+test_runtime_e2e.py

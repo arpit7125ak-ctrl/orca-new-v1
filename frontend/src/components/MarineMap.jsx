@@ -4,6 +4,7 @@ import { Compass, ShieldAlert, Layers, MapPin, Anchor } from 'lucide-react';
 import { orcaApi } from '../api/client';
 
 export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
+  const plan = analysis?.plan || {};
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersGroupRef = useRef(null);
@@ -12,12 +13,12 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
   const [showPorts, setShowPorts] = useState(false);
   const [gisLayers, setGisLayers] = useState([]);
 
-  const plan = analysis?.plan || {};
-  const validLat = Number(plan.location?.validated?.lat ?? plan.location?.original?.lat ?? 9.94);
-  const validLon = Number(plan.location?.validated?.lon ?? plan.location?.original?.lon ?? 76.16);
+  const validLat = plan.location?.validated?.lat != null ? Number(plan.location.validated.lat) : (plan.location?.original?.lat != null ? Number(plan.location.original.lat) : null);
+  const validLon = plan.location?.validated?.lon != null ? Number(plan.location.validated.lon) : (plan.location?.original?.lon != null ? Number(plan.location.original.lon) : null);
   const originalLat = Number(plan.location?.original?.lat ?? validLat);
   const originalLon = Number(plan.location?.original?.lon ?? validLon);
   const isSnapped = plan.location?.validated?.snapped;
+  const hasValidCoords = Number.isFinite(validLat) && Number.isFinite(validLon);
 
   // Load backend GIS layers for boundary rendering
   useEffect(() => {
@@ -36,7 +37,11 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
 
   // Initialize Leaflet Map
   useEffect(() => {
-    if (!mapContainerRef.current) return;
+    if (!mapContainerRef.current || !hasValidCoords) return;
+
+    let resizeObserver = null;
+    let t1 = null;
+    let t2 = null;
 
     if (!mapInstanceRef.current) {
       const map = L.map(mapContainerRef.current, {
@@ -58,15 +63,48 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
       layersGroupRef.current = layersGroup;
       markersGroupRef.current = markersGroup;
       mapInstanceRef.current = map;
+
+      // Force immediate and delayed recalculation of container dimensions
+      requestAnimationFrame(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+          mapInstanceRef.current.setView([validLat, validLon], 10);
+        }
+      });
+      t1 = setTimeout(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+          mapInstanceRef.current.setView([validLat, validLon], 10);
+        }
+      }, 150);
+      t2 = setTimeout(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      }, 400);
+
+      // ResizeObserver to automatically adapt whenever container layout resolves
+      if (typeof ResizeObserver !== 'undefined' && mapContainerRef.current) {
+        resizeObserver = new ResizeObserver(() => {
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.invalidateSize();
+          }
+        });
+        resizeObserver.observe(mapContainerRef.current);
+      }
     }
 
     return () => {
+      if (t1) clearTimeout(t1);
+      if (t2) clearTimeout(t2);
+      if (resizeObserver) resizeObserver.disconnect();
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
     };
-  }, []);
+  }, [validLat, validLon, hasValidCoords]);
+
 
   // Render Markers and Grid Points from REAL analysis data
   useEffect(() => {
@@ -103,7 +141,9 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
         }
       ).addTo(group);
 
-      snapLine.bindPopup(`<b>Shoreline Boundary Snapped</b><br>${plan.location?.validated?.snap_distance_km || '6.7'} km offshore (${plan.location?.validated?.snap_reference || 'Fisheries zone'})`);
+      const snapDist = plan.location?.validated?.snap_distance_km;
+      const snapDistText = snapDist ? `${snapDist} km` : 'Shoreline';
+      snapLine.bindPopup(`<b>Shoreline Boundary Snapped</b><br>${snapDistText} offshore (${plan.location?.validated?.snap_reference || 'Maritime boundary'})`);
     }
 
     // 3. Draw REAL 9 Spatial Grid Points from analysis
@@ -113,9 +153,9 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
       const pLat = Number(pt.lat ?? validLat);
       const pLon = Number(pt.lon ?? validLon);
       const pRisk = pt.risk || {};
-      const pScore = pRisk.final_score ?? 30;
+      const pScore = pRisk.final_score != null ? pRisk.final_score : null;
       const pId = pt.point_id ?? `P${index}`;
-      const pLevel = pRisk.risk_level || (pScore > 80 ? 'DANGEROUS' : pScore > 60 ? 'UNSAFE' : pScore > 30 ? 'CAUTION' : 'SAFE');
+      const pLevel = pRisk.risk_level || (pScore != null ? (pScore > 80 ? 'DANGEROUS' : pScore > 60 ? 'UNSAFE' : pScore > 35 ? 'CAUTION' : 'SAFE') : 'UNKNOWN');
       const pFindings = pRisk.key_findings || [];
       const hasWarning = pRisk.official_warnings && pRisk.official_warnings.length > 0;
       const isPreferred = analysis?.decision?.preferred_point === pId;
@@ -160,11 +200,14 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
       });
     });
 
-    // Fit map view
-    if (validLat && validLon) {
+    // Fit map view with size invalidation
+    if (hasValidCoords && map) {
+      map.invalidateSize();
       map.setView([validLat, validLon], 10);
     }
-  }, [analysis]);
+  }, [analysis, validLat, validLon, hasValidCoords]);
+
+
 
   // Render Real GIS Layers & 12nm Territorial Waters
   useEffect(() => {
@@ -257,12 +300,23 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
   }, [showGeofence, showPorts, gisLayers, validLat, validLon]);
 
   const handleRecenter = () => {
-    if (mapInstanceRef.current && validLat && validLon) {
+    if (mapInstanceRef.current && hasValidCoords) {
+      mapInstanceRef.current.invalidateSize();
       mapInstanceRef.current.setView([validLat, validLon], 10);
     }
   };
 
+  if (!hasValidCoords) {
+    return (
+      <div className="relative w-full h-[520px] rounded-2xl overflow-hidden border border-slate-800 shadow-xl bg-slate-950 flex flex-col items-center justify-center space-y-3">
+        <Compass className="w-8 h-8 text-cyan-400 animate-spin-slow" />
+        <span className="text-xs text-slate-400 font-mono">Awaiting valid mission coordinates...</span>
+      </div>
+    );
+  }
+
   return (
+
     <div className="relative w-full h-[520px] rounded-2xl overflow-hidden border border-slate-800 shadow-xl bg-slate-950">
       <div ref={mapContainerRef} className="w-full h-full" />
 
@@ -278,7 +332,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
           </p>
           {isSnapped && (
             <span className="text-[10px] text-amber-400 font-semibold block mt-0.5">
-              ⚠️ Shoreline Snapped ({plan.location?.validated?.snap_distance_km || 6.7}km Offshore)
+              ⚠️ Shoreline Snapped ({plan.location?.validated?.snap_distance_km ? `${plan.location.validated.snap_distance_km}km` : 'Offshore'})
             </span>
           )}
         </div>

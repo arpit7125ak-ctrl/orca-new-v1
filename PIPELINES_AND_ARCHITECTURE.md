@@ -417,6 +417,29 @@ ORCA adapts its telemetry evaluation to the specific operational profile of each
 
 ---
 
+## 11.1 Master System Capabilities Matrix
+
+The following matrix distinguishes between features built and audited in code, deterministic prototypes, and roadmap items:
+
+| Capability / Subsystem | Status | Implementation Details & Contract Conformance |
+| :--- | :--- | :--- |
+| **Open-Meteo Weather/Marine Adapter** | 🟢 **LIVE & AUDITED** | ECMWF/GFS blend, nearest-hour UTC/IST alignment, coastal 0.08° ocean cell search, fail-closed zero-fabrication error handling (`open_meteo.py`). |
+| **IMD Cyclone & SACHET Gateway** | 🟢 **LIVE & AUDITED** | Official CAP bulletins parsed from NDMA SACHET gateway, TLS verification with fallback, graded warning floors (Red=85, Orange=65, Yellow=45) (`imd_cyclone.py`). |
+| **UNCLOS Boundary Sentinel** | 🟢 **LIVE & AUDITED** | Official 1974 UNCLOS Indo-Sri Lanka Treaty line seeded to MongoDB Atlas (`seed-all-indian-zones.js`). Rameswaram, Dhanushkodi, and Pamban verified inside Indian sovereign waters. |
+| **4-Stage Deterministic Risk Governor** | 🟢 **LIVE & AUDITED** | Master Spec formula: $\text{Score}_{\text{base}} = \max(\phi_i) + \text{clamp}(\sum 0.2\phi_j, 0, 15)$. Missing wind/wave observations enforce minimum CAUTION floor (`baseline.py`, `risk_agent.py`). |
+| **Numeric Hallucination Filter** | 🟢 **LIVE & AUDITED** | Regex metric parser filters LLM qualitative narratives against ingested telemetry, discarding ungrounded predictions in favor of deterministic text (`decision_agent.py`). |
+| **Multilingual Speech STT/TTS** | 🟢 **LIVE & AUDITED** | Dynamic regional dialect binding (`hi-IN`, `ta-IN`, `te-IN`, `ml-IN`, `bn-IN`, `mr-IN`, `en-IN`) in `speech.js` and `MaritimeChat.jsx`. |
+| **Mission History & Client Session** | 🟢 **LIVE & AUDITED** | Real analysis tracking stored in MongoDB Atlas via `localStorage` mission IDs; session-isolated client device UUID for geofencing (`HistoryPage.jsx`, `GeofenceMonitor.jsx`). |
+| **Embedded Alert Surveillance Worker** | 🟢 **LIVE & AUDITED** | In-process background scheduler mounted in `server.js` using `node-cron` (`ENABLE_EMBEDDED_WORKER`) for single-server / Render free tier operation. |
+| **Maritime Waypoint Route Pathfinder** | 🟡 **DETERMINISTIC ENGINE** | Waypoint generation, great-circle distance, cruising speed time-of-passage risk, and Sri Lanka IMBL detour avoidance. Conforms 100% to `contracts/RouteResult.json` (`router.py`). |
+| **Oceanographic Trend & Anomaly Engine** | 🟡 **DETERMINISTIC ENGINE** | Non-parametric Theil-Sen median slope estimator and monthly thermal anomaly detector. Conforms 100% to `contracts/TrendResult.json` (`trends.py`). |
+| **PWA Offline Vector Tiles** | 🔵 **ROADMAP (M1)** | IndexedDB vector map caching for offshore navigation beyond cellular range. |
+| **NavIC Satellite IoT Messaging** | 🔵 **ROADMAP (M2)** | Direct satellite telemetry for deep-sea artisanal fishing vessels via ISRO receivers. |
+| **PINN Wave Shoaling Model** | 🔵 **ROADMAP (M3)** | Physics-informed neural network for nearshore wave refraction and harbor resonance. |
+| **Coast Guard MRCC Bridge** | 🔵 **ROADMAP (M4)** | Automated CAP distress message dispatch directly to Maritime Rescue Coordination Centers. |
+
+---
+
 ## 12. Future Enterprise Vision & Final Architecture Roadmap
 
 Following the completion of target SIH roadmap goals, the ORCA system scales into a **Nationwide Autonomous Marine Safety Infrastructure**:

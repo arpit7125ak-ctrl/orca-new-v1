@@ -12,15 +12,17 @@ import GisExplorer from './components/GisExplorer';
 import ProfileSettingsPage from './components/ProfileSettingsPage';
 import MaritimeChat from './components/MaritimeChat';
 import FloatingChatButton from './components/FloatingChatButton';
+import TrendPage from './components/TrendPage';
 import { orcaApi } from './api/client';
+import * as history from './utils/history';
 import { AlertCircle, Compass, Radio } from 'lucide-react';
 
 export default function App() {
   // Navigation tabs matching frontend_plan.md §3 & §4:
-  // 'landing' | 'input' | 'loading' | 'results' | 'route' | 'geofence' | 'alerts' | 'history' | 'gis' | 'profile' | 'chat'
+  // 'landing' | 'input' | 'loading' | 'results' | 'route' | 'trend' | 'geofence' | 'alerts' | 'history' | 'gis' | 'profile' | 'chat'
   const [activeTab, setActiveTab] = useState('landing');
   const [sunlightMode, setSunlightMode] = useState(false);
-  const [selectedLang, setSelectedLang] = useState('en');
+  const [selectedLang, setSelectedLang] = useState('auto');
 
   const [analysis, setAnalysis] = useState(null);
   const [activeAnalysisId, setActiveAnalysisId] = useState(null);
@@ -37,21 +39,24 @@ export default function App() {
     vessel_type: '',
   });
 
-  // Load the latest completed analysis from MongoDB on mount
+  // On mount: restore the last genuinely requested analysis from local history
   useEffect(() => {
-    async function loadLatest() {
+    async function restoreLast() {
+      const last = history.lastId();
+      if (!last) return;
       try {
-        const latest = await orcaApi.getLatestAnalysis();
-        if (latest && latest.analysis_id && latest.points) {
-          setAnalysis(latest);
-          setActiveAnalysisId(latest.analysis_id);
+        const res = await orcaApi.getAnalysis(last);
+        if (res && res.analysis_id) {
+          setAnalysis(res);
+          setActiveAnalysisId(res.analysis_id);
           setIsCompleted(true);
         }
       } catch (e) {
-        console.warn('Initial analysis pre-fetch:', e);
+        // Silently clear unrecoverable or expired ID from local history
+        history.remove(last);
       }
     }
-    loadLatest();
+    restoreLast();
   }, []);
 
   // Submit analysis from Home or Input Page
@@ -62,7 +67,14 @@ export default function App() {
     setActiveTab('loading'); // Transition to Page 2 Progress ("ORCA IS ANALYZING")
 
     try {
-      const created = await orcaApi.createAnalysis(payload);
+      const submissionPayload = { ...payload };
+      if (selectedLang && selectedLang !== 'auto') {
+        submissionPayload.language_override = selectedLang;
+      } else {
+        delete submissionPayload.language_override;
+      }
+
+      const created = await orcaApi.createAnalysis(submissionPayload);
       const aid = created.analysis_id || created.id;
 
       if (!aid) {
@@ -85,6 +97,15 @@ export default function App() {
       setIsCompleted(true);
       setIsLoading(false);
 
+      // Record to honest history
+      history.addEntry({
+        analysis_id: aid,
+        kind: 'point',
+        title: payload.place_name || payload.query || 'Point Analysis',
+        place: payload.place_name || 'Coastal Sector',
+        created_at: completedAnalysis.created_at || new Date().toISOString(),
+      });
+
       // Auto-transition to Advisory Results Hub
       setTimeout(() => {
         setActiveTab('results');
@@ -99,14 +120,20 @@ export default function App() {
     }
   };
 
-  const handleSelectHistoryItem = async (item) => {
-    try {
-      const full = await orcaApi.getAnalysis(item.id);
-      setAnalysis(full);
-      setActiveAnalysisId(full.analysis_id);
+  const handleSelectHistoryItem = (item) => {
+    const aid = item.analysis_id || item.id;
+    if (item.points || item.decision || item.trend_result || item.route_result) {
+      setAnalysis(item);
+      setActiveAnalysisId(aid);
       setActiveTab('results');
-    } catch {
-      setActiveTab('results');
+    } else {
+      orcaApi.getAnalysis(aid).then((full) => {
+        setAnalysis(full);
+        setActiveAnalysisId(full.analysis_id);
+        setActiveTab('results');
+      }).catch((e) => {
+        console.warn('Could not open history analysis:', e);
+      });
     }
   };
 
@@ -187,7 +214,15 @@ export default function App() {
 
         {/* Page 9: Route Planner (§13) */}
         {activeTab === 'route' && (
-          <RoutePlannerPage />
+          <RoutePlannerPage selectedLang={selectedLang} />
+        )}
+
+        {/* Page 11: Decadal Trends & Multi-Year History (§72) */}
+        {activeTab === 'trend' && (
+          <TrendPage
+            selectedLang={selectedLang}
+            onNavigateToTab={setActiveTab}
+          />
         )}
 
         {/* Page 10: Geofence / At-Sea Mode (§14) */}

@@ -59,6 +59,7 @@ export default function HomeAskOrca({
   // Speech recognition setup
   useEffect(() => {
     const recognizer = createSpeechRecognizer({
+      lang: selectedLang,
       onResult: (transcript, isFinal) => {
         setQuery(transcript);
         if (isFinal) setIsRecording(false);
@@ -67,7 +68,7 @@ export default function HomeAskOrca({
       onEnd: () => setIsRecording(false),
     });
     setSpeechRecognizer(recognizer);
-  }, []);
+  }, [selectedLang]);
 
   const toggleMic = () => {
     if (!speechRecognizer) {
@@ -114,8 +115,8 @@ export default function HomeAskOrca({
     let timer1;
     let timer2;
 
-    const initialLat = parseFloat(lat) || 9.94;
-    const initialLon = parseFloat(lon) || 76.16;
+    const initialLat = parseFloat(lat) || 15.0;
+    const initialLon = parseFloat(lon) || 75.0;
 
     if (!mapInstanceRef.current) {
       const map = L.map(mapContainerRef.current, {
@@ -261,14 +262,14 @@ export default function HomeAskOrca({
       vessel_type: canonicalVessel || undefined,
       date: isoDate,
       time_range: structuredTimeRange,
-      coordinate: hasValidCoords ? { lat: pLat, lon: pLon } : { lat: 9.94, lon: 76.16 },
+      coordinate: hasValidCoords ? { lat: pLat, lon: pLon } : undefined,
     };
 
     if (trimmedPlace) {
       payload.place_name = trimmedPlace;
     }
     const chosenLang = langOverride || selectedLang;
-    if (chosenLang && chosenLang !== 'en') {
+    if (chosenLang && chosenLang !== 'auto') {
       payload.language_override = chosenLang;
     }
 
@@ -438,7 +439,7 @@ export default function HomeAskOrca({
                           setPlaceName(getNearestCoastalPlace(pL, pLon));
                         }
                       }}
-                      placeholder="Latitude (e.g. 9.94)"
+                      placeholder="Latitude (e.g. 12.50)"
                       className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono"
                     />
                     <input
@@ -454,7 +455,7 @@ export default function HomeAskOrca({
                           setPlaceName(getNearestCoastalPlace(pL, pLon));
                         }
                       }}
-                      placeholder="Longitude (e.g. 76.16)"
+                      placeholder="Longitude (e.g. 74.80)"
                       className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono"
                     />
                   </div>
@@ -545,6 +546,31 @@ export default function HomeAskOrca({
                       <option value="night">🌙 Night (20:00 - 04:00 IST)</option>
                     </select>
                   </div>
+                </div>
+
+                {/* Language Selection */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Query & Response Language (10 Regional Languages)</label>
+                  <select
+                    value={langOverride || selectedLang || 'auto'}
+                    onChange={(e) => {
+                      setLangOverride(e.target.value);
+                      if (onSelectLang) onSelectLang(e.target.value);
+                    }}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  >
+                    <option value="auto">🌐 Auto-detect Language (Default)</option>
+                    <option value="en">English (EN)</option>
+                    <option value="hi">हिन्दी (HI)</option>
+                    <option value="bn">বাংলা (BN)</option>
+                    <option value="ta">தமிழ் (TA)</option>
+                    <option value="te">తెలుగు (TE)</option>
+                    <option value="or">ଓଡ଼ିଆ (OR)</option>
+                    <option value="mr">मराठी (MR)</option>
+                    <option value="ml">മലയാളം (ML)</option>
+                    <option value="kn">ಕನ್ನಡ (KN)</option>
+                    <option value="gu">ગુજરાતી (GU)</option>
+                  </select>
                 </div>
               </div>
             )}

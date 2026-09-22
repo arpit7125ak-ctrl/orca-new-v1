@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   ArrowLeft, 
   RotateCcw, 
@@ -24,10 +24,11 @@ import ExplainableAi from './ExplainableAi';
 import AgenticReasoning from './AgenticReasoning';
 import ReportModal from './ReportModal';
 import PointDetailSheet from './PointDetailSheet';
+import TrendView from './TrendView';
 
 export default function DecisionResultsPage({
   analysis,
-  selectedLang = 'en',
+  selectedLang = 'auto',
   onBackToInput,
   onNewAnalysis,
   onNavigateToTab,
@@ -52,8 +53,89 @@ export default function DecisionResultsPage({
     );
   }
 
-  const plan = analysis.plan || {};
   const aid = analysis.analysis_id || 'req_live_assessment';
+
+  // Branch if final_stage is trend
+  if (analysis.final_stage === 'trend' || analysis.trend_result) {
+    return (
+      <div className="space-y-6 py-2">
+        <div className="flex items-center justify-between bg-slate-900/70 border border-slate-800 p-4 rounded-2xl backdrop-blur-md">
+          <button
+            onClick={onBackToInput}
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs flex items-center space-x-1.5 transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="font-semibold">Setup</span>
+          </button>
+          <div className="text-xs">
+            <span className="text-slate-400">Trend Analysis Reference: </span>
+            <span className="font-mono font-bold text-purple-300">{aid}</span>
+          </div>
+          <button
+            onClick={onNewAnalysis}
+            className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center space-x-1.5 transition-all shadow-md cursor-pointer"
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span>New Analysis</span>
+          </button>
+        </div>
+        <TrendView trendResult={analysis.trend_result || analysis} />
+      </div>
+    );
+  }
+
+  // Branch if final_stage is route
+  if (analysis.final_stage === 'route' || analysis.route_result) {
+    const route = analysis.route_result || analysis;
+    return (
+      <div className="space-y-6 py-2">
+        <div className="flex items-center justify-between bg-slate-900/70 border border-slate-800 p-4 rounded-2xl backdrop-blur-md">
+          <button
+            onClick={onBackToInput}
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs flex items-center space-x-1.5 transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="font-semibold">Setup</span>
+          </button>
+          <div className="text-xs">
+            <span className="text-slate-400">Nautical Passage Route: </span>
+            <span className="font-mono font-bold text-cyan-300">{route.route_id || aid}</span>
+          </div>
+          <button
+            onClick={() => onNavigateToTab && onNavigateToTab('route')}
+            className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center space-x-1.5 transition-all shadow-md cursor-pointer"
+          >
+            <Navigation className="w-4 h-4" />
+            <span>Open in Route Planner</span>
+          </button>
+        </div>
+        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-white">Nautical Passage Analysis</h3>
+            <span className={`px-3 py-1 rounded-xl text-xs font-bold uppercase border ${route.max_risk_level === 'SAFE' ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : 'bg-amber-950 text-amber-300 border-amber-800'}`}>
+              {route.max_risk_level || 'Evaluated'}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
+              <span className="text-slate-400 block">Total Distance</span>
+              <span className="text-lg font-bold text-white">{route.total_distance_km ? `${route.total_distance_km.toFixed(1)} km` : '—'}</span>
+            </div>
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
+              <span className="text-slate-400 block">Est. Passage Time</span>
+              <span className="text-lg font-bold text-white">{route.estimated_duration_hours ? `${route.estimated_duration_hours.toFixed(1)} hrs` : '—'}</span>
+            </div>
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
+              <span className="text-slate-400 block">Waypoints</span>
+              <span className="text-lg font-bold text-white">{route.waypoints?.length || 0}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const plan = analysis.plan || {};
   const points = analysis.points || [];
 
   return (

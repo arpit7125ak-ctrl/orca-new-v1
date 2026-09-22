@@ -42,7 +42,7 @@
       }
     },
     "anomalies": {
-      "type": "array",
+      "type": ["array", "null"],
       "items": {
         "type": "object",
         "required": ["month", "anomaly_value", "unit"],

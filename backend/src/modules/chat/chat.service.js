@@ -90,12 +90,11 @@ async function handleMessage({
       }
     }
   }
-  if (!resolvedPlace && (inherited.lat === null || inherited.lat === undefined)) {
-    resolvedPlace = 'Kochi'; // Default baseline for coastal queries
-  }
+  // Do NOT force Kochi if no place was specified - let the Planner prompt or detect
+  // Only set place_name if explicitly matched or inherited
 
   // --- Detect activity and vessel neutrally or inherit ---
-  let detectedActivity = inherited.activity;
+  let detectedActivity = inherited.activity || null;
   if (!detectedActivity && message) {
     const qLower = message.toLowerCase();
     if (/\b(surf|surfing|board)\b/.test(qLower)) detectedActivity = 'surfing';
@@ -104,10 +103,10 @@ async function handleMessage({
     else if (/\b(ship|shipping|cargo|tanker|transport|freight)\b/.test(qLower)) detectedActivity = 'shipping';
     else if (/\b(research|survey|marine science|sample)\b/.test(qLower)) detectedActivity = 'marine_research';
     else if (/\b(fish|fishing|catch|trawl|angler|gillnet)\b/.test(qLower)) detectedActivity = 'fishing';
-    else detectedActivity = 'boating'; // Default neutral general coastal/marine activity
+    else if (/\b(boat|boating|sail|sailing)\b/.test(qLower)) detectedActivity = 'boating';
   }
 
-  let detectedVessel = inherited.vessel_type;
+  let detectedVessel = inherited.vessel_type || null;
   if (!detectedVessel && message) {
     const qLower = message.toLowerCase();
     if (/\b(ship|tanker|cargo|container|freighter)\b/.test(qLower)) detectedVessel = 'large_commercial_vessel';
@@ -115,7 +114,7 @@ async function handleMessage({
     else if (/\b(trawler|mechanized fishing)\b/.test(qLower)) detectedVessel = 'mechanized_fishing_vessel';
     else if (/\b(tourist|ferry|launch|yacht|recreational|passenger)\b/.test(qLower)) detectedVessel = 'recreational_boat';
     else if (/\b(canoe|kayak|traditional|catamaran|non-motorized)\b/.test(qLower)) detectedVessel = 'traditional_non_motorized';
-    else detectedVessel = 'motorized_country_craft';
+    else if (/\b(country craft|fiberglass|frp)\b/.test(qLower)) detectedVessel = 'motorized_country_craft';
   }
 
   const analysisBody = {
@@ -125,9 +124,9 @@ async function handleMessage({
       inherited.lon !== null && inherited.lon !== undefined
         ? { lat: inherited.lat, lon: inherited.lon }
         : null,
-    place_name: resolvedPlace,
-    activity: detectedActivity ?? 'boating',
-    vessel_type: detectedVessel ?? 'motorized_country_craft',
+    place_name: resolvedPlace || null,
+    activity: detectedActivity,
+    vessel_type: detectedVessel,
     language_override: languageOverride,
     conversation_id: conversation.conversation_id,
     parent_analysis_id: parentAnalysisId || inherited.last_analysis_id || null,

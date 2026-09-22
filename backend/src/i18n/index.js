@@ -76,7 +76,15 @@ function layerName(layerType, language) {
  * @param {object} values     { location, level, detail }
  */
 function alertMessage(alertType, language, values = {}) {
-  const bucket = alertMessages[alertType];
+  const templateKey = {
+    high_wave: 'high_waves',
+    strong_wind: 'adverse_weather',
+    other_hazard: 'adverse_weather',
+    swell_surge: 'high_waves',
+    poor_visibility: 'adverse_weather',
+    thunderstorm: 'lightning',
+  }[alertType] || alertType;
+  const bucket = alertMessages[templateKey] || alertMessages[alertType];
   if (!bucket) {
     logger.warn({ alertType }, '[i18n] Unknown alert type requested');
     return { message: null, languageUsed: null, fellBack: false };

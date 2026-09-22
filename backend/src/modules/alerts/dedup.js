@@ -52,32 +52,34 @@ async function isDuplicate({ subscriptionId, alertType, level }) {
  * them would be indefensible.
  */
 function isWithinQuietHours(quietHours, level, now = new Date()) {
-  // contracts' quiet_hours is just { start, end } - no `enabled` flag.
-  // Absence of start/end IS "not configured", so both being set is what
-  // "enabled" means here.
-  if (!quietHours || !quietHours.start || !quietHours.end) return false;
+  if (!quietHours) return false;
+  if (quietHours.enabled === false) return false;
 
-  // Section 70.3 (contract description, not a configurable field): "Official
-  // DANGEROUS alerts always deliver regardless of quiet hours." This is a
-  // hard safety rule enforced in code, not a per-subscription setting - the
-  // contract's quiet_hours object has no override flag at all.
-  if (level === 'DANGEROUS') return false;
+  const startStr = quietHours.start_local || quietHours.start;
+  const endStr = quietHours.end_local || quietHours.end;
+  if (!startStr || !endStr) return false;
 
-  // The contract's quiet_hours is just { start, end } as plain "HH:MM"
-  // strings with no UTC offset field. Without a stated offset we treat them
-  // as the subscriber's own local wall-clock time using server-local time -
-  // simpler than before, and matches what the contract actually offers.
+  const normLevel = String(level || '').toUpperCase();
+  const overrideSevere = quietHours.override_for_severe !== false;
+  if (overrideSevere && normLevel === 'DANGEROUS') {
+    return false;
+  }
+
+  const offset = quietHours.utc_offset_minutes;
+  if (offset === null || offset === undefined) {
+    return false;
+  }
+
   const toMinutes = (hhmm) => {
     const [h, m] = hhmm.split(':').map(Number);
     return h * 60 + m;
   };
 
-  const localMinutes = now.getHours() * 60 + now.getMinutes();
-  const start = toMinutes(quietHours.start);
-  const end = toMinutes(quietHours.end);
+  const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const localMinutes = (utcMinutes + offset + 1440) % 1440;
+  const start = toMinutes(startStr);
+  const end = toMinutes(endStr);
 
-  // Quiet hours usually span midnight (e.g. 22:00 -> 06:00), so the window
-  // wraps and a simple start<=x<=end comparison would be wrong.
   return start <= end
     ? localMinutes >= start && localMinutes < end
     : localMinutes >= start || localMinutes < end;
@@ -87,16 +89,16 @@ function isWithinQuietHours(quietHours, level, now = new Date()) {
  * Does this risk level meet the subscriber's threshold (Section 99.6)?
  * Ordered so a higher threshold implies the lower ones are not notified.
  */
-// UPPERCASE per contracts/RiskAssessment.json risk_level and
-// contracts/api/AlertSubscriptionRequest.json minimum_level. This was
-// lowercase before - caught by live testing against the real contract, which
-// rejects lowercase values outright (Ajv enum match is case-sensitive).
-const LEVEL_RANK = { SAFE: 0, CAUTION: 1, UNSAFE: 2, DANGEROUS: 3 };
+const LEVEL_RANK = {
+  SAFE: 0, CAUTION: 1, UNSAFE: 2, DANGEROUS: 3,
+  safe: 0, caution: 1, unsafe: 2, dangerous: 3,
+};
 
 function meetsThreshold(level, minimumLevel) {
-  // Contract field is `minimum_level` (contracts/api/AlertSubscriptionRequest).
-  if (!minimumLevel) return true;  // no threshold set = notify on anything
-  return (LEVEL_RANK[level] || 0) >= (LEVEL_RANK[minimumLevel] || 0);
+  if (!minimumLevel) return true;
+  const l = String(level || '').toUpperCase();
+  const m = String(minimumLevel || '').toUpperCase();
+  return (LEVEL_RANK[l] ?? 0) >= (LEVEL_RANK[m] ?? 0);
 }
 
 module.exports = { buildAlertDedupKey, isDuplicate, isWithinQuietHours, meetsThreshold, LEVEL_RANK };

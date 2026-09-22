@@ -1,0 +1,149 @@
+{
+  "route_id": "route_kochi_mangalore",
+  "analysis_id": "analysis_km_001",
+  "status": "completed",
+  "error": null,
+  "origin": {
+    "original": {
+      "name": "Kochi",
+      "lat": 9.9312,
+      "lon": 76.2673
+    },
+    "validated": {
+      "lat": 9.9312,
+      "lon": 76.2673,
+      "snapped": false,
+      "snap_distance_km": null,
+      "snap_reference": null
+    }
+  },
+  "destination": {
+    "original": {
+      "name": "Mangalore",
+      "lat": 12.9141,
+      "lon": 74.856
+    },
+    "validated": {
+      "lat": 12.9141,
+      "lon": 74.856,
+      "snapped": false,
+      "snap_distance_km": null,
+      "snap_reference": null
+    }
+  },
+  "vessel_type": "motorized_country_craft",
+  "waypoints": [
+    {
+      "seq": 0,
+      "lat": 9.9312,
+      "lon": 76.2673,
+      "point_id": "W0000",
+      "cumulative_distance_km": 0.0,
+      "risk_score": 35
+    },
+    {
+      "seq": 1,
+      "lat": 10.3573,
+      "lon": 76.0657,
+      "point_id": "W0001",
+      "cumulative_distance_km": 52.27,
+      "risk_score": 35
+    },
+    {
+      "seq": 2,
+      "lat": 10.7835,
+      "lon": 75.8641,
+      "point_id": "W0002",
+      "cumulative_distance_km": 104.53,
+      "risk_score": 34
+    },
+    {
+      "seq": 3,
+      "lat": 11.2096,
+      "lon": 75.6625,
+      "point_id": "W0003",
+      "cumulative_distance_km": 156.77,
+      "risk_score": 32
+    },
+    {
+      "seq": 4,
+      "lat": 11.6357,
+      "lon": 75.4608,
+      "point_id": "W0004",
+      "cumulative_distance_km": 209.0,
+      "risk_score": 29
+    },
+    {
+      "seq": 5,
+      "lat": 12.0618,
+      "lon": 75.2592,
+      "point_id": "W0005",
+      "cumulative_distance_km": 261.22,
+      "risk_score": 25
+    },
+    {
+      "seq": 6,
+      "lat": 12.488,
+      "lon": 75.0576,
+      "point_id": "W0006",
+      "cumulative_distance_km": 313.43,
+      "risk_score": 21
+    },
+    {
+      "seq": 7,
+      "lat": 12.9141,
+      "lon": 74.856,
+      "point_id": "W0007",
+      "cumulative_distance_km": 365.61,
+      "risk_score": 24
+    }
+  ],
+  "total_distance_km": 365.61,
+  "estimated_duration_hours": 24.7,
+  "max_risk_score": 35,
+  "max_risk_level": "CAUTION",
+  "time_of_passage_risk": [
+    {
+      "waypoint_seq": 0,
+      "valid_time": "2026-09-22T06:00:00Z",
+      "risk_score": 35
+    },
+    {
+      "waypoint_seq": 1,
+      "valid_time": "2026-09-22T09:31:53.516552Z",
+      "risk_score": 35
+    },
+    {
+      "waypoint_seq": 2,
+      "valid_time": "2026-09-22T13:03:46.408937Z",
+      "risk_score": 34
+    },
+    {
+      "waypoint_seq": 3,
+      "valid_time": "2026-09-22T16:35:33.650664Z",
+      "risk_score": 32
+    },
+    {
+      "waypoint_seq": 4,
+      "valid_time": "2026-09-22T20:07:18.689401Z",
+      "risk_score": 29
+    },
+    {
+      "waypoint_seq": 5,
+      "valid_time": "2026-09-22T23:38:59.173735Z",
+      "risk_score": 25
+    },
+    {
+      "waypoint_seq": 6,
+      "valid_time": "2026-09-23T03:10:38.554454Z",
+      "risk_score": 21
+    },
+    {
+      "waypoint_seq": 7,
+      "valid_time": "2026-09-23T06:42:11.802454Z",
+      "risk_score": 24
+    }
+  ],
+  "blocking_reasons": [],
+  "generated_at": "2026-09-21T19:57:48.979361Z"
+}

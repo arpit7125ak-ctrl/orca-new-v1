@@ -170,13 +170,36 @@ def _check_official_warnings(measurements: Dict[str, Any]) -> List[Dict[str, Any
         and m.get("status") in ("available", "derived")
         and bool(m.get("value")) is True
     ):
+        raw_lvl = str(official.get("warning_level") or "DANGEROUS").upper()
+        if raw_lvl == "DANGEROUS":
+            floor_score = 85
+            floor_level = "DANGEROUS"
+        elif raw_lvl == "UNSAFE":
+            floor_score = 65
+            floor_level = "UNSAFE"
+        elif raw_lvl == "CAUTION":
+            floor_score = 45
+            floor_level = "CAUTION"
+        else:
+            floor_score = 45
+            floor_level = "CAUTION"
+
         # contracts/RiskAssessment.json permits ONLY these five keys.
         warnings.append({
             "warning_type": "marine_warning",
-            "floor_score": OFFICIAL_WARNING_FLOOR,
-            "floor_level": official.get("warning_level") or "DANGEROUS",
+            "floor_score": floor_score,
+            "floor_level": floor_level,
             "issuing_authority": official.get("issuing_authority") or m.get("source") or "unknown",
             "bulletin_id": official.get("bulletin_id") or "unknown",
+        })
+    elif isinstance(m, dict) and m.get("status") == "missing":
+        # Spec 49.1 & T6: Unreachable SACHET gateway -> precautionary floor applied
+        warnings.append({
+            "warning_type": "marine_warning",
+            "floor_score": 45,
+            "floor_level": "CAUTION",
+            "issuing_authority": "NDMA SACHET (unreachable)",
+            "bulletin_id": "OFFICIAL-FEED-UNREACHABLE",
         })
 
     return warnings
@@ -190,8 +213,10 @@ def _compute_confidence(
     Driven by how much evidence actually existed, not by how confident the
     narrative sounds. Missing agents and thin parameter coverage both reduce it.
     """
-    confidence = 0.9
+    if scoreable_count == 0:
+        return 0.35
 
+    confidence = 0.9
     confidence -= 0.12 * len(agents_missing)
 
     if scoreable_count <= 1:
@@ -246,6 +271,28 @@ def _clamp_adjustment(
             adjustment = 0
 
     return adjustment
+
+
+def compute_constraint_floor(
+    official_warnings: List[Dict[str, Any]], hard_rules_applied: List[Dict[str, Any]]
+) -> Optional[int]:
+    """Compute the maximum floor score among active official warnings and hard safety limits."""
+    floors = [w["floor_score"] for w in official_warnings if "floor_score" in w and w["floor_score"] is not None]
+    floors += [r["floor_score"] for r in hard_rules_applied if "floor_score" in r and r["floor_score"] is not None]
+    return max(floors) if floors else None
+
+
+def apply_constraint_floor(
+    baseline_score: int, constraint_floor: Optional[int], llm_adjustment: int = 0
+) -> int:
+    """Enforce constraint floor and LLM adjustment on baseline score."""
+    proposed = baseline_score + llm_adjustment
+    if constraint_floor is not None:
+        proposed = max(proposed, constraint_floor)
+    return int(max(0, min(100, proposed)))
+
+
+clamp_adjustment = _clamp_adjustment
 
 
 def _build_batch_risk_prompt(
@@ -334,15 +381,28 @@ async def assess_points(
         )
         baseline_score = base["baseline_score"]
         if baseline_score is None:
-            log.warning("[risk] %s: no computable evidence - not scored", point_id)
-            continue
-
-        official_warnings = _check_official_warnings(measurements)
-        hard_rules_applied = _check_hard_rules(measurements)
-
-        floors = [w["floor_score"] for w in official_warnings]
-        floors += [r["floor_score"] for r in hard_rules_applied]
-        constraint_floor = max(floors) if floors else None
+            log.warning("[risk] %s: missing evidence - applying precautionary insufficient_evidence rule", point_id)
+            baseline_score = 45
+            base = {
+                "baseline_score": 45,
+                "hourly_scores": [],
+                "risk_factors": ["insufficient_evidence"],
+                "contributing": {},
+                "scoreable_count": 0,
+            }
+            official_warnings = _check_official_warnings(measurements)
+            hard_rules_applied = [{
+                "rule_id": "insufficient_evidence",
+                "description": "Insufficient observational data available from upstream providers; safety cannot be verified",
+                "floor_score": 45,
+            }]
+            constraint_floor = 45
+        else:
+            official_warnings = _check_official_warnings(measurements)
+            hard_rules_applied = _check_hard_rules(measurements)
+            floors = [w["floor_score"] for w in official_warnings]
+            floors += [r["floor_score"] for r in hard_rules_applied]
+            constraint_floor = max(floors) if floors else None
 
         items.append({
             "point_id": point_id,
@@ -425,6 +485,20 @@ async def assess_points(
             proposed = max(proposed, constraint_floor)
         final_score = int(max(0, min(100, proposed)))
 
+        # NEVER-FABRICATE INVARIANT: Missing wave or wind evidence strictly prohibits a SAFE verdict
+        missing_critical = False
+        for crit in ["wave_height_m", "wind_speed_ms"]:
+            c_m = measurements.get(crit)
+            if not isinstance(c_m, dict) or c_m.get("status") not in ("available", "derived") or c_m.get("value") is None:
+                missing_critical = True
+                break
+
+        risk_level = baseline_mod.level_for_score(final_score)
+        if missing_critical and risk_level == "SAFE":
+            final_score = max(final_score, 35)
+            risk_level = "CAUTION"
+            key_findings.append("Wave or wind observations incomplete; minimum CAUTION advisory enforced.")
+
         if pt_llm_avail and point_llm.get("reasoning"):
             reasoning = point_llm.get("reasoning")
         else:
@@ -445,7 +519,7 @@ async def assess_points(
             "hard_rules_applied": item["hard_rules_applied"],
             "constraint_floor": constraint_floor,
             "final_score": final_score,
-            "risk_level": baseline_mod.level_for_score(final_score),
+            "risk_level": risk_level,
             "risk_factors": base["risk_factors"],
             "reasoning": reasoning,
             "key_findings": key_findings,

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { 
   Anchor, 
   ArrowRight, 
@@ -23,7 +23,7 @@ export default function LandingPage({ onStartAnalysis, onQuickSelect }) {
   ];
 
   const presets = [
-    { title: 'Offshore Kochi', vessel: 'Motorized Country Craft', loc: { lat: 9.94, lon: 76.16 } },
+    { title: 'Offshore Kochi', vessel: 'Motorized Country Craft', loc: { lat: 9.93, lon: 76.26 } },
     { title: 'Veraval Coast', vessel: 'Mechanized Trawler', loc: { lat: 20.89, lon: 70.36 } },
     { title: 'Palk Strait', vessel: 'Traditional Canoe', loc: { lat: 9.50, lon: 79.52 } },
   ];

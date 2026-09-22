@@ -27,45 +27,57 @@ const AUTHORITATIVE_ZONES = [
     layer_name: 'India - Sri Lanka International Maritime Boundary & Sri Lankan Waters',
     layer_type: 'international_maritime_boundary',
     constraint_type: 'prohibited',
-    version: 'UNCLOS-1974-Treaty-v2',
-    source: 'Ministry of External Affairs / Sri Lanka Navy Maritime Boundary',
+    verification: 'approximate',
+    version: 'UNCLOS-1974-Treaty-v2-approx',
+    source: 'ORCA approximate outline - not survey data (reference authority: UN DOALOS / 1974 & 1976 Bilateral Maritime Boundary Agreements)',
     source_url: 'https://treaties.un.org/doc/Publication/UNTS/Volume%20962/volume-962-I-13844-English.pdf',
     last_updated: new Date('2026-09-01'),
     properties: {
       treaty: '1974 & 1976 India-Sri Lanka Maritime Agreements',
       hotspot: 'Palk Bay, Katchatheevu, Gulf of Mannar',
-      advisory: 'STRICTLY PROHIBITED. Crossing into Sri Lankan waters risks immediate vessel seizure and naval arrest.',
+      advisory: 'PROHIBITED. Crossing into Sri Lankan waters risks immediate vessel seizure and naval arrest.',
       danger_level: 'extreme'
     },
-    // Surveyed polygon covering the Sri Lankan side of Palk Strait and Gulf of Mannar
+    // Treaty Note: Positions NOT verified against UN Treaty Series text. Kept as approximate boundary.
+    // Geometrically covers Sri Lankan maritime jurisdiction east and south of IMBL.
+    // Asserts Indian coastal ports/landmarks (Rameswaram, Pamban, Dhanushkodi, Tuticorin, Kanyakumari, Point Calimere) remain OUTSIDE.
     geometry_full: {
       type: 'Polygon',
       coordinates: [[
-        [79.05, 10.15],
-        [79.85, 10.30],
-        [80.35, 9.85],
-        [80.05, 9.00],
-        [79.55, 8.85],
-        [79.15, 8.40],
-        [79.50, 7.80],
-        [80.10, 7.50],
-        [79.00, 7.50],
-        [78.90, 8.50],
-        [79.10, 9.15],
-        [79.05, 10.15]
+        [80.05, 10.08],
+        [80.50, 10.00],
+        [81.50, 9.00],
+        [82.20, 7.50],
+        [82.00, 5.80],
+        [79.50, 5.80],
+        [78.90, 8.20],
+        [78.92, 8.37],
+        [79.08, 8.52],
+        [79.22, 8.62],
+        [79.30, 8.67],
+        [79.49, 8.90],
+        [79.52, 9.00],
+        [79.53, 9.10],
+        [79.53, 9.22],
+        [79.51, 9.36],
+        [79.53, 9.68],
+        [79.91, 10.00],
+        [80.05, 10.08]
       ]]
     },
     geometry_simplified: {
       type: 'Polygon',
       coordinates: [[
-        [79.05, 10.15],
-        [79.85, 10.30],
-        [80.35, 9.85],
-        [80.05, 9.00],
-        [79.15, 8.40],
-        [79.00, 7.50],
-        [78.90, 8.50],
-        [79.05, 10.15]
+        [80.05, 10.08],
+        [81.50, 9.00],
+        [82.00, 5.80],
+        [79.50, 5.80],
+        [78.90, 8.20],
+        [79.30, 8.67],
+        [79.53, 9.10],
+        [79.51, 9.36],
+        [79.91, 10.00],
+        [80.05, 10.08]
       ]]
     }
   },
@@ -74,7 +86,8 @@ const AUTHORITATIVE_ZONES = [
     layer_type: 'international_maritime_boundary',
     constraint_type: 'prohibited',
     version: 'Sir-Creek-Delimitation-v2',
-    source: 'Indian Coast Guard / Maritime Security Line',
+    verification: 'approximate',
+    source: 'ORCA approximate outline - not survey data (reference authority: Indian Coast Guard / Maritime Security Line)',
     source_url: 'https://indiancoastguard.gov.in',
     last_updated: new Date('2026-09-01'),
     properties: {
@@ -118,7 +131,8 @@ const AUTHORITATIVE_ZONES = [
     layer_type: 'marine_protected_area',
     constraint_type: 'prohibited',
     version: 'WDPA-1362-v2',
-    source: 'UNEP-WCMC / IUCN Protected Planet (WDPA ID 1362)',
+    verification: 'approximate',
+    source: 'ORCA approximate outline - not survey data (reference authority: UNEP-WCMC / IUCN Protected Planet WDPA ID 1362)',
     source_url: 'https://www.protectedplanet.net/1362',
     last_updated: new Date('2026-09-01'),
     properties: {
@@ -164,7 +178,8 @@ const AUTHORITATIVE_ZONES = [
     layer_type: 'marine_protected_area',
     constraint_type: 'prohibited',
     version: 'WDPA-308534-v2',
-    source: 'UNEP-WCMC / IUCN Protected Planet (WDPA ID 308534)',
+    verification: 'approximate',
+    source: 'ORCA approximate outline - not survey data (reference authority: UNEP-WCMC / IUCN Protected Planet WDPA ID 308534)',
     source_url: 'https://www.protectedplanet.net/308534',
     last_updated: new Date('2026-09-01'),
     properties: {
@@ -205,7 +220,8 @@ const AUTHORITATIVE_ZONES = [
     layer_type: 'marine_protected_area',
     constraint_type: 'prohibited',
     version: 'WDPA-1361-v2',
-    source: 'UNEP-WCMC / IUCN Protected Planet (WDPA ID 1361)',
+    verification: 'approximate',
+    source: 'ORCA approximate outline - not survey data (reference authority: UNEP-WCMC / IUCN Protected Planet WDPA ID 1361)',
     source_url: 'https://www.protectedplanet.net/1361',
     last_updated: new Date('2026-09-01'),
     properties: {
@@ -247,7 +263,8 @@ const AUTHORITATIVE_ZONES = [
     layer_type: 'marine_protected_area',
     constraint_type: 'prohibited',
     version: 'WDPA-308535-v2',
-    source: 'UNEP-WCMC / IUCN Protected Planet (WDPA ID 308535)',
+    verification: 'approximate',
+    source: 'ORCA approximate outline - not survey data (reference authority: UNEP-WCMC / IUCN Protected Planet WDPA ID 308535)',
     source_url: 'https://www.protectedplanet.net/308535',
     last_updated: new Date('2026-09-01'),
     properties: {
@@ -284,7 +301,8 @@ const AUTHORITATIVE_ZONES = [
     layer_type: 'marine_protected_area',
     constraint_type: 'prohibited',
     version: 'WDPA-308533-v2',
-    source: 'UNEP-WCMC / IUCN Protected Planet (WDPA ID 308533)',
+    verification: 'approximate',
+    source: 'ORCA approximate outline - not survey data (reference authority: UNEP-WCMC / IUCN Protected Planet WDPA ID 308533)',
     source_url: 'https://www.protectedplanet.net/308533',
     last_updated: new Date('2026-09-01'),
     properties: {
@@ -320,7 +338,8 @@ const AUTHORITATIVE_ZONES = [
     layer_type: 'marine_protected_area',
     constraint_type: 'prohibited',
     version: 'WDPA-1364-v2',
-    source: 'UNEP-WCMC / IUCN Protected Planet (WDPA ID 1364)',
+    verification: 'approximate',
+    source: 'ORCA approximate outline - not survey data (reference authority: UNEP-WCMC / IUCN Protected Planet WDPA ID 1364)',
     source_url: 'https://www.protectedplanet.net/1364',
     last_updated: new Date('2026-09-01'),
     properties: {
@@ -360,7 +379,8 @@ const AUTHORITATIVE_ZONES = [
     layer_type: 'seasonal_fishing_ban_area',
     constraint_type: 'conditional',
     version: 'GoI-DoF-Ban-v2026',
-    source: 'Department of Fisheries, Ministry of Fisheries, Animal Husbandry & Dairying',
+    verification: 'approximate',
+    source: 'ORCA approximate outline - not survey data (reference authority: Department of Fisheries, Ministry of Fisheries, Animal Husbandry & Dairying)',
     source_url: 'https://dof.gov.in',
     last_updated: new Date('2026-09-01'),
     season_start: '04-15',
@@ -408,7 +428,8 @@ const AUTHORITATIVE_ZONES = [
     layer_type: 'seasonal_fishing_ban_area',
     constraint_type: 'conditional',
     version: 'GoI-DoF-Ban-v2026',
-    source: 'Department of Fisheries, Ministry of Fisheries, Animal Husbandry & Dairying',
+    verification: 'approximate',
+    source: 'ORCA approximate outline - not survey data (reference authority: Department of Fisheries, Ministry of Fisheries, Animal Husbandry & Dairying)',
     source_url: 'https://dof.gov.in',
     last_updated: new Date('2026-09-01'),
     season_start: '06-01',
@@ -460,7 +481,8 @@ const AUTHORITATIVE_ZONES = [
     layer_type: 'offshore_infrastructure_zone',
     constraint_type: 'prohibited',
     version: 'ONGC-ODAG-2024',
-    source: 'ONGC / Offshore Defence Advisory Group (ODAG)',
+    verification: 'approximate',
+    source: 'ORCA approximate outline - not survey data (reference authority: ONGC / Offshore Defence Advisory Group ODAG)',
     source_url: 'https://ongcindia.com',
     last_updated: new Date('2026-09-01'),
     properties: {
@@ -498,7 +520,8 @@ const AUTHORITATIVE_ZONES = [
     layer_type: 'exclusive_economic_zone',
     constraint_type: 'warning_only',
     version: 'MarineRegions-v12-IndiaEEZ',
-    source: 'Marine Regions (VLIZ / UNCLOS World EEZ v12)',
+    verification: 'approximate',
+    source: 'ORCA approximate outline - not survey data (reference authority: Marine Regions VLIZ / UNCLOS World EEZ v12)',
     source_url: 'https://www.marineregions.org/eezdetails.php?mrgid=8480',
     last_updated: new Date('2026-09-01'),
     properties: {
@@ -514,24 +537,37 @@ const AUTHORITATIVE_ZONES = [
         [66.00, 21.50],
         [67.00, 18.00],
         [69.50, 14.00],
-        [72.00, 10.00],
-        [74.50, 7.00],
-        [77.55, 6.00],
-        [80.00, 6.50],
-        [83.00, 9.00],
+        [71.50, 10.00],
+        [74.00, 7.00],
+        [77.55, 4.75],
+        [78.90, 8.20],
+        [79.08, 8.52],
+        [79.30, 8.67],
+        [79.52, 9.00],
+        [79.53, 9.10],
+        [79.53, 9.22],
+        [79.51, 9.36],
+        [79.53, 9.68],
+        [79.91, 10.00],
+        [80.05, 10.08],
+        [83.50, 10.50],
         [86.00, 12.00],
         [89.00, 16.00],
         [91.50, 20.50],
         [89.00, 21.50],
-        [86.50, 20.00],
-        [83.00, 17.00],
-        [80.00, 13.00],
-        [79.00, 9.50],
+        [87.50, 21.50],
+        [86.00, 20.00],
+        [83.00, 17.50],
+        [80.30, 13.08],
+        [79.80, 10.50],
+        [79.31, 9.28],
         [77.55, 8.08],
-        [76.00, 9.50],
-        [74.00, 13.00],
-        [72.80, 19.00],
-        [69.50, 22.00],
+        [76.50, 9.95],
+        [75.00, 13.00],
+        [73.50, 16.00],
+        [73.00, 19.00],
+        [70.00, 21.00],
+        [69.00, 22.50],
         [68.10, 23.65]
       ]]
     },
@@ -541,14 +577,17 @@ const AUTHORITATIVE_ZONES = [
         [68.10, 23.65],
         [66.00, 21.50],
         [69.50, 14.00],
-        [77.55, 6.00],
-        [83.00, 9.00],
-        [89.00, 16.00],
+        [74.00, 7.00],
+        [78.90, 8.20],
+        [79.53, 9.10],
+        [80.05, 10.08],
+        [86.00, 12.00],
         [91.50, 20.50],
-        [86.50, 20.00],
-        [79.00, 9.50],
+        [86.00, 20.00],
+        [80.30, 13.08],
         [77.55, 8.08],
-        [72.80, 19.00],
+        [75.00, 13.00],
+        [73.00, 19.00],
         [68.10, 23.65]
       ]]
     }
@@ -558,7 +597,8 @@ const AUTHORITATIVE_ZONES = [
     layer_type: 'territorial_waters',
     constraint_type: 'warning_only',
     version: 'Territorial-Waters-Act-1976-v2',
-    source: 'Survey of India / Ministry of External Affairs',
+    verification: 'approximate',
+    source: 'ORCA approximate outline - not survey data (reference authority: Survey of India / Ministry of External Affairs)',
     source_url: 'https://mea.gov.in',
     last_updated: new Date('2026-09-01'),
     properties: {
@@ -591,7 +631,8 @@ const AUTHORITATIVE_ZONES = [
     layer_type: 'territorial_waters',
     constraint_type: 'warning_only',
     version: 'Territorial-Waters-Act-1976-v2',
-    source: 'Survey of India / Ministry of External Affairs',
+    verification: 'approximate',
+    source: 'ORCA approximate outline - not survey data (reference authority: Survey of India / Ministry of External Affairs)',
     source_url: 'https://mea.gov.in',
     last_updated: new Date('2026-09-01'),
     properties: {
@@ -639,12 +680,12 @@ async function syncAuthoritativeGisLayers() {
     logger.info({ deleted: delPfz.deletedCount }, '[pfz-seed] Removed legacy demo PFZ advisories');
   }
 
-  // 3. Upsert each authoritative zone
+  // 3. Upsert each zone - sync bundled reference boundaries with verification: 'approximate'
   let upserted = 0;
   for (const zone of AUTHORITATIVE_ZONES) {
     await GisLayer.updateOne(
       { layer_name: zone.layer_name },
-      { $set: { ...zone, active: true } },
+      { $set: { ...zone, verification: zone.verification || 'approximate', active: true } },
       { upsert: true }
     );
     upserted += 1;
@@ -656,7 +697,7 @@ async function syncAuthoritativeGisLayers() {
   const totalLayers = await GisLayer.countDocuments();
   logger.info(
     { upserted, totalInDb: totalLayers },
-    '[gis-seed] Authoritative Indian Maritime Zones synchronized successfully'
+    '[gis-seed] Approximate Indian Maritime Zones synchronized successfully (reference boundaries only)'
   );
 
   return { success: true, upserted, totalLayers };

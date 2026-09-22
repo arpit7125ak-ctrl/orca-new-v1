@@ -10,16 +10,20 @@ import {
   Loader2, 
   Sparkles, 
   Ship,
-  HelpCircle 
+  HelpCircle,
+  Navigation,
+  TrendingUp,
+  AlertCircle
 } from 'lucide-react';
 import { orcaApi } from '../api/client';
-import { speakText, stopSpeaking, createSpeechRecognizer } from '../utils/speech';
+import { speakText, stopSpeaking, createSpeechRecognizer, localeFor } from '../utils/speech';
+import TrendView from './TrendView';
 
-export default function MaritimeChat({ selectedLang = 'en' }) {
+export default function MaritimeChat({ selectedLang = 'auto' }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      text: 'Namaste and Ahoy! I am your ORCA Ocean Risk & Coastal Advisory Copilot. Ask me anything about sea states, swell surges (Kallakkadal), wind & squall forecasts, passenger ferry safety, coastal tourism, or port navigation.',
+      text: 'Namaste and Ahoy! I am your ORCA Ocean Risk & Coastal Advisory Copilot. Ask me anything about sea states, swell surges, wind & squall forecasts, route safety, or decadal ocean trends.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -33,9 +37,30 @@ export default function MaritimeChat({ selectedLang = 'en' }) {
   const quickQuestions = [
     'What are the wave conditions and swell off Kochi coast today?',
     'Can passenger ferries safely operate near Mumbai harbour this afternoon?',
-    'Are there any high swell (Kallakkadal) or squall warnings active?',
-    'Is it safe for small craft and recreational boats in Palk Bay today?',
+    'Why has fish productivity declined near Ratnagiri over recent years?',
+    'Is it safe for small craft in Palk Bay today?',
   ];
+
+  // Restore existing conversation from server if available
+  useEffect(() => {
+    const savedConvId = localStorage.getItem('ORCA_CHAT_CONVERSATION_ID');
+    if (savedConvId) {
+      setConversationId(savedConvId);
+      orcaApi.getConversation(savedConvId).then((res) => {
+        if (res && Array.isArray(res.messages) && res.messages.length > 0) {
+          const loaded = res.messages.map((m) => ({
+            role: m.role,
+            text: m.content,
+            timestamp: m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+            analysis_id: m.analysis_id || null,
+          }));
+          setMessages(loaded);
+        }
+      }).catch((e) => {
+        console.warn('Could not restore chat thread:', e);
+      });
+    }
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -58,8 +83,10 @@ export default function MaritimeChat({ selectedLang = 'en' }) {
     try {
       const payload = {
         message: q,
-        language_override: selectedLang || 'en',
       };
+      if (selectedLang && selectedLang !== 'auto') {
+        payload.language_override = selectedLang;
+      }
       if (conversationId) {
         payload.conversation_id = conversationId;
       }
@@ -68,6 +95,9 @@ export default function MaritimeChat({ selectedLang = 'en' }) {
 
       if (res?.conversation_id) {
         setConversationId(res.conversation_id);
+        try {
+          localStorage.setItem('ORCA_CHAT_CONVERSATION_ID', res.conversation_id);
+        } catch (_) {}
       }
 
       const initialReply = res?.response_text || res?.reply || res?.message || 'Analyzing maritime conditions for your mission area...';
@@ -83,15 +113,27 @@ export default function MaritimeChat({ selectedLang = 'en' }) {
       // If an analysis was triggered, poll until done to display real synthesized advice
       if (res?.triggered_analysis_id) {
         try {
-          const completed = await orcaApi.pollAnalysisUntilDone(res.triggered_analysis_id, () => {}, 1500, 25);
-          const finalDecision = completed?.quick_information_result?.answer_text ||
-                                completed?.answer_text ||
-                                completed?.result?.answer_text ||
-                                completed?.decision?.one_line_recommendation ||
-                                completed?.decision?.detailed_recommendation ||
-                                completed?.decision?.primary_advice ||
-                                completed?.summary ||
-                                'Safety analysis complete. Sea conditions verified.';
+          const completed = await orcaApi.pollAnalysisUntilDone(res.triggered_analysis_id, () => {}, 1500, 30);
+          
+          let finalDecision = '';
+          let trendData = null;
+          let routeData = null;
+
+          if (completed?.status === 'failed') {
+            finalDecision = completed?.error?.message || 'Analysis could not be completed with current parameters.';
+          } else if (completed?.final_stage === 'trend' || completed?.trend_result) {
+            trendData = completed.trend_result || completed;
+            finalDecision = trendData.explanation || 'Historical oceanographic trend analysis complete:';
+          } else if (completed?.final_stage === 'route' || completed?.route_result) {
+            routeData = completed.route_result || completed;
+            finalDecision = `Nautical passage analysis complete: ${routeData.total_distance_km ? `${routeData.total_distance_km.toFixed(1)} km` : ''} (${routeData.max_risk_level || 'Evaluated'}).`;
+          } else {
+            finalDecision = completed?.quick_information_result?.answer_text ||
+                            completed?.decision?.one_line_recommendation ||
+                            completed?.decision?.detailed_recommendation ||
+                            completed?.decision?.primary_advice ||
+                            'Maritime advisory analysis complete.';
+          }
 
           setMessages((prev) => {
             const updated = [...prev];
@@ -101,6 +143,10 @@ export default function MaritimeChat({ selectedLang = 'en' }) {
                 ...updated[lastAssistantIdx],
                 text: finalDecision,
                 isAnalyzing: false,
+                trend_result: trendData,
+                route_result: routeData,
+                isError: completed?.status === 'failed',
+                language: completed?.response_language || completed?.detected_language || selectedLang,
               };
             }
             return updated;
@@ -122,12 +168,12 @@ export default function MaritimeChat({ selectedLang = 'en' }) {
     }
   };
 
-  const handleToggleSpeak = (text, idx) => {
+  const handleToggleSpeak = (text, idx, lang) => {
     if (speakingIdx === idx) {
       stopSpeaking();
       setSpeakingIdx(null);
     } else {
-      speakText(text, selectedLang);
+      speakText(text, lang || selectedLang);
       setSpeakingIdx(idx);
       const estTime = Math.max(3000, text.length * 75);
       setTimeout(() => setSpeakingIdx(null), estTime);
@@ -141,6 +187,7 @@ export default function MaritimeChat({ selectedLang = 'en' }) {
     }
 
     const recognizer = createSpeechRecognizer({
+      lang: selectedLang,
       onResult: (transcript, isFinal) => {
         setInput(transcript);
         if (isFinal) {
@@ -160,7 +207,7 @@ export default function MaritimeChat({ selectedLang = 'en' }) {
         console.warn(err);
       }
     } else {
-      alert('Speech recognition is not supported in this browser.');
+      alert(`Speech recognition is not available for locale ${localeFor(selectedLang)} in this browser.`);
     }
   };
 
@@ -181,7 +228,7 @@ export default function MaritimeChat({ selectedLang = 'en' }) {
           </div>
         </div>
         <span className="text-[11px] font-mono px-2.5 py-1 bg-slate-800 text-cyan-300 rounded-lg border border-slate-700">
-          Gemini 2.5 Active
+          Locale: {localeFor(selectedLang)}
         </span>
       </div>
 
@@ -215,92 +262,103 @@ export default function MaritimeChat({ selectedLang = 'en' }) {
                     : 'bg-cyan-600 text-white'
                 }`}
               >
-                <div className="whitespace-pre-wrap">{msg.text}</div>
-
-                <div className="flex items-center justify-between mt-2 pt-1 border-t border-white/10 text-[10px] text-slate-400">
-                  <span>{msg.timestamp}</span>
-
-                  {isAssistant && !msg.isError && (
+                <div className="flex items-center justify-between gap-4 mb-1">
+                  <span className="text-[10px] font-mono text-slate-400">
+                    {msg.timestamp}
+                  </span>
+                  {isAssistant && !msg.isAnalyzing && (
                     <button
-                      onClick={() => handleToggleSpeak(msg.text, idx)}
-                      className={`flex items-center space-x-1 px-1.5 py-0.5 rounded text-[10px] transition-all ${
-                        isSpeaking
-                          ? 'bg-amber-400 text-slate-950 font-bold'
-                          : 'text-slate-400 hover:text-cyan-300'
-                      }`}
+                      onClick={() => handleToggleSpeak(msg.text, idx, msg.language)}
+                      className="text-slate-400 hover:text-cyan-400 p-0.5 rounded cursor-pointer"
+                      title={isSpeaking ? 'Stop reading' : 'Read aloud'}
                     >
-                      {isSpeaking ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
-                      <span>{isSpeaking ? 'Stop' : 'Listen'}</span>
+                      {isSpeaking ? <VolumeX className="w-3.5 h-3.5 text-cyan-400" /> : <Volume2 className="w-3.5 h-3.5" />}
                     </button>
                   )}
                 </div>
+
+                <p className="whitespace-pre-line">{msg.text}</p>
+
+                {msg.isAnalyzing && (
+                  <div className="mt-2 flex items-center space-x-2 text-cyan-400 text-xs">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Synthesizing verified metocean & risk layers...</span>
+                  </div>
+                )}
+
+                {/* Render Trend Artifact Inline if present */}
+                {msg.trend_result && (
+                  <div className="mt-4 pt-3 border-t border-slate-700">
+                    <TrendView trendResult={msg.trend_result} />
+                  </div>
+                )}
+
+                {/* Render Route Summary Inline if present */}
+                {msg.route_result && (
+                  <div className="mt-3 p-3 rounded-xl bg-slate-950 border border-slate-700 text-xs space-y-1">
+                    <div className="flex items-center justify-between text-cyan-300 font-bold">
+                      <span>Nautical Passage Overview</span>
+                      <span>{msg.route_result.max_risk_level || 'Evaluated'}</span>
+                    </div>
+                    <p className="text-slate-400">
+                      Distance: {msg.route_result.total_distance_km ? `${msg.route_result.total_distance_km.toFixed(1)} km` : '—'} • Waypoints: {msg.route_result.waypoints?.length || 0}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           );
         })}
-        {isLoading && (
-          <div className="flex items-center space-x-2 text-xs text-cyan-400 bg-slate-800/60 w-fit p-3 rounded-2xl border border-slate-700">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Consulting ocean models & synthesizing advisory...</span>
-          </div>
-        )}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Suggested Quick Questions */}
-      <div className="px-4 py-2 bg-slate-950/40 border-t border-slate-800 overflow-x-auto flex space-x-2 scrollbar-none">
-        {quickQuestions.map((q, i) => (
+      <div className="px-4 py-2 bg-slate-950/60 border-t border-slate-800/80 flex items-center space-x-2 overflow-x-auto">
+        <span className="text-[10px] text-slate-500 uppercase font-bold flex-shrink-0">Suggestions:</span>
+        {quickQuestions.map((q, idx) => (
           <button
-            key={i}
+            key={idx}
             onClick={() => handleSend(q)}
-            className="text-[11px] whitespace-nowrap px-3 py-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-all flex items-center space-x-1"
+            disabled={isLoading}
+            className="px-2.5 py-1 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg text-[11px] text-slate-300 whitespace-nowrap transition-colors cursor-pointer disabled:opacity-50"
           >
-            <HelpCircle className="w-3 h-3 text-cyan-400 flex-shrink-0" />
-            <span>{q}</span>
+            {q}
           </button>
         ))}
       </div>
 
-      {/* Input Box */}
-      <div className="p-3 sm:p-4 bg-slate-950 border-t border-slate-800">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSend();
-          }}
-          className="flex items-center space-x-2"
+      {/* Input Form */}
+      <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="p-4 bg-slate-950 border-t border-slate-800 flex items-center space-x-2">
+        <button
+          type="button"
+          onClick={handleVoiceRecord}
+          className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${
+            isRecording
+              ? 'bg-rose-600 text-white border-rose-500 animate-pulse'
+              : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+          }`}
+          title="Voice input"
         >
-          <button
-            type="button"
-            onClick={handleVoiceRecord}
-            className={`p-2.5 rounded-xl transition-all ${
-              isRecording
-                ? 'bg-rose-600 text-white animate-pulse'
-                : 'bg-slate-800 text-slate-400 hover:text-white'
-            }`}
-            title={isRecording ? 'Listening... click to stop' : 'Voice Query'}
-          >
-            {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-          </button>
+          {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+        </button>
 
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask a maritime question in English, Hindi, Tamil, etc..."
-            disabled={isLoading}
-            className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-          />
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder={`Ask a maritime question in English, Hindi, Tamil, etc. (auto-detect)...`}
+          className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          disabled={isLoading}
+        />
 
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            className="p-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-xl font-bold transition-all disabled:opacity-50"
-          >
-            <Send className="w-4 h-4" />
-          </button>
-        </form>
-      </div>
+        <button
+          type="submit"
+          disabled={!input.trim() || isLoading}
+          className="p-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold disabled:opacity-50 transition-colors cursor-pointer"
+        >
+          {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+        </button>
+      </form>
     </div>
   );
 }

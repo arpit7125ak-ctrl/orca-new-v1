@@ -1,64 +1,238 @@
-import React, { useState } from 'react';
-import { X, Printer, Copy, Check, FileText, Anchor, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  X, 
+  Printer, 
+  Copy, 
+  Check, 
+  FileText, 
+  ShieldAlert, 
+  RefreshCw, 
+  AlertTriangle,
+  Database,
+  Calendar,
+  Layers
+} from 'lucide-react';
+import { orcaApi } from '../api/client';
+
+/**
+ * Lightweight faithful markdown renderer for advisory bulletins.
+ * Renders headers, tables, lists, bold text, and metadata without fabrication.
+ */
+function MarkdownRenderer({ content }) {
+  if (!content) return null;
+
+  const lines = content.split('\n');
+  const elements = [];
+  let tableBuffer = [];
+
+  const flushTable = (key) => {
+    if (tableBuffer.length === 0) return null;
+    const rows = [...tableBuffer];
+    tableBuffer = [];
+
+    // Filter out separator rows like |---|---|
+    const filteredRows = rows.filter((r) => !r.trim().match(/^\|[\s:-|]+\|$/));
+    if (filteredRows.length === 0) return null;
+
+    const [headerRow, ...bodyRows] = filteredRows;
+    const parseCells = (row) =>
+      row
+        .split('|')
+        .slice(1, -1)
+        .map((c) => c.trim());
+
+    const headers = parseCells(headerRow);
+
+    return (
+      <div key={`table-${key}`} className="overflow-x-auto my-4 rounded-xl border border-slate-800">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead className="bg-slate-950 border-b border-slate-800">
+            <tr>
+              {headers.map((h, i) => (
+                <th key={i} className="p-2.5 font-bold text-slate-300">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800/60 bg-slate-900/40">
+            {bodyRows.map((row, rIdx) => {
+              const cells = parseCells(row);
+              return (
+                <tr key={rIdx} className="hover:bg-slate-800/30">
+                  {cells.map((c, cIdx) => (
+                    <td key={cIdx} className="p-2.5 text-slate-300 font-mono">
+                      {c}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Table rows
+    if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+      tableBuffer.push(line);
+      continue;
+    } else if (tableBuffer.length > 0) {
+      const tableElem = flushTable(i);
+      if (tableElem) elements.push(tableElem);
+    }
+
+    // Horizontal rule
+    if (line.trim().match(/^---+$|^\*\*\*+$/)) {
+      elements.push(<hr key={i} className="border-slate-800 my-4" />);
+      continue;
+    }
+
+    // Headings
+    if (line.startsWith('# ')) {
+      elements.push(
+        <h1 key={i} className="text-xl sm:text-2xl font-black text-white tracking-tight mt-4 mb-2">
+          {line.replace('# ', '')}
+        </h1>
+      );
+      continue;
+    }
+    if (line.startsWith('## ')) {
+      elements.push(
+        <h2 key={i} className="text-base sm:text-lg font-bold text-cyan-300 tracking-wide mt-5 mb-2 border-b border-slate-800/80 pb-1">
+          {line.replace('## ', '')}
+        </h2>
+      );
+      continue;
+    }
+    if (line.startsWith('### ')) {
+      elements.push(
+        <h3 key={i} className="text-sm font-semibold text-slate-200 mt-3 mb-1">
+          {line.replace('### ', '')}
+        </h3>
+      );
+      continue;
+    }
+
+    // List items
+    if (line.trim().startsWith('- ')) {
+      const itemText = line.trim().replace(/^- /, '');
+      elements.push(
+        <li key={i} className="ml-4 list-disc text-xs sm:text-sm text-slate-300 leading-relaxed py-0.5">
+          {renderInlineMarkdown(itemText)}
+        </li>
+      );
+      continue;
+    }
+
+    // Empty lines
+    if (!line.trim()) {
+      continue;
+    }
+
+    // Paragraph
+    elements.push(
+      <p key={i} className="text-xs sm:text-sm text-slate-300 leading-relaxed my-1.5">
+        {renderInlineMarkdown(line)}
+      </p>
+    );
+  }
+
+  if (tableBuffer.length > 0) {
+    const tableElem = flushTable('end');
+    if (tableElem) elements.push(tableElem);
+  }
+
+  return <div className="space-y-1">{elements}</div>;
+}
+
+function renderInlineMarkdown(text) {
+  // Replace **bold** and _italic_
+  const parts = [];
+  let remaining = text;
+  let key = 0;
+
+  while (remaining.length > 0) {
+    const boldMatch = remaining.match(/\*\*(.*?)\*\*/);
+    const codeMatch = remaining.match(/`(.*?)`/);
+    const italicMatch = remaining.match(/_(.*?)_/);
+
+    const matches = [
+      boldMatch ? { type: 'bold', index: boldMatch.index, len: boldMatch[0].length, content: boldMatch[1] } : null,
+      codeMatch ? { type: 'code', index: codeMatch.index, len: codeMatch[0].length, content: codeMatch[1] } : null,
+      italicMatch ? { type: 'italic', index: italicMatch.index, len: italicMatch[0].length, content: italicMatch[1] } : null,
+    ].filter(Boolean);
+
+    if (matches.length === 0) {
+      parts.push(remaining);
+      break;
+    }
+
+    matches.sort((a, b) => a.index - b.index);
+    const first = matches[0];
+
+    if (first.index > 0) {
+      parts.push(remaining.slice(0, first.index));
+    }
+
+    if (first.type === 'bold') {
+      parts.push(<strong key={key++} className="font-bold text-white">{first.content}</strong>);
+    } else if (first.type === 'code') {
+      parts.push(<code key={key++} className="px-1 py-0.5 rounded bg-slate-950 text-cyan-400 font-mono text-[11px] border border-slate-800">{first.content}</code>);
+    } else if (first.type === 'italic') {
+      parts.push(<em key={key++} className="italic text-slate-400">{first.content}</em>);
+    }
+
+    remaining = remaining.slice(first.index + first.len);
+  }
+
+  return parts;
+}
 
 export default function ReportModal({ analysis, isOpen, onClose }) {
   const [copied, setCopied] = useState(false);
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [rawView, setRawView] = useState(false);
+
+  const analysisId = analysis?.analysis_id;
+
+  const fetchReport = async () => {
+    if (!analysisId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await orcaApi.getReport(analysisId, 'markdown');
+      setReportData(res?.data || res);
+    } catch (err) {
+      console.error('Error fetching authoritative report:', err);
+      setError(err.message || 'Failed to fetch authoritative advisory report from server.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && analysisId) {
+      fetchReport();
+    } else if (!isOpen) {
+      setReportData(null);
+      setError(null);
+    }
+  }, [isOpen, analysisId]);
 
   if (!isOpen || !analysis) return null;
 
-  const decision = analysis.decision || {};
-  const risk = analysis.risk || {};
-  const plan = analysis.plan || {};
-  const location = plan.location?.validated || plan.location?.original || { lat: 9.94, lon: 76.16 };
-  const score = Math.round(decision.overall_risk_score ?? risk.overall_risk_score ?? 28);
-  const category = (decision.safety_category || 'SAFE').toUpperCase();
-
-  const reportMarkdown = `# ORCA MARITIME SAFETY ADVISORY BULLETIN
-**Analysis Reference:** ${analysis.analysis_id || 'ORCA-REQ-2026-LIVE'}
-**Generated At:** ${new Date().toUTCString()}
-**Sovereign Jurisdiction:** Indian Coastal Waters (EEZ)
-
----
-
-### MISSION & VESSEL PROFILE
-- **Vessel Classification:** ${plan.vessel_type || 'Fibreglass FRP Motorized'}
-- **Activity:** ${plan.activity || 'Motorized Coastal Fishing'}
-- **Target Coordinates:** ${location.lat}°N, ${location.lon}°E ${location.snapped ? `(Shoreline snapped offshore)` : ''}
-- **Assessment Horizon:** ${plan.time_window?.duration_hours || 4} Hours
-
----
-
-### OPERATIONAL SAFETY DIRECTIVE
-- **Safety Category:** ${category}
-- **Synthesized Risk Score:** ${score} / 100
-- **Primary Operational Advice:**
-  ${decision.one_line_recommendation || decision.primary_advice || 'Conditions are favorable for normal maritime operations. Follow standard safety protocols.'}
-- **Detailed Metocean Advisory:**
-  ${decision.detailed_recommendation || 'Follow standard safety protocols and monitor marine VHF channel 16.'}
-
-### KEY OPERATIONAL DIRECTIVES
-${(decision.recommendations || [
-  'Carry standard life jackets and EPIRB beacons.',
-  'Maintain continuous listening watch on VHF Marine Channel 16.',
-  'Observe local harbor master flags prior to harbor departure.'
-]).map(r => `- ${r}`).join('\n')}
-
-### METOCEAN HAZARD PARAMETERS
-- Significant Wave Height: ${risk.dominant_factors?.significant_wave_height || '1.4'} meters
-- Sustained Wind Speed: ${risk.dominant_factors?.wind_speed || '12'} knots
-- Swell Direction: WSW (West-Southwest)
-- Emergency Safe Harbors: ${(decision.safe_harbor_recommendations || ['Kochi Fisheries Harbor', 'Thoppumpady Safe Haven']).join(', ')}
-
----
-
-**EMERGENCY CONTACTS:**
-- Indian Coast Guard Search & Rescue: **1554 (Toll-Free)**
-- National Maritime Rescue Coordination Centre (MRCC)
-- INCOIS Ocean Safety Broadcast Network
-`;
+  const content = reportData?.content || '';
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(reportMarkdown);
+    if (!content) return;
+    navigator.clipboard.writeText(content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -68,121 +242,135 @@ ${(decision.recommendations || [
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-        {/* Modal Header */}
-        <div className="p-4 sm:p-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center space-x-2.5">
-            <div className="p-2 rounded-lg bg-cyan-950 text-cyan-400 border border-cyan-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+        
+        {/* Header */}
+        <div className="p-4 sm:p-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between gap-3">
+          <div className="flex items-center space-x-2.5 min-w-0">
+            <div className="p-2 rounded-lg bg-cyan-950 text-cyan-400 border border-cyan-800 flex-shrink-0">
               <FileText className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-sm sm:text-base font-bold text-white">
-                Official Maritime Safety Advisory Bulletin
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-bold text-white truncate">
+                Authoritative Maritime Advisory Bulletin
               </h3>
-              <p className="text-[11px] text-slate-400 font-mono">
-                ID: {analysis.analysis_id || 'LIVE-REPORT'}
+              <p className="text-[11px] text-slate-400 font-mono truncate">
+                Analysis Reference: {analysisId || 'Unrecorded'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={handleCopy}
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs flex items-center space-x-1"
-              title="Copy Markdown"
-            >
-              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-              <span className="hidden sm:inline">{copied ? 'Copied!' : 'Copy'}</span>
-            </button>
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            {content && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setRawView(!rawView)}
+                  className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs hidden sm:inline-block border border-slate-700 cursor-pointer"
+                >
+                  {rawView ? 'Formatted' : 'Raw Markdown'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs flex items-center space-x-1 cursor-pointer"
+                  title="Copy Markdown"
+                >
+                  {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  <span className="hidden md:inline">{copied ? 'Copied' : 'Copy'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  className="p-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center space-x-1 cursor-pointer"
+                  title="Print Bulletin"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span className="hidden md:inline">Print</span>
+                </button>
+              </>
+            )}
 
             <button
-              onClick={handlePrint}
-              className="p-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center space-x-1"
-              title="Print Bulletin"
-            >
-              <Printer className="w-4 h-4" />
-              <span className="hidden sm:inline">Print / PDF</span>
-            </button>
-
-            <button
+              type="button"
               onClick={onClose}
-              className="p-2 rounded-lg bg-slate-800 hover:bg-rose-900/60 text-slate-400 hover:text-rose-200 border border-slate-700"
+              className="p-2 rounded-lg bg-slate-800 hover:bg-rose-900/60 text-slate-400 hover:text-rose-200 border border-slate-700 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Modal Body / Report Content */}
-        <div className="flex-1 p-6 overflow-y-auto font-sans text-slate-200 space-y-6 bg-slate-900">
-          {/* Header Badge */}
-          <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Anchor className="w-6 h-6 text-cyan-400" />
-              <span className="text-lg font-black tracking-wider text-white">ORCA MARITIME ADVISORY</span>
+        {/* Content area */}
+        <div className="flex-1 p-4 sm:p-6 overflow-y-auto font-sans text-slate-200 space-y-4 bg-slate-900/95">
+          {loading && (
+            <div className="py-20 flex flex-col items-center justify-center space-y-3 text-slate-400 text-sm">
+              <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
+              <span>Retrieving immutable advisory record from server...</span>
             </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-black uppercase ${
-              category === 'SAFE' ? 'bg-emerald-500 text-slate-950' : 
-              category === 'CAUTION' ? 'bg-amber-400 text-slate-950' : 'bg-rose-500 text-white'
-            }`}>
-              {category} ({score}/100)
-            </div>
-          </div>
+          )}
 
-          {/* Key Advice */}
-          <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 space-y-1">
-            <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">Operational Action Directive</span>
-            <p className="text-sm font-semibold text-white leading-relaxed">
-              {decision.primary_advice || 'Normal maritime conditions. Safe to proceed with standard navigation precautions.'}
-            </p>
-          </div>
+          {error && !loading && (
+            <div className="p-6 rounded-2xl bg-rose-950/40 border border-rose-800/80 space-y-3">
+              <div className="flex items-center space-x-2 text-rose-300 font-bold text-sm">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0 text-rose-400" />
+                <span>Unable to generate or retrieve advisory report</span>
+              </div>
+              <p className="text-xs text-rose-200/90 leading-relaxed font-mono">
+                {error}
+              </p>
+              <button
+                type="button"
+                onClick={fetchReport}
+                className="px-4 py-2 bg-rose-900 hover:bg-rose-800 text-rose-100 font-bold rounded-xl text-xs flex items-center space-x-1.5 transition-colors cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Retry Fetch</span>
+              </button>
+            </div>
+          )}
 
-          {/* Mission Details */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-            <div className="bg-slate-950/40 p-2.5 rounded-lg border border-slate-800">
-              <span className="text-slate-400 block text-[10px]">Vessel</span>
-              <span className="font-bold text-white capitalize">{plan.vessel_type || 'Fibreglass'}</span>
-            </div>
-            <div className="bg-slate-950/40 p-2.5 rounded-lg border border-slate-800">
-              <span className="text-slate-400 block text-[10px]">Activity</span>
-              <span className="font-bold text-white capitalize">{plan.activity || 'Fishing'}</span>
-            </div>
-            <div className="bg-slate-950/40 p-2.5 rounded-lg border border-slate-800">
-              <span className="text-slate-400 block text-[10px]">Coordinates</span>
-              <span className="font-bold text-cyan-400 font-mono">{location.lat}°N, {location.lon}°E</span>
-            </div>
-            <div className="bg-slate-950/40 p-2.5 rounded-lg border border-slate-800">
-              <span className="text-slate-400 block text-[10px]">Status</span>
-              <span className="font-bold text-emerald-400">Validated</span>
-            </div>
-          </div>
+          {!loading && !error && reportData && (
+            <div className="space-y-4">
+              {/* Metadata Banner */}
+              <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+                <div className="flex items-center space-x-2">
+                  <Database className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Report ID: <code className="font-mono text-cyan-300">{reportData.report_id}</code></span>
+                  {reportData.cached && (
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 font-bold text-[10px]">
+                      Cached Immutable Record
+                    </span>
+                  )}
+                </div>
+                {reportData.generated_at && (
+                  <div className="flex items-center space-x-1.5 font-mono text-slate-400">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>{new Date(reportData.generated_at).toLocaleString()}</span>
+                  </div>
+                )}
+              </div>
 
-          {/* Directives */}
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
-              Mandatory Safety Instructions
-            </h4>
-            <ul className="space-y-1.5 text-xs text-slate-300">
-              {(decision.recommendations || [
-                'Equip all crew with ISO/SOLAS approved life jackets prior to departure.',
-                'Maintain continuous listening watch on VHF Marine Channel 16.',
-                'Check automatic bilge pumps and battery reserves before sailing.'
-              ]).map((rec, i) => (
-                <li key={i} className="flex items-start space-x-2 bg-slate-950/30 p-2 rounded-lg">
-                  <ShieldCheck className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0 mt-0.5" />
-                  <span>{rec}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Emergency contacts footer */}
-          <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-2">
-            <span>Coast Guard Emergency MRCC: <strong className="text-rose-400 font-mono">1554</strong></span>
-            <span>VHF Distress: <strong className="text-cyan-400 font-mono">Channel 16 (156.8 MHz)</strong></span>
-          </div>
+              {/* Main Report Body */}
+              {rawView ? (
+                <pre className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-300 whitespace-pre-wrap overflow-x-auto">
+                  {content}
+                </pre>
+              ) : (
+                <div className="p-4 sm:p-6 rounded-2xl bg-slate-950/50 border border-slate-800/80">
+                  <MarkdownRenderer content={content} />
+                </div>
+              )}
+            </div>
+          )}
         </div>
+
+        {/* Footer info */}
+        <div className="p-3 bg-slate-950 border-t border-slate-800 text-center text-[11px] text-slate-500">
+          Generated exclusively from persisted metocean evidence & official boundary verification (§103).
+        </div>
+
       </div>
     </div>
   );

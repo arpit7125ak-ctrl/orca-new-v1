@@ -23,15 +23,62 @@ CONTRACT SHAPE (contracts/Decision.json) - two fields that are easy to get wrong
     preferred_point : a point_id STRING, not the point object
 """
 
+import re
 from typing import Any, Dict, List, Optional
 
 from app.clients import gemini_client
+from app.decision.fallback_strings import get_fallback_one_line, get_fallback_detailed
 from app.observability.logger import log
+
 
 # contracts/Decision.json recommendation_type enum - exact values.
 RECOMMENDATION_TYPES = [
     "go", "go_with_caution", "go_in_safer_window", "not_recommended", "do_not_venture",
 ]
+
+
+def _check_numeric_hallucination(
+    text: str,
+    merged_points: Dict[str, Dict[str, Any]],
+    assessments: List[Dict[str, Any]],
+) -> bool:
+    """Return True if text mentions numbers with marine units not grounded in measured data."""
+    if not text:
+        return False
+
+    valid_numbers: List[float] = []
+    for _pid, pdata in merged_points.items():
+        meas = pdata.get("measurements", {}) or {}
+        for m in meas.values():
+            if isinstance(m, dict) and isinstance(m.get("value"), (int, float)) and not isinstance(m.get("value"), bool):
+                valid_numbers.append(float(m["value"]))
+    for a in assessments:
+        for k in ["baseline_score", "final_score"]:
+            if a.get(k) is not None:
+                valid_numbers.append(float(a[k]))
+
+    if not valid_numbers:
+        return False
+
+    metric_pattern = re.compile(
+        r'(\d+(?:\.\d+)?)\s*(?:m/s|ms|m\b|meters?|km|knots?|kts?|degc|°c|hpa|ft)',
+        re.IGNORECASE,
+    )
+
+    matches = metric_pattern.findall(text)
+    for num_str in matches:
+        try:
+            val = float(num_str)
+        except ValueError:
+            continue
+        if val <= 2.0:
+            continue
+        matched = any(abs(val - vn) <= max(1.0, 0.25 * vn) for vn in valid_numbers)
+        if not matched:
+            log.warning("[decision] Numeric hallucination detected: '%s' not supported by telemetry", num_str)
+            return True
+
+    return False
 
 # Ordering for "which level is worse" comparisons. UPPERCASE throughout.
 _LEVEL_RANK = {"SAFE": 0, "CAUTION": 1, "UNSAFE": 2, "DANGEROUS": 3}
@@ -236,19 +283,36 @@ async def build_decision(
     )
 
     if llm.available and llm.data:
-        one_line = llm.data.get("one_line_recommendation") or _fallback_one_line(
-            recommendation_type, preferred
+        raw_one = llm.data.get("one_line_recommendation")
+        raw_det = llm.data.get("detailed_recommendation")
+
+        has_hallucination = _check_numeric_hallucination(
+            f"{raw_one or ''} {raw_det or ''}",
+            merged_points,
+            assessments,
         )
-        detailed = llm.data.get("detailed_recommendation") or _fallback_detailed(
-            recommendation_type, preferred, worst, excluded, agents_missing, merged_points
-        )
+
+        if has_hallucination:
+            log.warning("[decision] Discarding LLM narrative due to ungrounded numeric metrics - using audited deterministic advisory")
+            one_line = get_fallback_one_line(recommendation_type, preferred, language=response_language)
+            detailed = get_fallback_detailed(
+                recommendation_type, preferred, excluded, agents_missing, merged_points,
+                language=response_language,
+            )
+        else:
+            one_line = raw_one or get_fallback_one_line(recommendation_type, preferred, language=response_language)
+            detailed = raw_det or get_fallback_detailed(
+                recommendation_type, preferred, excluded, agents_missing, merged_points,
+                language=response_language,
+            )
         major_hazard = llm.data.get("major_hazard")
         main_uncertainty = llm.data.get("main_uncertainty")
     else:
         log.info("[decision] LLM unavailable (%s) - deterministic advisory", llm.reason)
-        one_line = _fallback_one_line(recommendation_type, preferred)
-        detailed = _fallback_detailed(
-            recommendation_type, preferred, worst, excluded, agents_missing, merged_points
+        one_line = get_fallback_one_line(recommendation_type, preferred, language=response_language)
+        detailed = get_fallback_detailed(
+            recommendation_type, preferred, excluded, agents_missing, merged_points,
+            language=response_language,
         )
         major_hazard = None
         main_uncertainty = None

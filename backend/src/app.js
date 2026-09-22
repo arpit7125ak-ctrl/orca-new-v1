@@ -143,6 +143,10 @@ function createApp() {
         vessel_types: registry.vesselTypes,
         languages: registry.languages,
         canonical_units: registry.canonicalUnits,
+        web_push: {
+          enabled: Boolean(env.VAPID_PUBLIC_KEY),
+          vapid_public_key: env.VAPID_PUBLIC_KEY || null,
+        },
       },
     });
   });

@@ -19,6 +19,7 @@ router.post(
   controller.createSubscription
 );
 router.get('/subscriptions/:id', controller.getSubscription);
+router.get('/subscriptions/:id/events', controller.getEvents);
 router.patch(
   '/subscriptions/:id',
   validateContract('api/AlertSubscriptionPatchRequest.json'),

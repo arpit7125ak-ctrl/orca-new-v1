@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle2, 
   Loader2, 
@@ -31,7 +31,7 @@ export default function AnalysisLoadingPage({
       icon: MapPin,
       detailPending: 'Waiting to verify coordinates...',
       detailActive: 'Resolving coordinates, land-sea boundary & shoreline snapping...',
-      detailDone: 'Location identified & snapped 6.7km offshore of target zone.',
+      detailDone: 'Target coordinates validated and offshore boundary checked.',
     },
     {
       id: 'weather',
@@ -39,7 +39,7 @@ export default function AnalysisLoadingPage({
       icon: CloudSun,
       detailPending: 'Waiting for IMD meteorological model...',
       detailActive: 'Querying IMD numerical weather prediction, wind gusts & rain...',
-      detailDone: 'Weather data collected: 12.6 m/s wind speed, 19.7 m/s max gusts.',
+      detailDone: 'Meteorological telemetry and atmospheric parameters retrieved.',
     },
     {
       id: 'ocean',
@@ -47,7 +47,7 @@ export default function AnalysisLoadingPage({
       icon: Waves,
       detailPending: 'Waiting for INCOIS oceanography model...',
       detailActive: 'Analyzing wave height, primary swell period & ocean current vectors...',
-      detailDone: 'Waves and ocean conditions analyzed: 0.82m wave, 0.92m swell.',
+      detailDone: 'Wave height, swell parameters and sea state analyzed.',
     },
     {
       id: 'ecosystem',
@@ -55,7 +55,7 @@ export default function AnalysisLoadingPage({
       icon: ShieldAlert,
       detailPending: 'Waiting for spatial GIS boundaries...',
       detailActive: 'Screening Marine Protected Areas, IMBL borders & navigation hazards...',
-      detailDone: 'Marine boundaries verified: Safe from IMBL, outside MPA exclusion.',
+      detailDone: 'Marine spatial boundaries and territorial limits screened.',
     },
     {
       id: 'risk',
@@ -63,7 +63,7 @@ export default function AnalysisLoadingPage({
       icon: Scale,
       detailPending: 'Waiting for metocean parameters...',
       detailActive: 'Enforcing deterministic IMD safety floors & 9-point grid scoring...',
-      detailDone: 'Risk matrix computed: Active IMD alert applied, constraint floor 85.',
+      detailDone: 'Multi-factor risk matrix evaluated across vessel envelope.',
     },
     {
       id: 'decision',
@@ -71,7 +71,7 @@ export default function AnalysisLoadingPage({
       icon: Compass,
       detailPending: 'Waiting for risk synthesis...',
       detailActive: 'Synthesizing operational directives, best quadrant & safe harbors...',
-      detailDone: 'Operational directives generated. Safe harbor: Kochi Fisheries Harbor.',
+      detailDone: 'Advisory directives and navigational recommendations generated.',
     },
   ];
 

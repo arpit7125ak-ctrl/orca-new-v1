@@ -143,14 +143,6 @@ export const orcaApi = {
   },
 
   /**
-   * Get the most recently completed real analysis
-   */
-  async getLatestAnalysis() {
-    const res = await request('/analysis/latest');
-    return res.data || res;
-  },
-
-  /**
    * Poll analysis until completion or failure
    */
   async pollAnalysisUntilDone(analysisId, onProgress = () => { }, intervalMs = 1200, maxAttempts = 50) {
@@ -195,6 +187,14 @@ export const orcaApi = {
   },
 
   /**
+   * Get conversational thread by conversation_id
+   */
+  async getConversation(conversationId) {
+    const res = await request(`/chat/${conversationId}`);
+    return res.data || res;
+  },
+
+  /**
    * Fetch GIS layers metadata and boundaries
    */
   async getMapLayers(params = {}) {
@@ -231,6 +231,25 @@ export const orcaApi = {
   },
 
   /**
+   * Submit trend analysis request (§72)
+   */
+  async createTrend(payload) {
+    const res = await request('/trend', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data || res;
+  },
+
+  /**
+   * Fetch trend analysis by ID
+   */
+  async getTrend(trendId) {
+    const res = await request(`/trend/${trendId}`);
+    return res.data || res;
+  },
+
+  /**
    * Create alert subscription (§70)
    */
   async createAlertSubscription(payload) {
@@ -246,6 +265,14 @@ export const orcaApi = {
    */
   async getAlertSubscription(id) {
     const res = await request(`/alerts/subscriptions/${id}`);
+    return res.data || res;
+  },
+
+  /**
+   * Fetch delivered/failed events for an alert subscription
+   */
+  async getSubscriptionEvents(id) {
+    const res = await request(`/alerts/subscriptions/${id}/events`);
     return res.data || res;
   },
 

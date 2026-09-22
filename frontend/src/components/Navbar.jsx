@@ -12,6 +12,7 @@ import {
   Layers,
   Bell,
   Navigation,
+  TrendingUp,
   Clock,
   User
 } from 'lucide-react';
@@ -55,6 +56,7 @@ export default function Navbar({
     { id: 'input', label: 'Setup', icon: MapPin },
     { id: 'results', label: 'Advisory Hub', icon: Activity },
     { id: 'route', label: 'Route', icon: Navigation },
+    { id: 'trend', label: 'Trends', icon: TrendingUp },
     { id: 'geofence', label: 'At-Sea Guard', icon: ShieldAlert },
     { id: 'alerts', label: 'Alerts', icon: Bell },
     { id: 'history', label: 'History', icon: Clock },
@@ -63,12 +65,17 @@ export default function Navbar({
   ];
 
   const languages = [
+    { code: 'auto', label: 'Auto-detect' },
     { code: 'en', label: 'English (EN)' },
     { code: 'hi', label: 'हिन्दी (HI)' },
+    { code: 'bn', label: 'বাংলা (BN)' },
     { code: 'ta', label: 'தமிழ் (TA)' },
     { code: 'te', label: 'తెలుగు (TE)' },
+    { code: 'or', label: 'ଓଡ଼ିଆ (OR)' },
+    { code: 'mr', label: 'मराठी (MR)' },
     { code: 'ml', label: 'മലയാളം (ML)' },
-    { code: 'bn', label: 'বাংলা (BN)' },
+    { code: 'kn', label: 'ಕನ್ನಡ (KN)' },
+    { code: 'gu', label: 'ગુજરાતી (GU)' },
   ];
 
   return (

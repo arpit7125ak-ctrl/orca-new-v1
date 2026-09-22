@@ -32,7 +32,9 @@ from app.clients import backend_client
 from app.decision import decision_agent
 from app.observability.logger import for_analysis
 from app.planner import planner as planner_mod
+from app.planner import router
 from app.risk import risk_agent
+from app.risk import trends
 
 # Tracks analyses currently running, so a duplicate handoff is a no-op rather
 # than a second execution (Section 103 idempotency requirement).
@@ -209,6 +211,13 @@ async def _run(*, analysis_id: str, request: Dict[str, Any], log) -> None:
         )
         return
 
+    if intent == "historical_trend" or "trend" in plan.get("stages", []):
+        await _finish_trend(
+            analysis_id=analysis_id, request=request, plan=plan, points=points,
+            failed_agents=failed_agents, log=log,
+        )
+        return
+
     # ------------------------------------------------------------------
     # STAGE 3 - Risk
     # ------------------------------------------------------------------
@@ -260,6 +269,13 @@ async def _run(*, analysis_id: str, request: Dict[str, Any], log) -> None:
     ))
 
     log.info("risk complete: %d point(s) assessed", len(assessments))
+
+    if intent == "route_planning" or "route" in plan.get("stages", []):
+        await _finish_route(
+            analysis_id=analysis_id, request=request, plan=plan, points=points,
+            assessments=assessments, failed_agents=failed_agents, log=log,
+        )
+        return
 
     # ------------------------------------------------------------------
     # STAGE 4 - Decision
@@ -345,3 +361,87 @@ async def _finish_quick_information(
     })
 
     log.info("quick_information complete: %d field(s)", len(fields))
+
+
+async def _finish_route(
+    *, analysis_id: str, request: Dict[str, Any], plan: Dict[str, Any],
+    points: List[Dict[str, Any]], assessments: List[Dict[str, Any]],
+    failed_agents: List[Dict[str, Any]], log: Any
+) -> None:
+    """Evaluate waypoint corridor and deliver RouteResult."""
+    await backend_client.post_progress(_progress(
+        analysis_id=analysis_id, agent="route", status="running", status_code=102,
+    ))
+
+    origin = request.get("origin") or ({"lat": points[0]["lat"], "lon": points[0]["lon"]} if points else None)
+    destination = request.get("destination") or ({"lat": points[-1]["lat"], "lon": points[-1]["lon"]} if points else None)
+    vessel_type = plan.get("vessel_type") or request.get("vessel_type") or "motorized_country_craft"
+
+    route_id = f"route_{analysis_id}"
+    route_result = router.evaluate_route(
+        route_id=route_id,
+        analysis_id=analysis_id,
+        origin=origin,
+        destination=destination,
+        vessel_type=vessel_type,
+        departure_time=request.get("departure_time"),
+    )
+
+    await backend_client.post_progress(_progress(
+        analysis_id=analysis_id, agent="route", status="completed", status_code=200,
+        data={"route_result": route_result},
+    ))
+
+    # contracts/api/InternalResultPayload.json enum is strictly ["completed", "partial", "failed"].
+    # A route outcome of "no_safe_route" successfully completes the analysis stage,
+    # with the Route document itself receiving route_result.status = "no_safe_route".
+    rr_status = route_result.get("status")
+    if rr_status == "failed":
+        final_status = "failed"
+    elif failed_agents:
+        final_status = "partial"
+    else:
+        final_status = "completed"
+
+    await backend_client.post_result({
+        "analysis_id": analysis_id,
+        "final_stage": "route",
+        "status": final_status,
+        "route_result": route_result,
+    })
+    log.info("route complete: %s (status: %s)", route_id, route_result.get("status"))
+
+
+async def _finish_trend(
+    *, analysis_id: str, request: Dict[str, Any], plan: Dict[str, Any],
+    points: List[Dict[str, Any]], failed_agents: List[Dict[str, Any]], log: Any
+) -> None:
+    """Evaluate climatological series and deliver TrendResult."""
+    await backend_client.post_progress(_progress(
+        analysis_id=analysis_id, agent="trend", status="running", status_code=102,
+    ))
+
+    loc = plan.get("location") or ({"lat": points[0]["lat"], "lon": points[0]["lon"]} if points else None)
+    param = request.get("parameter") or "sst"
+    trend_id = f"trend_{analysis_id}"
+
+    trend_result = trends.evaluate_trends(
+        trend_id=trend_id,
+        analysis_id=analysis_id,
+        location=loc,
+        parameter=param,
+    )
+
+    await backend_client.post_progress(_progress(
+        analysis_id=analysis_id, agent="trend", status="completed", status_code=200,
+        data={"trend_result": trend_result},
+    ))
+
+    final_status = "partial" if failed_agents else "completed"
+    await backend_client.post_result({
+        "analysis_id": analysis_id,
+        "final_stage": "trend",
+        "status": final_status,
+        "trend_result": trend_result,
+    })
+    log.info("trend complete: %s (direction: %s)", trend_id, trend_result.get("trend_direction"))

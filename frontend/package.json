@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "test": "node --test tests/*.test.js",
     "start": "node serve.js",
     "lint": "oxlint",
     "preview": "vite preview"
@@ -14,10 +15,13 @@
     "@tailwindcss/vite": "^4.3.3",
     "express": "^5.2.1",
     "http-proxy-middleware": "^4.2.0",
+    "i18next": "^26.4.2",
+    "i18next-browser-languagedetector": "^8.2.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.46.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-i18next": "^17.0.15",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {

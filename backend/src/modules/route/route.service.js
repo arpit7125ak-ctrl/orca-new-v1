@@ -50,11 +50,16 @@ async function createRoute(body) {
   // risk rules, GIS constraints and evidence chain. origin/destination on
   // AnalysisRequest are what signal route intent to the Planner - there is no
   // separate `route_request` field in the contract.
+  const originCoord = body.origin?.coordinate || (body.origin?.lat !== undefined ? { lat: body.origin.lat, lon: body.origin.lon } : null);
+  const originName = body.origin?.place_name || body.origin?.name || null;
+
   const { analysis, dispatched, dispatchError } = await analysisService.createAnalysis(
     {
       query: body.query || null,
       origin: body.origin,
       destination: body.destination,
+      place_name: originName,
+      coordinate: originCoord,
       activity: body.activity || null,
       vessel_type: body.vessel_type,
       language_override: body.language_override || null,

@@ -72,4 +72,9 @@ const deleteSubscription = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createSubscription, getSubscription, updateSubscription, deleteSubscription };
+const getEvents = asyncHandler(async (req, res) => {
+  const events = await service.getSubscriptionEvents(req.params.id);
+  return res.status(HTTP.OK).json({ events });
+});
+
+module.exports = { createSubscription, getSubscription, updateSubscription, deleteSubscription, getEvents };

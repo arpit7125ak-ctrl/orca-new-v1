@@ -3,8 +3,10 @@ import { Compass, Waves, Wind, AlertTriangle, ShieldAlert, CheckCircle2 } from '
 
 export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
   const plan = analysis?.plan || {};
-  const validLat = plan.location?.validated?.lat || plan.location?.original?.lat || 9.94;
-  const validLon = plan.location?.validated?.lon || plan.location?.original?.lon || 76.16;
+  const rawPoints = analysis?.points || [];
+
+  const validLat = plan.location?.validated?.lat ?? plan.location?.original?.lat ?? (rawPoints[0] ? rawPoints[0].lat : null);
+  const validLon = plan.location?.validated?.lon ?? plan.location?.original?.lon ?? (rawPoints[0] ? rawPoints[0].lon : null);
 
   const dirMap = {
     P0: { label: 'Center (Origin)', compass: '🎯' },
@@ -17,8 +19,6 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
     P7: { label: 'West', compass: '⬅️' },
     P8: { label: 'Northwest', compass: '↖️' },
   };
-
-  const rawPoints = analysis?.points || [];
 
   if (rawPoints.length === 0) {
     return (
@@ -34,7 +34,7 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
     const pRisk = p.risk || {};
     const factors = Array.isArray(pRisk.risk_factors) ? pRisk.risk_factors : [];
     const formattedFactors = factors.map((f) => String(f).replace(/_/g, ' ')).join(', ');
-    const finding = (Array.isArray(pRisk.key_findings) ? pRisk.key_findings[0] : null) || pRisk.reasoning || 'Sea state evaluated';
+    const finding = (Array.isArray(pRisk.key_findings) ? pRisk.key_findings[0] : null) || pRisk.reasoning || 'Evaluated';
     const isPreferred = analysis?.decision?.preferred_point === (p.point_id || `P${idx}`);
     const isWorst = analysis?.decision?.worst_point === (p.point_id || `P${idx}`);
 
@@ -42,13 +42,14 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
       point_id: p.point_id || `P${idx}`,
       lat: p.lat,
       lon: p.lon,
-      risk_score: pRisk.final_score ?? 30,
-      status: pRisk.risk_level || 'SAFE',
-      dominant_hazard: formattedFactors || 'Normal Sea',
+      risk_score: pRisk.final_score ?? null,
+      status: pRisk.risk_level || 'UNRATED',
+      dominant_hazard: formattedFactors || 'None reported',
       finding,
       isPreferred,
       isWorst,
       official_warning: pRisk.official_warnings?.[0] || null,
+      point_status: p.point_status || null,
     };
   });
 
@@ -61,7 +62,7 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
             <span>9-Point Spatial Grid Assessment Matrix</span>
           </h3>
           <p className="text-xs text-slate-400">
-            Real sensor-backed safety screening across all 9 marine quadrants
+            Real sensor-backed safety screening across all evaluated marine quadrants
           </p>
         </div>
         <span className="text-xs font-mono font-bold text-cyan-400 bg-cyan-950 px-2.5 py-1 rounded-lg border border-cyan-800">
@@ -74,21 +75,27 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
         {points.map((pt) => {
           const id = pt.point_id || 'P0';
           const info = dirMap[id] || { label: id, compass: '📍' };
-          const score = Math.round(pt.risk_score ?? 30);
+          const hasScore = pt.risk_score !== null && pt.risk_score !== undefined;
+          const score = hasScore ? Math.round(pt.risk_score) : null;
           const isSelected = selectedPoint?.point_id === id || selectedPoint?.id === id;
 
           // Color scale
-          let badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-          let barColor = 'bg-emerald-500';
-          if (score > 80 || pt.status === 'DANGEROUS') {
-            badgeColor = 'bg-rose-500/20 text-rose-400 border-rose-500/40';
-            barColor = 'bg-rose-500';
-          } else if (score > 60 || pt.status === 'UNSAFE') {
-            badgeColor = 'bg-orange-500/20 text-orange-400 border-orange-500/40';
-            barColor = 'bg-orange-500';
-          } else if (score > 30 || pt.status === 'CAUTION') {
-            badgeColor = 'bg-amber-500/20 text-amber-400 border-amber-500/40';
-            barColor = 'bg-amber-400';
+          let badgeColor = 'bg-slate-800/40 text-slate-400 border-slate-700';
+          let barColor = 'bg-slate-700';
+          if (hasScore) {
+            if (score > 80 || pt.status === 'DANGEROUS') {
+              badgeColor = 'bg-rose-500/20 text-rose-400 border-rose-500/40';
+              barColor = 'bg-rose-500';
+            } else if (score > 60 || pt.status === 'UNSAFE') {
+              badgeColor = 'bg-orange-500/20 text-orange-400 border-orange-500/40';
+              barColor = 'bg-orange-500';
+            } else if (score > 30 || pt.status === 'CAUTION') {
+              badgeColor = 'bg-amber-500/20 text-amber-400 border-amber-500/40';
+              barColor = 'bg-amber-400';
+            } else {
+              badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+              barColor = 'bg-emerald-500';
+            }
           }
 
           return (
@@ -122,21 +129,25 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
                     </span>
                   )}
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeColor}`}>
-                    {score}/100
+                    {hasScore ? `${score}/100` : 'Unrated'}
                   </span>
                 </div>
               </div>
 
               {/* Score bar */}
               <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mb-2">
-                <div className={`h-full ${barColor} rounded-full`} style={{ width: `${score}%` }} />
+                {hasScore ? (
+                  <div className={`h-full ${barColor} rounded-full`} style={{ width: `${score}%` }} />
+                ) : (
+                  <div className="h-full bg-slate-700/50 w-full" />
+                )}
               </div>
 
               {/* Coordinates and Hazard Factors */}
               <div className="text-[11px] text-slate-300 space-y-1">
                 <div className="flex justify-between text-slate-400 text-[10px]">
-                  <span>Lat: {typeof pt.lat === 'number' ? pt.lat.toFixed(3) : validLat.toFixed(3)}°N</span>
-                  <span>Lon: {typeof pt.lon === 'number' ? pt.lon.toFixed(3) : validLon.toFixed(3)}°E</span>
+                  <span>Lat: {typeof pt.lat === 'number' ? pt.lat.toFixed(3) : (validLat !== null ? validLat.toFixed(3) : '—')}°N</span>
+                  <span>Lon: {typeof pt.lon === 'number' ? pt.lon.toFixed(3) : (validLon !== null ? validLon.toFixed(3) : '—')}°E</span>
                 </div>
 
                 {pt.official_warning && (
