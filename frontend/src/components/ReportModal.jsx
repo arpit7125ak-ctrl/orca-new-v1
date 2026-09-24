@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   X, 
   Printer, 
@@ -30,8 +31,19 @@ function MarkdownRenderer({ content }) {
     const rows = [...tableBuffer];
     tableBuffer = [];
 
-    // Filter out separator rows like |---|---|
-    const filteredRows = rows.filter((r) => !r.trim().match(/^\|[\s:-|]+\|$/));
+    // Filter out markdown table separator rows (e.g. |---|---|, |:---:|---:|).
+    // IMPORTANT: hyphen must be at the END of the character class so it is
+    // treated as a literal character, not as a range operator.
+    //
+    // The original bug: [\s:-|] created a Unicode range from ':' (U+003A) to
+    // '|' (U+007C), which encompasses ALL uppercase and lowercase English
+    // letters (A-Z are U+0041-U+005A, a-z are U+0061-U+007A). This caused
+    // real header rows like "| Point | Lat | Lon |" to MATCH the separator
+    // pattern and be filtered OUT, while actual "| --- | --- |" rows did NOT
+    // match and survived to become the table header — exactly the visible bug.
+    //
+    // Fix: [\s:|-] — hyphen is now last, unambiguously literal.
+    const filteredRows = rows.filter((r) => !r.trim().match(/^\|[\s:|-]+\|$/));
     if (filteredRows.length === 0) return null;
 
     const [headerRow, ...bodyRows] = filteredRows;
@@ -194,6 +206,7 @@ function renderInlineMarkdown(text) {
 }
 
 export default function ReportModal({ analysis, isOpen, onClose }) {
+  const { t } = useTranslation('ui');
   const [copied, setCopied] = useState(false);
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -211,7 +224,7 @@ export default function ReportModal({ analysis, isOpen, onClose }) {
       setReportData(res?.data || res);
     } catch (err) {
       console.error('Error fetching authoritative report:', err);
-      setError(err.message || 'Failed to fetch authoritative advisory report from server.');
+      setError(err.message || t('report.errorFetchFailed', { defaultValue: 'Failed to fetch authoritative advisory report from server.' }));
     } finally {
       setLoading(false);
     }
@@ -253,10 +266,10 @@ export default function ReportModal({ analysis, isOpen, onClose }) {
             </div>
             <div className="min-w-0">
               <h3 className="text-sm sm:text-base font-bold text-white truncate">
-                Authoritative Maritime Advisory Bulletin
+                {t('report.bulletinTitle', { defaultValue: 'Authoritative Maritime Advisory Bulletin' })}
               </h3>
               <p className="text-[11px] text-slate-400 font-mono truncate">
-                Analysis Reference: {analysisId || 'Unrecorded'}
+                {t('report.analysisReference', { defaultValue: 'Analysis Reference' })}: {analysisId || t('report.unrecorded', { defaultValue: 'Unrecorded' })}
               </p>
             </div>
           </div>
@@ -269,25 +282,25 @@ export default function ReportModal({ analysis, isOpen, onClose }) {
                   onClick={() => setRawView(!rawView)}
                   className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs hidden sm:inline-block border border-slate-700 cursor-pointer"
                 >
-                  {rawView ? 'Formatted' : 'Raw Markdown'}
+                  {rawView ? t('report.formatted', { defaultValue: 'Formatted' }) : t('report.rawMarkdown', { defaultValue: 'Raw Markdown' })}
                 </button>
                 <button
                   type="button"
                   onClick={handleCopy}
                   className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs flex items-center space-x-1 cursor-pointer"
-                  title="Copy Markdown"
+                  title={t('report.copyMarkdown', { defaultValue: 'Copy Markdown' })}
                 >
                   {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                  <span className="hidden md:inline">{copied ? 'Copied' : 'Copy'}</span>
+                  <span className="hidden md:inline">{copied ? t('report.copied', { defaultValue: 'Copied' }) : t('report.copy', { defaultValue: 'Copy' })}</span>
                 </button>
                 <button
                   type="button"
                   onClick={handlePrint}
                   className="p-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center space-x-1 cursor-pointer"
-                  title="Print Bulletin"
+                  title={t('report.printBulletin', { defaultValue: 'Print Bulletin' })}
                 >
                   <Printer className="w-4 h-4" />
-                  <span className="hidden md:inline">Print</span>
+                  <span className="hidden md:inline">{t('report.print', { defaultValue: 'Print' })}</span>
                 </button>
               </>
             )}
@@ -307,7 +320,7 @@ export default function ReportModal({ analysis, isOpen, onClose }) {
           {loading && (
             <div className="py-20 flex flex-col items-center justify-center space-y-3 text-slate-400 text-sm">
               <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
-              <span>Retrieving immutable advisory record from server...</span>
+              <span>{t('report.retrievingRecord', { defaultValue: 'Retrieving immutable advisory record from server...' })}</span>
             </div>
           )}
 
@@ -315,7 +328,7 @@ export default function ReportModal({ analysis, isOpen, onClose }) {
             <div className="p-6 rounded-2xl bg-rose-950/40 border border-rose-800/80 space-y-3">
               <div className="flex items-center space-x-2 text-rose-300 font-bold text-sm">
                 <AlertTriangle className="w-5 h-5 flex-shrink-0 text-rose-400" />
-                <span>Unable to generate or retrieve advisory report</span>
+                <span>{t('report.errorTitle', { defaultValue: 'Unable to generate or retrieve advisory report' })}</span>
               </div>
               <p className="text-xs text-rose-200/90 leading-relaxed font-mono">
                 {error}
@@ -326,7 +339,7 @@ export default function ReportModal({ analysis, isOpen, onClose }) {
                 className="px-4 py-2 bg-rose-900 hover:bg-rose-800 text-rose-100 font-bold rounded-xl text-xs flex items-center space-x-1.5 transition-colors cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>Retry Fetch</span>
+                <span>{t('report.retryFetch', { defaultValue: 'Retry Fetch' })}</span>
               </button>
             </div>
           )}
@@ -337,10 +350,10 @@ export default function ReportModal({ analysis, isOpen, onClose }) {
               <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
                 <div className="flex items-center space-x-2">
                   <Database className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Report ID: <code className="font-mono text-cyan-300">{reportData.report_id}</code></span>
+                  <span>{t('report.reportId', { defaultValue: 'Report ID' })}: <code className="font-mono text-cyan-300">{reportData.report_id}</code></span>
                   {reportData.cached && (
                     <span className="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 font-bold text-[10px]">
-                      Cached Immutable Record
+                      {t('report.cachedRecord', { defaultValue: 'Cached Immutable Record' })}
                     </span>
                   )}
                 </div>
@@ -368,7 +381,7 @@ export default function ReportModal({ analysis, isOpen, onClose }) {
 
         {/* Footer info */}
         <div className="p-3 bg-slate-950 border-t border-slate-800 text-center text-[11px] text-slate-500">
-          Generated exclusively from persisted metocean evidence & official boundary verification (§103).
+          {t('report.footerProvenance', { defaultValue: 'Generated exclusively from persisted metocean evidence & official boundary verification (§103).' })}
         </div>
 
       </div>

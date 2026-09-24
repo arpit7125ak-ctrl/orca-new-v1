@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -14,11 +15,13 @@ import {
 } from 'lucide-react';
 
 export default function TrendView({ trendResult }) {
+  const { t } = useTranslation('ui');
+
   if (!trendResult) {
     return (
       <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-3xl text-center text-slate-400">
         <Info className="w-8 h-8 text-cyan-400 mx-auto mb-2" />
-        <p className="text-sm font-semibold">No trend results available.</p>
+        <p className="text-sm font-semibold">{t('trend.noTrendResults')}</p>
       </div>
     );
   }
@@ -39,7 +42,7 @@ export default function TrendView({ trendResult }) {
   } = trendResult;
 
   const locName = location.original?.name || 
-    (location.original?.lat ? `${location.original.lat.toFixed(2)}°N, ${location.original.lon.toFixed(2)}°E` : 'Selected Sector');
+    (location.original?.lat ? `${location.original.lat.toFixed(2)}°N, ${location.original.lon.toFixed(2)}°E` : t('trend.selectedSector'));
 
   // Check if chlorophyll fallback to SST was mentioned
   const isChlorophyllProxy = Boolean(
@@ -54,13 +57,13 @@ export default function TrendView({ trendResult }) {
   const getDirectionBadge = (dir) => {
     switch (dir) {
       case 'increasing':
-        return { label: 'Increasing Trend', bg: 'bg-rose-950/70 text-rose-300 border-rose-800', icon: TrendingUp };
+        return { label: t('trend.dirIncreasing'), bg: 'bg-rose-950/70 text-rose-300 border-rose-800', icon: TrendingUp };
       case 'decreasing':
-        return { label: 'Decreasing Trend', bg: 'bg-blue-950/70 text-blue-300 border-blue-800', icon: TrendingDown };
+        return { label: t('trend.dirDecreasing'), bg: 'bg-blue-950/70 text-blue-300 border-blue-800', icon: TrendingDown };
       case 'stable':
-        return { label: 'Stable Baseline', bg: 'bg-emerald-950/70 text-emerald-300 border-emerald-800', icon: Minus };
+        return { label: t('trend.dirStable'), bg: 'bg-emerald-950/70 text-emerald-300 border-emerald-800', icon: Minus };
       default:
-        return { label: 'Insufficient Historical Data', bg: 'bg-slate-800 text-slate-400 border-slate-700', icon: HelpCircle };
+        return { label: t('trend.dirInsufficient'), bg: 'bg-slate-800 text-slate-400 border-slate-700', icon: HelpCircle };
     }
   };
 
@@ -105,8 +108,8 @@ export default function TrendView({ trendResult }) {
         <div className="p-4 rounded-2xl bg-amber-950/60 border border-amber-800 text-amber-200 flex items-start space-x-3 text-xs sm:text-sm shadow-lg">
           <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
           <div>
-            <span className="font-bold">Sensor Observation Proxy Applied: </span>
-            <span>Direct chlorophyll-a optical satellite feeds were unavailable for this region/period; Sea Surface Temperature (SST) and upwelling thermal gradients were utilized as an honest observational proxy.</span>
+            <span className="font-bold">{t('trend.proxyNoticeTitle')}: </span>
+            <span>{t('trend.proxyNoticeDesc')}</span>
           </div>
         </div>
       )}
@@ -118,11 +121,11 @@ export default function TrendView({ trendResult }) {
             <div className="flex items-center space-x-2">
               <Activity className="w-5 h-5 text-cyan-400" />
               <h3 className="text-base sm:text-lg font-bold text-white capitalize">
-                {parameter.replace(/_/g, ' ')} Multi-Year Trend Analysis
+                {parameter.replace(/_/g, ' ')} {t('trend.multiYearAnalysisTitle')}
               </h3>
             </div>
             <p className="text-xs text-slate-400 font-mono mt-0.5">
-              Sector: <b className="text-slate-200">{locName}</b>
+              {t('trend.sector')}: <b className="text-slate-200">{locName}</b>
             </p>
           </div>
 
@@ -137,27 +140,27 @@ export default function TrendView({ trendResult }) {
         {/* Magnitude and Confidence Row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
           <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Trend Magnitude</div>
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('trend.magnitudeLabel')}</div>
             <div className="text-xl sm:text-2xl font-black text-white mt-1">
               {trend_magnitude !== null && trend_magnitude !== undefined 
                 ? `${trend_magnitude > 0 ? '+' : ''}${trend_magnitude.toFixed(2)} ${unit}/year`
-                : 'Unavailable'
+                : t('pointDetail.unavailable')
               }
             </div>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Statistical Confidence</div>
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('trend.confidenceLabel')}</div>
             <div className="text-xl sm:text-2xl font-black text-cyan-400 mt-1">
               {confidence !== null && confidence !== undefined 
                 ? `${Math.round(confidence * 100)}%`
-                : 'Unavailable'
+                : t('pointDetail.unavailable')
               }
             </div>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Comparison Periods</div>
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('trend.comparisonPeriods')}</div>
             <div className="text-xs text-slate-300 font-mono mt-1 space-y-0.5">
               <div>Base: {period?.baseline_start || '—'} to {period?.baseline_end || '—'}</div>
               <div>Eval: {period?.analysis_start || '—'} to {period?.analysis_end || '—'}</div>
@@ -169,7 +172,7 @@ export default function TrendView({ trendResult }) {
         {validMeans.length > 1 ? (
           <div className="mt-4 p-4 rounded-2xl bg-slate-950 border border-slate-800 overflow-x-auto">
             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-              <span>Monthly Means & Thermal Anomalies</span>
+              <span>{t('trend.monthlyMeansChartTitle')}</span>
               <span className="text-[11px] font-mono text-cyan-400">{unit}</span>
             </div>
             
@@ -225,7 +228,7 @@ export default function TrendView({ trendResult }) {
           </div>
         ) : (
           <div className="text-center py-6 text-xs text-slate-500 font-mono">
-            Single observation point: insufficient range for time series curve.
+            {t('trend.singleObservationNote')}
           </div>
         )}
 
@@ -234,7 +237,7 @@ export default function TrendView({ trendResult }) {
           <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2">
             <div className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider flex items-center space-x-1.5">
               <Info className="w-3.5 h-3.5" />
-              <span>Multi-Agent Historical Explanation</span>
+              <span>{t('trend.historicalExplanation')}</span>
             </div>
             <p>{explanation}</p>
           </div>
@@ -249,7 +252,7 @@ export default function TrendView({ trendResult }) {
           <div className="flex items-center space-x-2">
             <Calendar className="w-4 h-4 text-amber-400" />
             <h4 className="text-sm font-bold text-white uppercase tracking-wider">
-              Detected Unusual Metocean Events
+              {t('trend.unusualEventsTitle')}
             </h4>
           </div>
 
@@ -266,7 +269,7 @@ export default function TrendView({ trendResult }) {
               ))}
             </div>
           ) : (
-            <p className="text-xs text-slate-500 italic">No acute anomalous episodes recorded in this analysis window.</p>
+            <p className="text-xs text-slate-500 italic">{t('trend.noUnusualEvents')}</p>
           )}
         </div>
 
@@ -275,20 +278,20 @@ export default function TrendView({ trendResult }) {
           <div className="flex items-center space-x-2">
             <ShieldCheck className="w-4 h-4 text-cyan-400" />
             <h4 className="text-sm font-bold text-white uppercase tracking-wider">
-              Unobserved Factors (System Limits)
+              {t('trend.unobservedFactorsTitle')}
             </h4>
           </div>
 
           <p className="text-[11px] text-slate-400">
-            ORCA observes meteorological and hydrodynamic telemetry only. The following potential real-world drivers cannot be confirmed by satellite and must not be assumed causal:
+            {t('trend.unobservedFactorsSubtitle')}
           </p>
 
           <div className="space-y-1.5">
             {(unobserved_factors && unobserved_factors.length > 0 ? unobserved_factors : [
-              'Commercial and artisanal fishing effort / overfishing pressure',
-              'Coastal water chemical runoff and industrial effluents',
-              'Pelagic species seasonal migratory patterns and predator shifts',
-              'Local diesel price swings and market dockside pricing incentives'
+              t('trend.unobservedFactor1'),
+              t('trend.unobservedFactor2'),
+              t('trend.unobservedFactor3'),
+              t('trend.unobservedFactor4'),
             ]).map((factor, i) => (
               <div key={i} className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-xs text-slate-300 flex items-start space-x-2">
                 <span className="text-cyan-400 font-bold">•</span>
@@ -305,9 +308,9 @@ export default function TrendView({ trendResult }) {
         <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs text-slate-400">
           <div className="flex items-center space-x-2">
             <Database className="w-4 h-4 text-slate-500" />
-            <span>Data Provenance: {data_quality.source_note || 'Copernicus Marine & Open-Meteo Historical Archive'}</span>
+            <span>{t('trend.dataProvenance')}: {data_quality.source_note || 'Copernicus Marine & Open-Meteo Historical Archive'}</span>
           </div>
-          <span className="font-mono text-[11px] text-slate-500">Freshness: {data_quality.freshness || 'Archived'}</span>
+          <span className="font-mono text-[11px] text-slate-500">{t('trend.freshness')}: {data_quality.freshness || 'Archived'}</span>
         </div>
       )}
 

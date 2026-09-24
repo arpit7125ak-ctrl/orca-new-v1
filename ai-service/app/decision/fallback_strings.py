@@ -53,10 +53,9 @@ String 5 (go / favourable):
 
 Strings 6-16 (detailed/findings/reasoning templates): All use {placeholders}
 for dynamic values. The surrounding template text has been back-translated and
-confirms the meaning is preserved across all 10 languages. ✅
 """
-
-from typing import Dict
+import re
+from typing import Any, Dict, List, Optional
 
 # ─────────────────────────────────────────────────────────────────
 # ONE-LINE RECOMMENDATION FALLBACKS
@@ -91,7 +90,7 @@ FALLBACK_ONE_LINE: Dict[str, Dict[str, str]] = {
         "en": "Conditions are marginal now - wait for the safer window before going out.",
         "hi": "अभी की परिस्थितियाँ सीमान्त हैं — समुद्र में जाने से पहले सुरक्षित समय की प्रतीक्षा करें।",
         "bn": "এখন পরিস্থিতি সীমান্তে — বের হওয়ার আগে নিরাপদ সময়ের জন্য অপেক্ষা করুন।",
-        "ta": "இப்போது நிலைமைகள் கோடு கடக்கும் நிலையில் உள்ளன — வெளியே செல்வதற்கு முன் பாதுகாப்பான நேரத்தை எதிர்பார்க்கவும்.",
+        "ta": "இப்போது நிலைமைகள் குறைந்தபட்ச அளவில் உள்ளன — வெளியே செல்வதற்கு முன் பாதுகாப்பான நேரம் வரும் வரை காத்திருங்கள்.",
         "te": "ఇప్పుడు పరిస్థితులు అంచున ఉన్నాయి — బయటకు వెళ్ళే ముందు సురక్షితమైన సమయం కోసం వేచి ఉండండి.",
         "or": "ବର୍ତ୍ତମାନ ପରିସ୍ଥିତି ସୀମାଗ୍ରସ୍ତ — ବାହାରକୁ ଯିବା ପୂର୍ବରୁ ସୁରକ୍ଷିତ ସମୟ ପ୍ରତୀକ୍ଷା କରନ୍ତୁ।",
         "mr": "सध्या परिस्थिती सीमारेषेवर आहे — बाहेर जाण्यापूर्वी सुरक्षित वेळाची वाट पाहा.",
@@ -135,7 +134,7 @@ FALLBACK_SAFEST_POINT: Dict[str, str] = {
     "bn": "সবচেয়ে নিরাপদ বিশ্লেষিত বিন্দু হল {point_id} (ঝুঁকি {score}, {level})।",
     "ta": "பகுப்பாய்வு செய்யப்பட்ட மிகவும் பாதுகாப்பான புள்ளி {point_id} (அபாய மதிப்பெண் {score}, {level}).",
     "te": "విశ్లేషించబడిన అత్యంత సురక్షితమైన బిందువు {point_id} (ప్రమాదం {score}, {level}).",
-    "or": "ଅନୁଭବ ସୁରକ୍ଷିତ ବିଶ୍ଳେଷିତ ବିନ୍ଦୁ {point_id} (ବିପଦ {score}, {level}) ।",
+    "or": "ସବୁଠୁ ସୁରକ୍ଷିତ ବିଶ୍ଳେଷିତ ବିନ୍ଦୁ {point_id} ଅଟେ (ବିପଦ {score}, {level}) ।",
     "mr": "सर्वात सुरक्षित विश्लेषित बिंदू {point_id} आहे (धोका {score}, {level}).",
     "ml": "ഏറ്റവും സുരക്ഷിതമായ വിശകലനം ചെയ്ത ബിന്ദു {point_id} ആണ് (അപകടസ്ഥിതി {score}, {level}).",
     "kn": "ವಿಶ್ಲೇಷಿಸಿದ ಅತ್ಯಂತ ಸುರಕ್ಷಿತ ಬಿಂದು {point_id} ({score} ಅಪಾಯ, {level}).",
@@ -147,8 +146,8 @@ FALLBACK_NO_SAFE_POINT: Dict[str, str] = {
     "hi": "कोई भी विश्लेषित बिंदु अनुमत और पर्याप्त सुरक्षित दोनों नहीं था।",
     "bn": "কোনো বিশ্লেষিত বিন্দু অনুমোদিত এবং যথেষ্ট নিরাপদ উভয়ই ছিল না।",
     "ta": "பகுப்பாய்வு செய்யப்பட்ட எந்த புள்ளியும் அனுமதிக்கப்பட்டதாகவும் போதுமான அளவு பாதுகாப்பானதாகவும் இல்லை.",
-    "te": "విశ్లేషించబడిన ఏ బిందువూ అనుమతించబడినది మరియు సురక్షితమైనది రెండూ కాదు.",
-    "or": "ବିଶ୍ଳେଷିତ ବିନ୍ଦୁ ଅନୁମତ ଏବଂ ଯଥେଷ୍ଟ ସୁରକ୍ଷିତ ଉଭୟ ନ ଥିଲା।",
+    "te": "విశ్లేషించబడిన ఏ బిందువూ అనుమతించబడినది మరియు సిఫారసు చేయడానికి తగినంత సురక్షితమైనది రెండూ కాదు.",
+    "or": "କୌଣସି ବିଶ୍ଳେଷିତ ବିନ୍ଦୁ ଅନୁମତ ଏବଂ ଯଥେଷ୍ଟ ସୁରକ୍ଷିତ ଉଭୟ ନ ଥିଲା।",
     "mr": "कोणताही विश्लेषित बिंदू परवानगी दिलेला आणि पुरेसा सुरक्षित नव्हता.",
     "ml": "വിശകലനം ചെയ്ത ഒരു ബിന്ദുവും അനുവദനീയവും മതിയായ സുരക്ഷിതവുമായിരുന്നില്ല.",
     "kn": "ವಿಶ್ಲೇಷಿಸಿದ ಯಾವ ಬಿಂದುವೂ ಅನುಮತಿಸಲ್ಪಟ್ಟ ಮತ್ತು ಸಾಕಷ್ಟು ಸುರಕ್ಷಿತ ಎರಡೂ ಆಗಿರಲಿಲ್ಲ.",
@@ -273,12 +272,786 @@ FALLBACK_FINDINGS_INSUFFICIENT: Dict[str, str] = {
     "bn": "বিস্তারিত ফলাফলের জন্য অপর্যাপ্ত প্রমাণ",
     "ta": "விரிவான கண்டுபிடிப்புகளுக்கு போதுமான சான்றுகள் இல்லை",
     "te": "వివరణాత్మక ఫలితాలకు తగిన సాక్ష్యం లేదు",
-    "or": "ବିସ୍ତୃତ ଫଳାଫଳ ପାଇଁ ଅপ୍ରତୁଳ ପ୍ରମାଣ",
+    "or": "ବିସ୍ତୃତ ଫଳାଫଳ ପାଇଁ ଅପ୍ରତୁଳ ପ୍ରମାଣ",
     "mr": "तपशीलवार निष्कर्षांसाठी अपुरे पुरावे",
     "ml": "വിശദമായ കണ്ടെത്തലുകൾക്ക് അപര്യാപ്തമായ തെളിവ്",
     "kn": "ವಿವರವಾದ ಸಂಶೋಧನೆಗಳಿಗೆ ಸಾಕಷ್ಟು ಸಾಕ್ಷ್ಯ ಇಲ್ಲ",
     "gu": "વિગતવાર તારણો માટે અપૂરતા પુરાવા",
 }
+
+FALLBACK_FINDINGS_OBSERVATIONS_INCOMPLETE: Dict[str, str] = {
+    "en": "Wave or wind observations incomplete; minimum CAUTION advisory enforced.",
+    "hi": "लहर या हवा के अवलोकन अपूर्ण हैं; न्यूनतम CAUTION सलाह लागू की गई।",
+    "bn": "ঢেউ বা বাতাসের পর্যবেক্ষণ অসম্পূর্ণ; ন্যূনতম CAUTION পরামর্শ প্রয়োগ করা হয়েছে।",
+    "ta": "அலை அல்லது காற்று அவதானிப்புகள் முழுமையடையவில்லை; குறைந்தபட்ச CAUTION எச்சரிக்கை அமல்படுத்தப்பட்டது.",
+    "te": "అలలు లేదా గాలి పరిశీలనలు అసంపూర్ణంగా ఉన్నాయి; కనీస CAUTION సలహా అమలు చేయబడింది.",
+    "or": "ତରଙ୍ଗ କିମ୍ବା ପବନ ନିରୀକ୍ଷଣ ଅସମ୍ପୂର୍ଣ୍ଣ; ସର୍ବନିମ୍ନ CAUTION ପରାମର୍ଶ ଲାଗୁ କରାଗଲା।",
+    "mr": "लाटा किंवा वाऱ्याची निरीक्षणे अपूर्ण आहेत; किमान CAUTION सल्ला लागू केला.",
+    "ml": "തിരമാല അല്ലെങ്കിൽ കാറ്റിന്റെ നിരീക്ഷണങ്ങൾ അപൂർണ്ണമാണ്; ഏറ്റവും കുറഞ്ഞ CAUTION മുന്നറിയിപ്പ് നടപ്പിലാക്കി.",
+    "kn": "ಅಲೆ ಅಥವಾ ಗಾಳಿಯ ವೀಕ್ಷಣೆಗಳು ಅಪೂರ್ಣವಾಗಿವೆ; ಕನಿಷ್ಠ CAUTION ಸಲಹೆ ಜಾರಿಗೊಳಿಸಲಾಗಿದೆ.",
+    "gu": "મોજા અથવા પવનના અવલોકનો અપૂર્ણ છે; ન્યૂનતમ CAUTION સલાહ લાગુ કરવામાં આવી.",
+}
+
+FALLBACK_LOCAL_CONDITIONS_PREFIX: Dict[str, str] = {
+    "en": "Local conditions: {conds}.",
+    "hi": "स्थानीय परिस्थितियाँ: {conds}।",
+    "bn": "স্থানীয় পরিস্থিতি: {conds}।",
+    "ta": "உள்ளூர் நிலைமைகள்: {conds}.",
+    "te": "స్థానిక పరిస్థితులు: {conds}.",
+    "or": "ସ୍ଥାନୀୟ ପରିସ୍ଥିତି: {conds} ।",
+    "mr": "स्थानिक परिस्थिती: {conds}.",
+    "ml": "പ്രാദേശിക സാഹചര്യങ്ങൾ: {conds}.",
+    "kn": "ಸ್ಥಳೀಯ ಪರಿಸ್ಥಿತಿಗಳು: {conds}.",
+    "gu": "સ્થાનિક પરિસ્થિતિઓ: {conds}.",
+}
+
+FALLBACK_LOCAL_CONDITIONS_UNAVAILABLE: Dict[str, str] = {
+    "en": "Local sensor readings unavailable.",
+    "hi": "स्थानीय सेंसर रीडिंग अनुपलब्ध हैं।",
+    "bn": "স্থানীয় সেন্সর রিডিং অনুপলব্ধ।",
+    "ta": "உள்ளூர் சென்சார் அளவீடுகள் கிடைக்கவில்லை.",
+    "te": "స్థానిక సెన్సార్ రీడింగ్‌లు అందుబాటులో లేవు.",
+    "or": "ସ୍ଥାନୀୟ ସେନ୍ସର ରିଡିଂ ଅନୁପଲବ୍ଧ ଅଟେ।",
+    "mr": "स्थानिक सेन्सर वाचन उपलब्ध नाही.",
+    "ml": "പ്രാദേശിക സെൻസർ റീഡിംഗുകൾ ലഭ്യമല്ല.",
+    "kn": "ಸ್ಥಳೀಯ ಸಂವೇದಕ ರೀಡಿಂಗ್‌ಗಳು ಲಭ್ಯವಿಲ್ಲ.",
+    "gu": "સ્થાનિક સેન્સર રીડિંગ ઉપલબ્ધ નથી.",
+}
+
+PARAM_LABELS: Dict[str, Dict[str, str]] = {
+    "wind_speed_ms": {
+        "en": "wind speed",
+        "hi": "हवा की गति",
+        "bn": "বাতাসের গতি",
+        "ta": "காற்றின் வேகம்",
+        "te": "గాలి వేగం",
+        "or": "ପବନର ବେଗ",
+        "mr": "वाऱ्याचा वेग",
+        "ml": "കാറ്റിന്റെ വേഗത",
+        "kn": "ಗಾಳಿಯ ವೇಗ",
+        "gu": "પવનની ગતિ",
+    },
+    "wind_gust_ms": {
+        "en": "wind gusts",
+        "hi": "हवा के झोंके",
+        "bn": "দমকা বাতাস",
+        "ta": "திடீர் காற்று வீச்சு",
+        "te": "ఈదురు గాలులు",
+        "or": "ଝଟକା ପବନ",
+        "mr": "वाऱ्याचे झोत",
+        "ml": "കാറ്റടിച്ചുകയറൽ",
+        "kn": "ಬಿರುಗಾಳಿ ಬೀಸುವಿಕೆ",
+        "gu": "ઝંઝાવાતી પવન",
+    },
+    "wave_height_m": {
+        "en": "wave height",
+        "hi": "लहर की ऊँचाई",
+        "bn": "ঢেউয়ের উচ্চতা",
+        "ta": "அலை உயரம்",
+        "te": "అలల ఎత్తు",
+        "or": "ତରଙ୍ଗର ଉଚ୍ଚତା",
+        "mr": "लाटांची उंची",
+        "ml": "തിരമാലയുടെ ഉയരം",
+        "kn": "ಅಲೆಯ ಎತ್ತರ",
+        "gu": "મોજાની ઊંચાઈ",
+    },
+    "swell_height_m": {
+        "en": "swell height",
+        "hi": "उफान (स्वेल) ऊँचाई",
+        "bn": "সোয়েল উচ্চতা",
+        "ta": "கடல் வீக்க உயரம்",
+        "te": "స్వెల్ అలల ఎత్తు",
+        "or": "ସ୍ୱେଲ୍ ଉଚ୍ଚତା",
+        "mr": "उधाणाच्या लाटांची उंची",
+        "ml": "സ്വെൽ ഉയരം",
+        "kn": "ಸ್ವೆಲ್ ಎತ್ತರ",
+        "gu": "સ્વેલ મોજાની ઊંચાઈ",
+    },
+    "current_speed_ms": {
+        "en": "ocean current speed",
+        "hi": "समुद्री धारा गति",
+        "bn": "সমুদ্র স্রোতের গতি",
+        "ta": "கடல் நீரோட்ட வேகம்",
+        "te": "సముద్ర ప్రవాహ వేగం",
+        "or": "ସମୁଦ୍ର ସ୍ରୋତ ବେଗ",
+        "mr": "सागरी प्रवाहाचा वेग",
+        "ml": "സമുദ്ര പ്രവാഹ വേഗത",
+        "kn": "ಸಾಗರ ಪ್ರವಾಹದ ವೇಗ",
+        "gu": "સમુદ્રી પ્રવાહની ગતિ",
+    },
+    "visibility_km": {
+        "en": "visibility",
+        "hi": "दृश्यता",
+        "bn": "দৃশ্যমানতা",
+        "ta": "பார்வைத்திறன்",
+        "te": "దృశ్యమానత",
+        "or": "ଦୃଶ୍ୟମାନତା",
+        "mr": "दृश्यमानता",
+        "ml": "കാഴ്ചപരിധി",
+        "kn": "ಗೋಚರತೆ",
+        "gu": "દ્રશ્યતા",
+    },
+    "precipitation_mm": {
+        "en": "precipitation",
+        "hi": "वर्षा",
+        "bn": "বৃষ্টিপাত",
+        "ta": "மழைப்பொழிவு",
+        "te": "వర్షపాతం",
+        "or": "ବର୍ଷା",
+        "mr": "पर्जन्यवृष्टी",
+        "ml": "മഴ",
+        "kn": "ಮಳೆ",
+        "gu": "વરસાદ",
+    },
+    "wind_direction_deg": {
+        "en": "wind direction",
+        "hi": "हवा की दिशा",
+        "bn": "বাতাসের দিক",
+        "ta": "காற்றின் திசை",
+        "te": "గాలి దిశ",
+        "or": "ପବନର ଦିଗ",
+        "mr": "वाऱ्याची दिशा",
+        "ml": "കാറ്റിന്റെ ദിശ",
+        "kn": "ಗಾಳಿಯ ದಿಕ್ಕು",
+        "gu": "પવનની દિશા",
+    },
+    "wave_period_s": {
+        "en": "wave period",
+        "hi": "तरंग आवर्तकाल",
+        "bn": "ঢেউয়ের সময়কাল",
+        "ta": "அலை கால இடைவெளி",
+        "te": "అలల కాల వ్యవధి",
+        "or": "ତରଙ୍ଗ ସମୟାବଧି",
+        "mr": "लाटांचा आवर्तकाळ",
+        "ml": "തിരമാല കാലയളവ്",
+        "kn": "ಅಲೆಯ ಅವಧಿ",
+        "gu": "તરંગ આવર્તકાળ",
+    },
+    "sst_c": {
+        "en": "sea surface temperature",
+        "hi": "समुद्री सतह तापमान",
+        "bn": "সমুদ্র পৃষ্ঠের তাপমাত্রা",
+        "ta": "கடல் மேற்பரப்பு வெப்பநிலை",
+        "te": "సముద్ర ఉపరితల ఉష్ణోగ్రత",
+        "or": "ସମୁଦ୍ର ପୃଷ୍ଠ ତାପମାତ୍ରା",
+        "mr": "समुद्राच्या पृष्ठभागाचे तापमान",
+        "ml": "സമുദ്രോപരിതല താപനില",
+        "kn": "ಸಮುದ್ರದ ಮೇಲ್ಮೈ ತಾಪಮಾನ",
+        "gu": "દરિયાઈ સપાટીનું તાપમાન",
+    },
+    "water_depth_m": {
+        "en": "water depth",
+        "hi": "पानी की गहराई",
+        "bn": "পানির গভীরতা",
+        "ta": "நீரின் ஆழம்",
+        "te": "నీటి లోతు",
+        "or": "ଜଳର ଗଭୀରତା",
+        "mr": "पाण्याची खोली",
+        "ml": "ജലത്തിന്റെ ആഴം",
+        "kn": "ನೀರಿನ ಆಳ",
+        "gu": "પાણીની ઊંડાઈ",
+    },
+    "official_warning_active": {
+        "en": "official warning",
+        "hi": "आधिकारिक चेतावनी",
+        "bn": "সরকারী সতর্কতা",
+        "ta": "அதிகாரப்பூர்வ எச்சரிக்கை",
+        "te": "అధికారిక హెచ్చరిక",
+        "or": "ସରକାରୀ ଚେତାବନୀ",
+        "mr": "अधिकृत इशारा",
+        "ml": "ഔദ്യോഗിക മുന്നറിയിപ്പ്",
+        "kn": "ಅಧಿಕೃತ ಎಚ್ಚರಿಕೆ",
+        "gu": "સત્તાવાર ચેતવણી",
+    },
+    "distance_to_boundary_km": {
+        "en": "distance to maritime boundary",
+        "hi": "समुद्री सीमा से दूरी",
+        "bn": "সামুদ্রিক সীমানা থেকে দূরত্ব",
+        "ta": "கடல் எல்லைக்கான தூரம்",
+        "te": "సముద్ర సరిహద్దుకు దూరం",
+        "or": "ସାମୁଦ୍ରିକ ସୀମା ଠାରୁ ଦୂରତା",
+        "mr": "सागरी सीमेपासूनचे अंतर",
+        "ml": "സമുദ്ര അതിർത്തിയിലേക്കുള്ള ദൂരം",
+        "kn": "ಸಾಗರ ಗಡಿಗೆ ಇರುವ ದೂರ",
+        "gu": "દરિયાઈ સીમાથી અંતર",
+    },
+    "inside_prohibited_zone": {
+        "en": "inside prohibited zone",
+        "hi": "प्रतिबंधित क्षेत्र के अंदर",
+        "bn": "নিষিদ্ধ অঞ্চলের মধ্যে",
+        "ta": "தடைசெய்யப்பட்ட மண்டலத்தினுள்",
+        "te": "నిషేధిత ప్రాంతంలో",
+        "or": "ନିଷିଦ୍ଧ ଅଞ୍ଚଳ ଭିତରେ",
+        "mr": "प्रतिबंधित क्षेत्रात",
+        "ml": "നിരോധിത മേഖലയ്ക്കുള്ളിൽ",
+        "kn": "ನಿಷೇಧಿತ ವಲಯದೊಳಗೆ",
+        "gu": "પ્રતિબંધિત ક્ષેત્રમાં",
+    },
+    "zone_name": {
+        "en": "zone name",
+        "hi": "क्षेत्र का नाम",
+        "bn": "অঞ্চলের নাম",
+        "ta": "மண்டலத்தின் பெயர்",
+        "te": "ప్రాంతం పేరు",
+        "or": "ଅଞ୍ଚଳର ନାମ",
+        "mr": "क्षेत्राचे नाव",
+        "ml": "മേഖലയുടെ പേര്",
+        "kn": "ವಲಯದ ಹೆಸರು",
+        "gu": "ક્ષેત્રનું નામ",
+    },
+    "zone_category": {
+        "en": "zone category",
+        "hi": "क्षेत्र श्रेणी",
+        "bn": "অঞ্চল বিভাগ",
+        "ta": "மண்டல வகை",
+        "te": "ప్రాంతం వర్గం",
+        "or": "ଅଞ୍ଚଳ ବର୍ଗ",
+        "mr": "क्षेत्राचा प्रकार",
+        "ml": "മേഖല തരം",
+        "kn": "ವಲಯದ ವರ್ಗ",
+        "gu": "ક્ષેત્ર શ્રેણી",
+    },
+    "constraint_type": {
+        "en": "constraint type",
+        "hi": "बाध्यता प्रकार",
+        "bn": "সীমাবদ্ধতার প্রকার",
+        "ta": "கட்டுப்பாடு வகை",
+        "te": "పరిమితి రకం",
+        "or": "ପ୍ରତିବନ୍ଧକ ପ୍ରକାର",
+        "mr": "मर्यादा प्रकार",
+        "ml": "നിയന്ത്രണ തരം",
+        "kn": "ನಿರ್ಬಂಧದ ಪ್ರಕಾರ",
+        "gu": "નિયંત્રણ પ્રકાર",
+    },
+    "nearest_boundary_name": {
+        "en": "nearest boundary",
+        "hi": "निकटतम समुद्री सीमा",
+        "bn": "নিকটতম সামুদ্রিক সীমানা",
+        "ta": "அருகிலுள்ள கடல் எல்லை",
+        "te": "సమీప సముద్ర సరిహద్దు",
+        "or": "ନିକଟତମ ସାମୁଦ୍ରିକ ସୀମା",
+        "mr": "जवळची सागरी सीमा",
+        "ml": "ഏറ്റവും അടുത്തുള്ള സമുദ്ര അതിർത്തി",
+        "kn": "ಹತ್ತಿರದ ಸಾಗರ ಗಡಿ",
+        "gu": "નજીકની દરિયાઈ સીમા",
+    },
+    "pfz_suitability_score": {
+        "en": "PFZ suitability score",
+        "hi": "PFZ उपयुक्तता स्कोर",
+        "bn": "PFZ উপযুক্ততা স্কোর",
+        "ta": "PFZ பொருத்தம் மதிப்பெண்",
+        "te": "PFZ అనుకూలత స్కోర్",
+        "or": "PFZ ଉପଯୁକ୍ତତା ସ୍କୋର",
+        "mr": "PFZ उपयुक्तता स्कोर",
+        "ml": "PFZ അനുയോജ്യത സ്കോർ",
+        "kn": "PFZ ಸೂಕ್ತತೆಯ ಸ್ಕೋರ್",
+        "gu": "PFZ યોગ્યતા સ્કોર",
+    },
+    "sst_gradient": {
+        "en": "SST gradient",
+        "hi": "SST तापमान प्रवणता",
+        "bn": "SST তাপমাত্রা গ্রেডিয়েন্ট",
+        "ta": "SST வெப்பநிலை சாய்வு",
+        "te": "SST ఉష్ణోగ్రత ప్రవణత",
+        "or": "SST ତାପମାତ୍ରା ପ୍ରବଣତା",
+        "mr": "SST तापमान प्रवणता",
+        "ml": "SST താപനില ഗ്രേഡിയന്റ്",
+        "kn": "SST ತಾಪಮಾನ ಗ್ರೇಡಿಯಂಟ್",
+        "gu": "SST તાપમાન ગ્રેડિયન્ટ",
+    },
+    "distance_to_pfz_km": {
+        "en": "distance to PFZ",
+        "hi": "PFZ से दूरी",
+        "bn": "PFZ থেকে দূরত্ব",
+        "ta": "PFZ க்கான தூரம்",
+        "te": "PFZ కు దూరం",
+        "or": "PFZ କୁ ଦୂରତା",
+        "mr": "PFZ पासूनचे अंतर",
+        "ml": "PFZ ലേക്കുള്ള ദൂരം",
+        "kn": "PFZ ಗೆ ಇರುವ ದೂರ",
+        "gu": "PFZ થી અંતર",
+    },
+    "target_species": {
+        "en": "target species",
+        "hi": "लक्षित मछली प्रजातियाँ",
+        "bn": "লক্ষ্য মাছের প্রজাতি",
+        "ta": "இலக்கு மீன் இனங்கள்",
+        "te": "లక్ష్య చేపల జాతులు",
+        "or": "ଲକ୍ଷ୍ୟ ମାଛ ପ୍ରଜାତି",
+        "mr": "लक्ष्य माशांच्या प्रजाती",
+        "ml": "ലക്ഷ്യമിടുന്ന മത്സ്യങ്ങൾ",
+        "kn": "ಉದ್ದೇಶಿತ ಮೀನು ಪ್ರಭೇದಗಳು",
+        "gu": "લક્ષિત માછલીની પ્રજાતિઓ",
+    },
+    "cyclone_distance_km": {
+        "en": "cyclone distance",
+        "hi": "चक्रवात से दूरी",
+        "bn": "ঘূর্ণিঝড় থেকে দূরত্ব",
+        "ta": "புயலுக்கான தூரம்",
+        "te": "తుఫాను దూరం",
+        "or": "ବାତ୍ୟା ଠାରୁ ଦୂରତା",
+        "mr": "वादळापासूनचे अंतर",
+        "ml": "ചുഴലിക്കാറ്റിലേക്കുള്ള ദൂരം",
+        "kn": "ಚಂಡಮಾರುತದ ದೂರ",
+        "gu": "વાવાઝોડાથી અંતર",
+    },
+    "tide_height_m": {
+        "en": "tide height",
+        "hi": "ज्वार की ऊँचाई",
+        "bn": "জোয়ারের উচ্চতা",
+        "ta": "ஓத உயரம்",
+        "te": "పోటు ఎత్తు",
+        "or": "ଜୁଆର ଉଚ୍ଚତା",
+        "mr": "भरतीची उंची",
+        "ml": "വേലിയേറ്റ ഉയരം",
+        "kn": "ಉಬ್ಬರವಿಳಿತದ ಎತ್ತರ",
+        "gu": "ભરતીની ઊંચાઈ",
+    },
+}
+
+AGENT_LABELS: Dict[str, Dict[str, str]] = {
+    "weather": {
+        "en": "Weather",
+        "hi": "मौसम (Weather)",
+        "bn": "আবহাওয়া (Weather)",
+        "ta": "வானிலை (Weather)",
+        "te": "వాతావరణం (Weather)",
+        "or": "ପାଣିପାଗ (Weather)",
+        "mr": "हवामान (Weather)",
+        "ml": "കാലാവസ്ഥ (Weather)",
+        "kn": "ಹವಾಮಾನ (Weather)",
+        "gu": "હવામાન (Weather)",
+    },
+    "ocean": {
+        "en": "Ocean",
+        "hi": "समुद्री स्थिति (Ocean)",
+        "bn": "মহাসাগর (Ocean)",
+        "ta": "பெருங்கடல் (Ocean)",
+        "te": "సముద్రం (Ocean)",
+        "or": "ସମୁଦ୍ର (Ocean)",
+        "mr": "महासागर (Ocean)",
+        "ml": "സമുദ്രം (Ocean)",
+        "kn": "ಸಾಗರ (Ocean)",
+        "gu": "મહાસાગર (Ocean)",
+    },
+    "cyclone": {
+        "en": "Cyclone",
+        "hi": "चक्रवात (Cyclone)",
+        "bn": "ঘূর্ণিঝড় (Cyclone)",
+        "ta": "புயல் (Cyclone)",
+        "te": "తుఫాను (Cyclone)",
+        "or": "ବାତ୍ୟା (Cyclone)",
+        "mr": "वादळ (Cyclone)",
+        "ml": "ചുഴലിക്കാറ്റ് (Cyclone)",
+        "kn": "ಚಂಡಮಾರುತ (Cyclone)",
+        "gu": "વાવાઝોડું (Cyclone)",
+    },
+    "gis": {
+        "en": "GIS Boundaries",
+        "hi": "समुद्री सीमाएँ (GIS)",
+        "bn": "সামুদ্রিক সীমানা (GIS)",
+        "ta": "கடல் எல்லைகள் (GIS)",
+        "te": "సముద్ర సరిహద్దులు (GIS)",
+        "or": "ସାମୁଦ୍ରିକ ସୀମା (GIS)",
+        "mr": "सागरी सीमा (GIS)",
+        "ml": "സമുദ്ര അതിർത്തികൾ (GIS)",
+        "kn": "ಸಾಗರ ಗಡಿಗಳು (GIS)",
+        "gu": "દરિયાઈ સીમાઓ (GIS)",
+    },
+    "pfz": {
+        "en": "PFZ Fisheries",
+        "hi": "मछली क्षेत्र (PFZ)",
+        "bn": "মাছ ধরার অঞ্চল (PFZ)",
+        "ta": "மீன்பிடி மண்டலம் (PFZ)",
+        "te": "చేపల వేట ప్రాంతం (PFZ)",
+        "or": "ମାଛ ଧରା ଅଞ୍ଚଳ (PFZ)",
+        "mr": "मासेमारी क्षेत्र (PFZ)",
+        "ml": "മത്സ്യബന്ധന മേഖല (PFZ)",
+        "kn": "ಮೀನುಗಾರಿಕಾ ವಲಯ (PFZ)",
+        "gu": "મત્સ્યપાલન ક્ષેત્ર (PFZ)",
+    },
+}
+
+ZONE_CATEGORY_LABELS: Dict[str, Dict[str, str]] = {
+    "seasonal_fishing_ban_area": {
+        "en": "seasonal fishing ban area",
+        "hi": "मौसमी मत्स्य प्रतिबंध क्षेत्र",
+        "bn": "মৌসুমি মাছ ধরার নিষিদ্ধ এলাকা",
+        "ta": "பருவகால மீன்பிடி தடை பகுதி",
+        "te": "కాలానుగుణ చేపల వేట నిషేధ ప్రాంతం",
+        "or": "ଋତୁକାଳୀନ ମତ୍ସ୍ୟ ନିଷେଧ ଅଞ୍ଚଳ",
+        "mr": "हंगामी मासेमारी बंदी क्षेत्र",
+        "ml": "സീസണൽ മത്സ്യബന്ധന നിരോധിത മേഖല",
+        "kn": "ಋತುಮಾನದ ಮೀನುಗಾರಿಕೆ ನಿಷೇಧ ಪ್ರದೇಶ",
+        "gu": "મોસમી માછીમારી પ્રતિબંધ વિસ્તાર",
+    },
+    "marine_protected_area": {
+        "en": "marine protected area",
+        "hi": "समुद्री संरक्षित क्षेत्र",
+        "bn": "সামুদ্রিক সংরক্ষিত এলাকা",
+        "ta": "கடல் பாதுகாக்கப்பட்ட பகுதி",
+        "te": "సముద్ర రక్షిత ప్రాంతం",
+        "or": "ସାମୁଦ୍ରିକ ସଂରକ୍ଷିତ ଅଞ୍ଚଳ",
+        "mr": "सागरी संरक्षित क्षेत्र",
+        "ml": "സമുദ്ര സംരക്ഷിത പ്രദേശം",
+        "kn": "ಸಾಗರ ಸಂರಕ್ಷಿತ ಪ್ರದೇಶ",
+        "gu": "દરિયાઈ સંરક્ષિત વિસ્તાર",
+    },
+    "prohibited_zone": {
+        "en": "prohibited maritime zone",
+        "hi": "प्रतिबंधित समुद्री क्षेत्र",
+        "bn": "নিষিদ্ধ সামুদ্রিক অঞ্চল",
+        "ta": "தடைசெய்யப்பட்ட கடல் பகுதி",
+        "te": "నిషేధిత సముద్ర ప్రాంతం",
+        "or": "ନିଷିଦ୍ଧ ସାମୁଦ୍ରିକ ଅଞ୍ଚଳ",
+        "mr": "प्रतिबंधित सागरी क्षेत्र",
+        "ml": "നിരോധിത സമുദ്ര മേഖല",
+        "kn": "ನಿರ್ಬಂಧಿತ ಸಾಗರ ವಲಯ",
+        "gu": "પ્રતિબંધિત દરિયાઈ વિસ્તાર",
+    },
+    "restricted_zone": {
+        "en": "restricted zone",
+        "hi": "प्रतिबंधित क्षेत्र",
+        "bn": "নিষিদ্ধ অঞ্চল",
+        "ta": "தடைசெய்யப்பட்ட பகுதி",
+        "te": "నిషేధిత ప్రాంతం",
+        "or": "ପ୍ରତିବନ୍ଧିତ ଅଞ୍ଚଳ",
+        "mr": "प्रतिबंधित क्षेत्र",
+        "ml": "നിരോധിത മേഖല",
+        "kn": "ನಿರ್ಬಂಧಿತ ವಲಯ",
+        "gu": "પ્રતિબંધિત વિસ્તાર",
+    },
+    "international_maritime_boundary": {
+        "en": "international maritime boundary",
+        "hi": "अंतर्राष्ट्रीय समुद्री सीमा",
+        "bn": "আন্তর্জাতিক সামুদ্রিক সীমানা",
+        "ta": "சர்வதேச கடல் எல்லை",
+        "te": "అంతర్జాతీయ సముద్ర సరిహద్దు",
+        "or": "ଆନ୍ତର୍ଜାତୀୟ ସାମୁଦ୍ରିକ ସୀମା",
+        "mr": "आंतरराष्ट्रीय सागरी सीमा",
+        "ml": "അന്താരാഷ്ട്ര സമുദ്ര അതിർത്തി",
+        "kn": "ಅಂತರಾಷ್ಟ್ರೀಯ ಸಾಗರ ಗಡಿ",
+        "gu": "આંતરરાષ્ટ્રીય દરિયાઈ સીમા",
+    },
+    "exclusive_economic_zone": {
+        "en": "exclusive economic zone",
+        "hi": "अनन्य आर्थिक क्षेत्र",
+        "bn": "একচেটিয়া অর্থনৈতিক অঞ্চল",
+        "ta": "பிரத்தியேக பொருளாதார மண்டலம்",
+        "te": "ప్రత్యేక ఆర్థిక మండలం",
+        "or": "ଏକ୍ସକ୍ଲୁସିଭ୍ ଅର୍ଥନୈତିକ ଅଞ୍ଚଳ",
+        "mr": "विशेष आर्थिक क्षेत्र",
+        "ml": "പ്രത്യേക സാമ്പത്തിക മേഖല",
+        "kn": "ವಿಶೇಷ ಆರ್ಥಿಕ ವಲಯ",
+        "gu": "વિશિષ્ટ આર્થિક ક્ષેત્ર",
+    },
+    "territorial_waters": {
+        "en": "territorial waters",
+        "hi": "प्रादेशिक जल सीमा",
+        "bn": "আঞ্চলিক জলসীমা",
+        "ta": "ஆள்புல கடல் பகுதி",
+        "te": "\u0c2a\u0c4d\u0c30\u0c3e\u0c26\u0c47\u0c36\u0c3f\u0c15 \u0c1c\u0c32\u0c3e\u0c32\u0c41",
+        "or": "ଆଞ୍ଚଳିକ ଜଳସୀମା",
+        "mr": "प्रादेशिक जलक्षेत्र",
+        "ml": "പ്രാദേശിക ജലാതിർത്തി",
+        "kn": "ಪ್ರಾದೇಶಿಕ ಜಲಪ್ರದೇಶ",
+        "gu": "પ્રાદેશિક જળસીમા",
+    },
+    "offshore_infrastructure_zone": {
+        "en": "offshore infrastructure zone",
+        "hi": "अपतटीय अवसंरचना क्षेत्र",
+        "bn": "তীরবর্তী অবকাঠামো এলাকা",
+        "ta": "கடலோர உள்கட்டமைப்பு பகுதி",
+        "te": "ఆఫ్ షోర్ మౌలిక సదుపాయాల ప్రాంతం",
+        "or": "ଅପତଟ ଭିତ୍ତିଭୂମି ଅଞ୍ଚଳ",
+        "mr": "अपतटीय पायाभूत सुविधा क्षेत्र",
+        "ml": "ഓഫ്ഷോർ ഇൻഫ്രാസ്ട്രക്ചർ മേഖല",
+        "kn": "ತೀರದಾಚೆಯ ಮೂಲಸೌಕರ್ಯ ವಲಯ",
+        "gu": "ઓફશોર ઈન્ફ્રાસ્ટ્રક્ચર વિસ્તાર",
+    },
+    "ecologically_sensitive_zone": {
+        "en": "ecologically sensitive zone",
+        "hi": "पारिस्थितिक रूप से संवेदनशील क्षेत्र",
+        "bn": "পরিবেশগতভাবে সংবেদনশীল অঞ্চল",
+        "ta": "சுற்றுச்சூழல் உணர்திறன் பகுதி",
+        "te": "పర్యావరణ సున్నిత ప్రాంతం",
+        "or": "ପାରିସ୍ଥିତିକ ସମ୍ବେଦନଶୀଳ ଅଞ୍ଚଳ",
+        "mr": "पर्यावरणदृष्ट्या संवेदनशील क्षेत्र",
+        "ml": "പരിസ്ഥിതി ലോല മേഖല",
+        "kn": "ಪರಿಸರ ಸೂಕ್ಷ್ಮ ವಲಯ",
+        "gu": "પર્યાવરણીય સંવેદનશીલ વિસ્તાર",
+    },
+    "port": {
+        "en": "port / harbor area",
+        "hi": "बंदरगाह क्षेत्र",
+        "bn": "বন্দর এলাকা",
+        "ta": "துறைமுகப் பகுதி",
+        "te": "ఓడరేవు ప్రాంతం",
+        "or": "ବନ୍ଦର ଅଞ୍ଚଳ",
+        "mr": "बंदर क्षेत्र",
+        "ml": "തുറമുഖ പ്രദേശം",
+        "kn": "ಬಂದರು ಪ್ರದೇಶ",
+        "gu": "બંદર વિસ્તાર",
+    },
+    "custom": {
+        "en": "designated maritime zone",
+        "hi": "निर्दिष्ट समुद्री क्षेत्र",
+        "bn": "নির্দিষ্ট সামুদ্রিক অঞ্চল",
+        "ta": "குறிப்பிட்ட கடல் பகுதி",
+        "te": "నిర్దేశిత సముద్ర ప్రాంతం",
+        "or": "ନିର୍ଦ୍ଦିଷ୍ଟ ସାମୁଦ୍ରିକ ଅଞ୍ଚଳ",
+        "mr": "नियुक्त सागरी क्षेत्र",
+        "ml": "പ്രത്യേക സമുദ്ര മേഖല",
+        "kn": "ಗೊತ್ತುಪಡಿಸಿದ ಸಾಗರ ವಲಯ",
+        "gu": "નિયુક્ત દરિયાઈ વિસ્તાર",
+    },
+}
+
+CONSTRAINT_TYPE_LABELS: Dict[str, Dict[str, str]] = {
+    "prohibited": {
+        "en": "prohibited",
+        "hi": "निषेधित",
+        "bn": "নিষিদ্ধ",
+        "ta": "தடைசெய்யப்பட்டது",
+        "te": "నిషేధించబడింది",
+        "or": "ନିଷିଦ୍ଧ",
+        "mr": "प्रतिबंधित",
+        "ml": "നിരോധിതം",
+        "kn": "ನಿರ್ಬಂಧಿತ",
+        "gu": "પ્રતિબંધિત",
+    },
+    "conditional": {
+        "en": "conditional access",
+        "hi": "सशर्त प्रवेश",
+        "bn": "শর্তসাপেক্ষ প্রবেশাধিকার",
+        "ta": "நிபந்தனைக்குட்பட்ட அனுமதி",
+        "te": "షరతులతో కూడిన ప్రవేశం",
+        "or": "ସର୍ତ୍ତମୂଳକ ପ୍ରବେଶ",
+        "mr": "सशर्त प्रवेश",
+        "ml": "വ്യവസ്ഥകൾക്ക് വിധേയമായ പ്രവേശനം",
+        "kn": "ಷರತ್ತುಬದ್ಧ ಪ್ರವೇಶ",
+        "gu": "શરતી પ્રવેશ",
+    },
+    "warning_only": {
+        "en": "advisory warning",
+        "hi": "परामर्श चेतावनी",
+        "bn": "পরামর্শমূলক সতর্কতা",
+        "ta": "ஆலோசனை எச்சரிக்கை",
+        "te": "సలహా హెచ్చరిక",
+        "or": "ପରାମର୍ଶ ଚେତାବନୀ",
+        "mr": "सल्ला सूचना",
+        "ml": "ജാഗ്രതാ മുന്നറിയിപ്പ്",
+        "kn": "ಸಲಹಾ ಎಚ್ಚರಿಕೆ",
+        "gu": "સલાહકાર ચેતવણી",
+    },
+    "none": {
+        "en": "unrestricted",
+        "hi": "अप्रतिबंधित",
+        "bn": "অবাধ",
+        "ta": "கட்டுப்பாடற்றது",
+        "te": "పరిమితులు లేనిది",
+        "or": "ଅପ୍ରତିବନ୍ଧିତ",
+        "mr": "अप्रतिबंधित",
+        "ml": "നിയന്ത്രണമില്ലാത്തത്",
+        "kn": "ನಿರ್ಬಂಧವಿಲ್ಲದ",
+        "gu": "અનિયંત્રિત",
+    },
+}
+
+ZONE_NAME_LABELS: Dict[str, Dict[str, str]] = {
+    "West Coast Annual Monsoon Fishing Ban Area": {
+        "en": "West Coast Annual Monsoon Fishing Ban Area",
+        "hi": "पश्चिमी तट वार्षिक मानसून मत्स्य प्रतिबंध क्षेत्र",
+        "bn": "পশ্চিম উপকূল বার্ষিক বর্ষাকালীন মাছ ধরার নিষিদ্ধ এলাকা",
+        "ta": "மேற்கு கடற்கரை வருடாந்திர பருவமழை மீன்பிடி தடை பகுதி",
+        "te": "పశ్చిమ తీర వార్షిక వర్షాకాల చేపల వేట నిషేధ ప్రాంతం",
+        "or": "ପଶ୍ଚିମ ଉପକୂଳ ବାର୍ଷିକ ମୌସୁମୀ ମତ୍ସ୍ୟ ନିଷେଧ ଅଞ୍ଚଳ",
+        "mr": "पश्चिम किनारपट्टी वार्षिक मान्सून मासेमारी बंदी क्षेत्र",
+        "ml": "പടിഞ്ഞാറൻ തീര വാർഷിക മൺസൂൺ മത്സ്യബന്ധന നിരോധിത മേഖല",
+        "kn": "ಪಶ್ಚಿಮ ಕರಾವಳಿ ವಾರ್ಷಿಕ ಮಾನ್ಸೂನ್ ಮೀನುಗಾರಿಕೆ ನಿಷೇಧ ಪ್ರದೇಶ",
+        "gu": "પશ્ચિમ કાંઠા વાર્ષિક ચોમાસુ માછીમારી પ્રતિબંધ વિસ્તાર",
+    },
+    "East Coast Annual Monsoon Fishing Ban Area": {
+        "en": "East Coast Annual Monsoon Fishing Ban Area",
+        "hi": "पूर्वी तट वार्षिक मानसून मत्स्य प्रतिबंध क्षेत्र",
+        "bn": "পূর্ব উপকূল বার্ষিক বর্ষাকালীন মাছ ধরার নিষিদ্ধ এলাকা",
+        "ta": "கிழக்கு கடற்கரை வருடாந்திர பருவமழை மீன்பிடி தடை பகுதி",
+        "te": "తూర్పు తీర వార్షిక వర్షాకాల చేపల వేట నిషేధ ప్రాంతం",
+        "or": "ପୂର୍ବ ଉପକୂଳ ବାର୍ଷିକ ମୌସୁମୀ ମତ୍ସ୍ୟ ନିଷେଧ ଅଞ୍ଚଳ",
+        "mr": "पूर्व किनारपट्टी वार्षिक मान्सून मासेमारी बंदी क्षेत्र",
+        "ml": "കിഴക്കൻ തീര വാർഷിക മൺസൂൺ മത്സ്യബന്ധന നിരോധിത മേഖല",
+        "kn": "ಪೂರ್ವ ಕರಾವಳಿ ವಾರ್ಷಿಕ ಮಾನ್ಸೂನ್ ಮೀನುಗಾರಿಕೆ ನಿಷೇಧ ಪ್ರದೇಶ",
+        "gu": "પૂર્વ કાંઠા વાર્ષિક ચોમાસુ માછીમારી પ્રતિબંધ વિસ્તાર",
+    },
+    "Seasonal Fishing Ban Area": {
+        "en": "Seasonal Fishing Ban Area",
+        "hi": "मौसमी मत्स्य प्रतिबंध क्षेत्र",
+        "bn": "মৌসুমি মাছ ধরার নিষিদ্ধ এলাকা",
+        "ta": "பருவகால மீன்பிடி தடை பகுதி",
+        "te": "కాలానుగుణ చేపల వేట నిషేధ ప్రాంతం",
+        "or": "ଋତୁକାଳୀନ ମତ୍ସ୍ୟ ନିଷେଧ ଅଞ୍ଚଳ",
+        "mr": "हंगामी मासेमारी बंदी क्षेत्र",
+        "ml": "സീസണൽ മത്സ്യബന്ധന നിരോധിത മേഖല",
+        "kn": "ಋತುಮಾನದ ಮೀನುಗಾರಿಕೆ ನಿಷೇಧ ಪ್ರದೇಶ",
+        "gu": "મોસમી માછીમારી પ્રતિબંધ વિસ્તાર",
+    },
+    "Indian EEZ (Open Waters)": {
+        "en": "Indian EEZ (Open Waters)",
+        "hi": "भारतीय अनन्य आर्थिक क्षेत्र (खुला समुद्र)",
+        "bn": "ভারতীয় একচেটিয়া অর্থনৈতিক অঞ্চল (উন্মুক্ত জলসীমা)",
+        "ta": "இந்திய பிரத்தியேக பொருளாதார மண்டலம் (திறந்த வெளி கடல்)",
+        "te": "భారతీయ ప్రత్యేక ఆర్థిక మండలం (బహిరంగ జలాలు)",
+        "or": "ଭାରତୀୟ ଏକ୍ସକ୍ଲୁସିଭ୍ ଅର୍ଥନୈତିକ ଅଞ୍ଚଳ (ଖୋଲା ସମୁଦ୍ର)",
+        "mr": "भारतीय विशेष आर्थिक क्षेत्र (खुले पाणी)",
+        "ml": "ഇന്ത്യൻ പ്രത്യേക സാമ്പത്തിക മേഖല (തുറന്ന സമുദ്രം)",
+        "kn": "ಭಾರತೀಯ ವಿಶೇಷ ಆರ್ಥಿಕ ವಲಯ (ತೆರೆದ ಜಲಪ್ರದೇಶ)",
+        "gu": "ભારતીય વિશિષ્ટ આર્થિક ક્ષેત્ર (ખુલ્લો દરિયો)",
+    },
+    "Indian Exclusive Economic Zone (EEZ)": {
+        "en": "Indian Exclusive Economic Zone (EEZ)",
+        "hi": "भारतीय अनन्य आर्थिक क्षेत्र (EEZ)",
+        "bn": "ভারতীয় একচেটিয়া অর্থনৈতিক অঞ্চল (EEZ)",
+        "ta": "இந்திய பிரத்தியேக பொருளாதார மண்டலம் (EEZ)",
+        "te": "భారతీయ ప్రత్యేక ఆర్థిక మండలం (EEZ)",
+        "or": "ଭାରତୀୟ ଏକ୍ସକ୍ଲୁସିଭ୍ ଅର୍ଥନୈତିକ ଅଞ୍ଚଳ (EEZ)",
+        "mr": "भारतीय विशेष आर्थिक क्षेत्र (EEZ)",
+        "ml": "ഇന്ത്യൻ പ്രത്യേക സാമ്പത്തിക മേഖല (EEZ)",
+        "kn": "ಭಾರತೀಯ ವಿಶೇಷ ಆರ್ಥಿಕ ವಲಯ (EEZ)",
+        "gu": "ભારતીય વિશિષ્ટ આર્થિક ક્ષેત્ર (EEZ)",
+    },
+}
+
+FALLBACK_INSIDE_PROHIBITED: Dict[str, str] = {
+    "en": "Located inside a prohibited maritime zone.",
+    "hi": "प्रतिबंधित समुद्री क्षेत्र के अंदर स्थित है।",
+    "bn": "নিষিদ্ধ সামুদ্রিক অঞ্চলের মধ্যে অবস্থিত.",
+    "ta": "தடைசெய்யப்பட்ட கடல் பகுதிக்குள் அமைந்துள்ளது.",
+    "te": "నిషేధిత సముద్ర ప్రాంతంలో ఉంది.",
+    "or": "ନିଷିଦ୍ଧ ସାମୁଦ୍ରିକ ଅଞ୍ଚଳ ଭିତରେ ଅବସ୍ଥିତ.",
+    "mr": "प्रतिबंधित सागरी क्षेत्रात स्थित आहे.",
+    "ml": "നിരോധിത സമുദ്ര മേഖലയ്ക്കുള്ളിൽ സ്ഥിതിചെയ്യുന്നു.",
+    "kn": "ನಿರ್ಬಂಧಿತ ಸಾಗರ ವಲಯದೊಳಗೆ ನೆಲೆಗೊಂಡಿದೆ.",
+    "gu": "પ્રતિબંધિત દરિયાઈ વિસ્તારની અંદર સ્થિત છે.",
+}
+
+
+def get_zone_category_label(category: str, language: str = "en") -> str:
+    """Return the localized label for a GIS zone category enum value."""
+    lang = language if language in _SUPPORTED else "en"
+    cat_key = str(category).lower().strip()
+    entry = ZONE_CATEGORY_LABELS.get(cat_key)
+    if entry:
+        return entry.get(lang) or entry.get("en") or category
+    return category.replace("_", " ")
+
+
+def get_constraint_type_label(constraint: str, language: str = "en") -> str:
+    """Return the localized label for a GIS constraint type enum value."""
+    lang = language if language in _SUPPORTED else "en"
+    c_key = str(constraint).lower().strip()
+    entry = CONSTRAINT_TYPE_LABELS.get(c_key)
+    if entry:
+        return entry.get(lang) or entry.get("en") or constraint
+    return constraint.replace("_", " ")
+
+
+def get_zone_name_label(name: str, language: str = "en") -> str:
+    """Return the localized name for an official maritime zone."""
+    if not name:
+        return ""
+    lang = language if language in _SUPPORTED else "en"
+    clean = name.replace(" (approximate boundary, unverified)", "").strip()
+    entry = ZONE_NAME_LABELS.get(clean)
+    if entry:
+        return entry.get(lang) or entry.get("en") or clean
+
+    if lang != "en":
+        ban_area_labels = {
+            "hi": "प्रतिबंध क्षेत्र",
+            "bn": "নিষিদ্ধ এলাকা",
+            "ta": "தடை பகுதி",
+            "te": "నిషేధ ప్రాంతం",
+            "or": "ନିଷିଦ୍ଧ ଅଞ୍ଚଳ",
+            "mr": "बंदी क्षेत्र",
+            "ml": "നിരോധിത മേഖല",
+            "kn": "ನಿಷೇಧ ಪ್ರದೇಶ",
+            "gu": "પ્રતિબંધ વિસ્તાર",
+        }
+        if lang in ban_area_labels:
+            clean = re.sub(r"\bBan Area\b", ban_area_labels[lang], clean)
+            clean = re.sub(
+                r"\bFishing Ban Area\b",
+                f"मत्स्य {ban_area_labels[lang]}" if lang == "hi" else ban_area_labels[lang],
+                clean,
+            )
+    return clean
+
+
+def sanitize_user_facing_text(text: str, language: str = "en") -> str:
+    """Strip internal debug syntax and fix untranslated English GIS terms in user-facing text."""
+    if not text:
+        return text
+
+    # 1. Remove raw debug annotations like (zone_category = seasonal_fishing_ban_area) or (parameter = value)
+    cleaned = re.sub(r"\s*\([a-z_]+\s*=\s*[^)]+\)", "", text)
+
+    # 2. Replace any raw snake_case GIS enums that leaked through
+    for cat_enum in ZONE_CATEGORY_LABELS:
+        if cat_enum in cleaned:
+            cleaned = cleaned.replace(cat_enum, get_zone_category_label(cat_enum, language))
+    for c_enum in CONSTRAINT_TYPE_LABELS:
+        if c_enum in cleaned:
+            cleaned = cleaned.replace(c_enum, get_constraint_type_label(c_enum, language))
+
+    # 3. Replace untranslated English fragments like "Ban Area" in Indic text
+    if language != "en":
+        cleaned = get_zone_name_label(cleaned, language)
+        ban_area_labels = {
+            "hi": "प्रतिबंध क्षेत्र",
+            "bn": "নিষিদ্ধ এলাকা",
+            "ta": "தடை பகுதி",
+            "te": "నిషేధ ప్రాంతం",
+            "or": "ନିଷିଦ୍ଧ ଅଞ୍ଚଳ",
+            "mr": "बंदी क्षेत्र",
+            "ml": "നിരോധിത മേഖല",
+            "kn": "ನಿಷೇಧ ಪ್ರದೇಶ",
+            "gu": "પ્રતિબંધ વિસ્તાર",
+        }
+        if language in ban_area_labels:
+            cleaned = re.sub(r"\bBan Area\b", ban_area_labels[language], cleaned)
+            cleaned = re.sub(
+                r"\bFishing Ban Area\b",
+                f"मत्स्य {ban_area_labels[language]}" if language == "hi" else ban_area_labels[language],
+                cleaned,
+            )
+
+    # 4. Clean up any trailing double punctuation or dangling brackets
+    cleaned = re.sub(r"\s+([।.,])", r"\1", cleaned)
+    cleaned = re.sub(r"\(\s*\)", "", cleaned)
+    return cleaned.strip()
+
+
+def get_parameter_label(param: str, language: str = "en") -> str:
+    """Return the localized label for a parameter key."""
+    lang = language if language in _SUPPORTED else "en"
+    labels = PARAM_LABELS.get(param)
+    if labels and lang in labels:
+        return labels[lang]
+    clean = param.replace("_", " ")
+    for suffix in (" ms", " m", " km", " mm", " s", " c", " deg"):
+        if clean.endswith(suffix):
+            clean = clean[:-len(suffix)]
+            break
+    return clean
+
+
+def get_agent_label(agent_name: str, language: str = "en") -> str:
+    """Return the localized label for an agent name."""
+    lang = language if language in _SUPPORTED else "en"
+    labels = AGENT_LABELS.get(agent_name.lower())
+    if labels and lang in labels:
+        return labels[lang]
+    return agent_name
 
 
 def get_fallback_one_line(recommendation_type: str, preferred: dict | None, language: str = "en") -> str:
@@ -323,12 +1096,13 @@ def get_fallback_detailed(
             z = (
                 (merged_points or {}).get(pid, {}).get("measurements", {}).get("zone_name", {}).get("value")
             )
-            details.append(f"{pid} ({z})" if z else pid)
+            z_loc = get_zone_name_label(z, lang) if z else ""
+            details.append(f"{pid} ({z_loc})" if z_loc else pid)
         tmpl = FALLBACK_GIS_EXCLUDED.get(lang) or FALLBACK_GIS_EXCLUDED["en"]
         parts.append(tmpl.replace("{zones}", ", ".join(details)))
 
     if agents_missing:
-        names = ", ".join(a["agent"] for a in agents_missing)
+        names = ", ".join(get_agent_label(a.get("agent", "agent"), lang) for a in agents_missing)
         tmpl = FALLBACK_DATA_MISSING.get(lang) or FALLBACK_DATA_MISSING["en"]
         parts.append(tmpl.replace("{agents}", names))
 
@@ -351,10 +1125,20 @@ def get_fallback_reasoning(
     parts = []
     for parameter, score in sorted(base.get("contributing", {}).items(), key=lambda kv: -kv[1])[:3]:
         m = measurements.get(parameter, {})
-        parts.append(f"{parameter.replace('_', ' ')} at {m.get('value')} {m.get('unit') or ''}".strip())
+        val = m.get("value")
+        unit = m.get("unit") or ""
+        label = get_parameter_label(parameter, lang)
+        unit_str = f" {unit}" if unit else ""
+        if lang == "en":
+            parts.append(f"{label} at {val}{unit_str}".strip())
+        else:
+            parts.append(f"{label} {val}{unit_str}".strip())
 
-    local_conds_en = f"Local conditions: {', '.join(parts)}." if parts else "Local sensor readings unavailable."
-    local_conds = local_conds_en  # conditions text uses data values, kept in English for accuracy
+    if parts:
+        prefix_tmpl = FALLBACK_LOCAL_CONDITIONS_PREFIX.get(lang) or FALLBACK_LOCAL_CONDITIONS_PREFIX["en"]
+        local_conds = prefix_tmpl.replace("{conds}", ", ".join(parts))
+    else:
+        local_conds = FALLBACK_LOCAL_CONDITIONS_UNAVAILABLE.get(lang) or FALLBACK_LOCAL_CONDITIONS_UNAVAILABLE["en"]
 
     effective_score = final_score if final_score is not None else base.get("baseline_score", 0)
     level = baseline_mod.level_for_score(effective_score)
@@ -405,7 +1189,24 @@ def get_fallback_findings(
 
     for parameter in base.get("risk_factors", [])[:3]:
         m = measurements.get(parameter, {})
-        findings.append(f"{parameter.replace('_', ' ')}: {m.get('value')} {m.get('unit') or ''}".strip())
+        val = m.get("value")
+        unit = m.get("unit") or ""
+        label = get_parameter_label(parameter, lang)
+        unit_str = f" {unit}" if unit else ""
+        if parameter == "zone_category":
+            val_str = get_zone_category_label(str(val), lang)
+            findings.append(f"{label}: {val_str}".strip())
+        elif parameter == "constraint_type":
+            val_str = get_constraint_type_label(str(val), lang)
+            findings.append(f"{label}: {val_str}".strip())
+        elif parameter == "zone_name":
+            val_str = get_zone_name_label(str(val), lang)
+            findings.append(f"{label}: {val_str}".strip())
+        elif parameter == "inside_prohibited_zone":
+            if bool(val):
+                findings.append(FALLBACK_INSIDE_PROHIBITED.get(lang) or FALLBACK_INSIDE_PROHIBITED["en"])
+        else:
+            findings.append(f"{label}: {val}{unit_str}".strip())
 
     unavailable = [
         p for p, m in measurements.items()
@@ -413,16 +1214,23 @@ def get_fallback_findings(
     ]
     if unavailable:
         tmpl = FALLBACK_FINDINGS_UNAVAILABLE.get(lang) or FALLBACK_FINDINGS_UNAVAILABLE["en"]
-        findings.append(tmpl.replace("{params}", ", ".join(sorted(unavailable)[:3])))
+        translated_params = [get_parameter_label(p, lang) for p in sorted(unavailable)[:3]]
+        findings.append(tmpl.replace("{params}", ", ".join(translated_params)))
 
     for a in agents_missing[:2]:
         tmpl = FALLBACK_FINDINGS_AGENT_FAILED.get(lang) or FALLBACK_FINDINGS_AGENT_FAILED["en"]
-        findings.append(tmpl.replace("{agent}", a["agent"]))
+        findings.append(tmpl.replace("{agent}", get_agent_label(a.get("agent", "agent"), lang)))
 
     if not findings:
         return [FALLBACK_FINDINGS_INSUFFICIENT.get(lang) or FALLBACK_FINDINGS_INSUFFICIENT["en"]]
 
     return findings
+
+
+def get_fallback_incomplete_warning(language: str = "en") -> str:
+    """Return the deterministic observation incomplete warning in the requested language."""
+    lang = language if language in _SUPPORTED else "en"
+    return FALLBACK_FINDINGS_OBSERVATIONS_INCOMPLETE.get(lang) or FALLBACK_FINDINGS_OBSERVATIONS_INCOMPLETE["en"]
 
 
 _SUPPORTED = {

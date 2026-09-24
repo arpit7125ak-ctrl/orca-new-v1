@@ -58,18 +58,26 @@ def _progress(
     selection_reason: Optional[str] = None,
     data: Optional[Dict[str, Any]] = None,
     error: Optional[Dict[str, Any]] = None,
+    started_at: Optional[str] = None,
+    duration_ms: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Build a contract-shaped ProgressMessage.
 
     Required by contract: analysis_id, agent, status, status_code, timestamp.
     Note the field is `agent`, NOT `stage`.
+
+    `started_at` and `duration_ms` are included when the caller has accurate
+    per-agent timing (e.g. data agents in base.py). The backend reads these
+    directly so it does not have to infer timing from the message timestamps,
+    which would give 0ms for agents that only send one progress call.
     """
+    now = _now_iso()
     message: Dict[str, Any] = {
         "analysis_id": analysis_id,
         "agent": agent,
         "status": status,
         "status_code": status_code,
-        "timestamp": _now_iso(),
+        "timestamp": now,
     }
     if selection_reason:
         message["selection_reason"] = selection_reason
@@ -77,6 +85,25 @@ def _progress(
         message["data"] = data
     if error is not None:
         message["error"] = error
+
+    # Section 38 & ProgressMessage.json: additionalProperties is false at top level.
+    # Timing fields MUST go into metadata (which allows additionalProperties: true).
+    metadata: Dict[str, Any] = {}
+    if started_at is not None:
+        metadata["started_at"] = started_at
+    if duration_ms is not None:
+        metadata["duration_ms"] = duration_ms
+        if started_at is not None:
+            try:
+                from datetime import timedelta
+                import datetime as _dt
+                sa = _dt.datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+                metadata["completed_at"] = (sa + timedelta(milliseconds=duration_ms)).isoformat().replace("+00:00", "Z")
+            except Exception:
+                metadata["completed_at"] = now
+    if metadata:
+        message["metadata"] = metadata
+
     return message
 
 
@@ -176,7 +203,14 @@ async def _run(*, analysis_id: str, request: Dict[str, Any], log) -> None:
         ))
 
     async def _report_agent(result: Dict[str, Any]) -> None:
-        """Push each agent's result the moment it finishes."""
+        """Push each agent's result the moment it finishes.
+
+        We carry started_at and duration_ms from base.py's per-agent timing
+        directly in the top-level progress message. Without this, the backend
+        would see started_at === completed_at (both set to message.timestamp)
+        because the data agents only send ONE progress call (at completion),
+        giving duration_ms = 0 for every data agent.
+        """
         await backend_client.post_progress(_progress(
             analysis_id=analysis_id,
             agent=result["agent_name"],
@@ -184,6 +218,8 @@ async def _run(*, analysis_id: str, request: Dict[str, Any], log) -> None:
             status_code=200 if result["status"] in ("completed", "partial") else 502,
             data=result if result.get("normalized") else None,
             error=result.get("error"),
+            started_at=result.get("started_at"),
+            duration_ms=result.get("duration_ms"),
         ))
 
     agent_results = await agents_base.run_agents_parallel(

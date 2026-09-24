@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import L from 'leaflet';
 import { Compass, ShieldAlert, Layers, MapPin, Anchor } from 'lucide-react';
 import { orcaApi } from '../api/client';
 
 export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
+  const { t } = useTranslation('ui');
   const plan = analysis?.plan || {};
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -123,7 +125,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
     });
 
     L.marker([originalLat, originalLon], { icon: userIcon })
-      .bindPopup(`<b>Mission Origin Request</b><br>Lat: ${originalLat.toFixed(3)}°N, Lon: ${originalLon.toFixed(3)}°E`)
+      .bindPopup(`<b>${t('map.missionOriginRequest')}</b><br>${t('map.latLabel')}: ${originalLat.toFixed(3)}°N, ${t('map.lonLabel')}: ${originalLon.toFixed(3)}°E`)
       .addTo(group);
 
     // 2. If snapped offshore, draw snap line & reference
@@ -142,8 +144,8 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
       ).addTo(group);
 
       const snapDist = plan.location?.validated?.snap_distance_km;
-      const snapDistText = snapDist ? `${snapDist} km` : 'Shoreline';
-      snapLine.bindPopup(`<b>Shoreline Boundary Snapped</b><br>${snapDistText} offshore (${plan.location?.validated?.snap_reference || 'Maritime boundary'})`);
+      const snapDistText = snapDist ? `${snapDist} km` : t('map.shoreline');
+      snapLine.bindPopup(`<b>${t('map.shorelineSnapped')}</b><br>${snapDistText} offshore (${plan.location?.validated?.snap_reference || t('map.maritimeBoundary')})`);
     }
 
     // 3. Draw REAL 9 Spatial Grid Points from analysis
@@ -155,7 +157,10 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
       const pRisk = pt.risk || {};
       const pScore = pRisk.final_score != null ? pRisk.final_score : null;
       const pId = pt.point_id ?? `P${index}`;
-      const pLevel = pRisk.risk_level || (pScore != null ? (pScore > 80 ? 'DANGEROUS' : pScore > 60 ? 'UNSAFE' : pScore > 35 ? 'CAUTION' : 'SAFE') : 'UNKNOWN');
+      const isLand = pt.land_sea === 'land' || pt.point_status === 'not_applicable';
+      const pLevel = isLand 
+        ? 'LAND' 
+        : (pRisk.risk_level || (pScore != null ? (pScore > 80 ? 'DANGEROUS' : pScore > 60 ? 'UNSAFE' : pScore > 35 ? 'CAUTION' : 'SAFE') : 'UNKNOWN'));
       const pFindings = pRisk.key_findings || [];
       const hasWarning = pRisk.official_warnings && pRisk.official_warnings.length > 0;
       const isPreferred = analysis?.decision?.preferred_point === pId;
@@ -163,7 +168,8 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
 
       // Color mapping
       let color = '#10b981'; // Green (Safe)
-      if (pScore > 80 || pLevel === 'DANGEROUS') color = '#ef4444'; // Red
+      if (isLand) color = '#64748b'; // Slate gray for land
+      else if (pScore > 80 || pLevel === 'DANGEROUS') color = '#ef4444'; // Red
       else if (pScore > 60 || pLevel === 'UNSAFE') color = '#f97316'; // Orange
       else if (pScore > 30 || pLevel === 'CAUTION') color = '#eab308'; // Yellow
 
@@ -173,19 +179,19 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
         color: isPreferred ? '#38bdf8' : isWorst ? '#ef4444' : '#ffffff',
         weight: isPreferred || isWorst ? 3 : 2,
         opacity: 1,
-        fillOpacity: 0.85,
+        fillOpacity: isLand ? 0.4 : 0.85,
       }).addTo(group);
 
       circle.bindPopup(`
         <div style="font-family:sans-serif; min-width: 190px; max-width: 250px; color: #f8fafc;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
-            <strong style="color: #38bdf8; font-size: 13px;">Point ${pId} ${index === 0 ? '(Origin)' : ''}</strong>
-            <span style="background:${color}; color:#000; font-size:10px; font-weight:bold; padding:2px 6px; border-radius:4px;">${pLevel}</span>
+            <strong style="color: #38bdf8; font-size: 13px;">${t('map.pointLabel', { id: pId })} ${index === 0 ? t('map.originTag') : ''}</strong>
+            <span style="background:${color}; color:${isLand ? '#fff' : '#000'}; font-size:10px; font-weight:bold; padding:2px 6px; border-radius:4px;">${pLevel}</span>
           </div>
           <div style="font-size: 11px; margin-bottom: 3px;">
-            <b>Risk Score:</b> <span style="color:${color};font-weight:bold;">${Math.round(pScore)}/100</span>
-            ${isPreferred ? ' <span style="color:#38bdf8;font-weight:bold;">[Recommended]</span>' : ''}
-            ${isWorst ? ' <span style="color:#ef4444;font-weight:bold;">[Worst Point]</span>' : ''}
+            <b>${t('hero.riskScore')}:</b> <span style="color:${color};font-weight:bold;">${isLand ? 'Land (N/A)' : (pScore != null ? `${Math.round(pScore)}/100` : 'Unrated')}</span>
+            ${isPreferred ? ` <span style="color:#38bdf8;font-weight:bold;">${t('map.recommendedBadge')}</span>` : ''}
+            ${isWorst ? ` <span style="color:#ef4444;font-weight:bold;">${t('map.worstPointBadge')}</span>` : ''}
           </div>
           <div style="font-size: 11px; margin-bottom: 3px; color:#94a3b8;">
             <b>GPS:</b> ${pLat.toFixed(3)}°N, ${pLon.toFixed(3)}°E
@@ -205,7 +211,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
       map.invalidateSize();
       map.setView([validLat, validLon], 10);
     }
-  }, [analysis, validLat, validLon, hasValidCoords]);
+  }, [analysis, validLat, validLon, hasValidCoords, t]);
 
 
 
@@ -227,7 +233,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
         opacity: 0.75,
       }).addTo(group);
 
-      territorialCircle.bindPopup('<b>12 NM Territorial Water Baseline</b><br>State Fisheries Maritime Limits');
+      territorialCircle.bindPopup(`<b>${t('map.territorialTitle')}</b><br>${t('map.territorialDesc')}`);
 
       // Add real boundary polygons from GIS layers (both Polygon and MultiPolygon)
       gisLayers.forEach((layer) => {
@@ -250,10 +256,10 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
                 <div style="font-family:sans-serif; min-width: 190px; color:#f8fafc;">
                   <strong style="color: ${color}; font-size:12px;">${layer.layer_name}</strong>
                   <div style="font-size:11px; margin-top:3px; color:#cbd5e1;">
-                    <b>Safety Directive:</b> <span style="text-transform:capitalize;">${layer.constraint_type ? layer.constraint_type.replace(/_/g, ' ') : 'Advisory'}</span>
+                    <b>${t('map.safetyDirective')}:</b> <span style="text-transform:capitalize;">${layer.constraint_type ? layer.constraint_type.replace(/_/g, ' ') : 'Advisory'}</span>
                   </div>
                   <div style="font-size:10px; margin-top:3px; color:#94a3b8;">
-                    Source: ${layer.source}
+                    ${t('map.source')}: ${layer.source}
                   </div>
                 </div>
               `)
@@ -286,10 +292,10 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
               <div style="font-family:sans-serif; min-width:180px; color:#f8fafc;">
                 <strong style="color:#38bdf8; font-size:12px;">⚓ ${layer.layer_name}</strong>
                 <div style="font-size:11px; margin-top:3px; color:#cbd5e1;">
-                  <b>Category:</b> <span style="text-transform:capitalize;">${portType.replace(/_/g, ' ')}</span> (${stateName})
+                  <b>${t('map.category')}:</b> <span style="text-transform:capitalize;">${portType.replace(/_/g, ' ')}</span> (${stateName})
                 </div>
                 <div style="font-size:11px; margin-top:2px; font-weight:600; color:${isShelter ? '#34d399' : '#94a3b8'};">
-                  ${isShelter ? '🛡️ Emergency Storm Shelter Available' : 'Landing / Transit Facility'}
+                  ${isShelter ? t('map.stormShelterAvailable') : t('map.landingTransitFacility')}
                 </div>
               </div>
             `)
@@ -297,7 +303,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
         }
       });
     }
-  }, [showGeofence, showPorts, gisLayers, validLat, validLon]);
+  }, [showGeofence, showPorts, gisLayers, validLat, validLon, t]);
 
   const handleRecenter = () => {
     if (mapInstanceRef.current && hasValidCoords) {
@@ -310,7 +316,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
     return (
       <div className="relative w-full h-[520px] rounded-2xl overflow-hidden border border-slate-800 shadow-xl bg-slate-950 flex flex-col items-center justify-center space-y-3">
         <Compass className="w-8 h-8 text-cyan-400 animate-spin-slow" />
-        <span className="text-xs text-slate-400 font-mono">Awaiting valid mission coordinates...</span>
+        <span className="text-xs text-slate-400 font-mono">{t('map.awaitingCoords')}</span>
       </div>
     );
   }
@@ -325,14 +331,14 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
         <div className="bg-slate-900/95 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-700/80 shadow-md text-xs">
           <div className="flex items-center space-x-2 font-bold text-white mb-1">
             <Compass className="w-3.5 h-3.5 text-cyan-400 animate-spin-slow" />
-            <span>9-Point Spatial Grid Map</span>
+            <span>{t('map.title')}</span>
           </div>
           <p className="text-[11px] text-slate-300">
-            Center: <b className="text-cyan-400 font-mono">{validLat.toFixed(3)}°N, {validLon.toFixed(3)}°E</b>
+            {t('map.center')} <b className="text-cyan-400 font-mono">{validLat.toFixed(3)}°N, {validLon.toFixed(3)}°E</b>
           </p>
           {isSnapped && (
             <span className="text-[10px] text-amber-400 font-semibold block mt-0.5">
-              ⚠️ Shoreline Snapped ({plan.location?.validated?.snap_distance_km ? `${plan.location.validated.snap_distance_km}km` : 'Offshore'})
+              ⚠️ {t('map.shorelineSnappedBadge', { dist: plan.location?.validated?.snap_distance_km ? `${plan.location.validated.snap_distance_km}km` : t('map.offshore') })}
             </span>
           )}
         </div>
@@ -347,7 +353,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
             }`}
           >
             <ShieldAlert className="w-3.5 h-3.5" />
-            <span>{showGeofence ? '12 NM Boundary: ON' : 'Show 12 NM Boundary'}</span>
+            <span>{showGeofence ? t('map.boundaryOn') : t('map.showBoundary')}</span>
           </button>
 
           <button
@@ -359,29 +365,29 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
             }`}
           >
             <Anchor className="w-3.5 h-3.5" />
-            <span>{showPorts ? 'Harbors: ON' : 'Show Harbors'}</span>
+            <span>{showPorts ? t('map.harborsOn') : t('map.showHarbors')}</span>
           </button>
         </div>
       </div>
 
       {/* Legend */}
       <div className="absolute bottom-3 left-3 z-[400] bg-slate-900/95 backdrop-blur-md p-2.5 rounded-xl border border-slate-700/80 shadow-md text-[11px] text-slate-300 flex items-center space-x-3">
-        <span className="font-bold text-slate-200">Risk Color Scale:</span>
+        <span className="font-bold text-slate-200">{t('map.riskColorScale')}:</span>
         <div className="flex items-center space-x-1">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
-          <span>Safe (0-30)</span>
+          <span>{t('map.safeRange')}</span>
         </div>
         <div className="flex items-center space-x-1">
           <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
-          <span>Caution (31-60)</span>
+          <span>{t('map.cautionRange')}</span>
         </div>
         <div className="flex items-center space-x-1">
           <span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block" />
-          <span>Unsafe (61-80)</span>
+          <span>{t('map.unsafeRange')}</span>
         </div>
         <div className="flex items-center space-x-1">
           <span className="w-2.5 h-2.5 rounded-full bg-rose-600 inline-block" />
-          <span>Danger (&gt;80)</span>
+          <span>{t('map.dangerRange')}</span>
         </div>
       </div>
 
@@ -390,10 +396,10 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
         <button
           onClick={handleRecenter}
           className="p-2.5 rounded-xl bg-slate-900/95 backdrop-blur-md hover:bg-slate-800 text-white border border-slate-700 shadow-lg text-xs font-semibold flex items-center space-x-1.5"
-          title="Recenter to Mission Origin"
+          title={t('map.recenterTitle')}
         >
           <MapPin className="w-4 h-4 text-cyan-400" />
-          <span>Recenter</span>
+          <span>{t('map.recenter')}</span>
         </button>
       </div>
     </div>

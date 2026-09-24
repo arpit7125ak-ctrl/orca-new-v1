@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Send, 
   Bot, 
@@ -20,10 +21,12 @@ import { speakText, stopSpeaking, createSpeechRecognizer, localeFor } from '../u
 import TrendView from './TrendView';
 
 export default function MaritimeChat({ selectedLang = 'auto' }) {
+  const { t } = useTranslation('ui');
+
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      text: 'Namaste and Ahoy! I am your ORCA Ocean Risk & Coastal Advisory Copilot. Ask me anything about sea states, swell surges, wind & squall forecasts, route safety, or decadal ocean trends.',
+      text: t('chat.welcomeMessage', { defaultValue: 'Namaste and Ahoy! I am your ORCA Ocean Risk & Coastal Advisory Copilot. Ask me anything about sea states, swell surges, wind & squall forecasts, route safety, or decadal ocean trends.' }),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -35,10 +38,10 @@ export default function MaritimeChat({ selectedLang = 'auto' }) {
   const messagesEndRef = useRef(null);
 
   const quickQuestions = [
-    'What are the wave conditions and swell off Kochi coast today?',
-    'Can passenger ferries safely operate near Mumbai harbour this afternoon?',
-    'Why has fish productivity declined near Ratnagiri over recent years?',
-    'Is it safe for small craft in Palk Bay today?',
+    { key: 'q1', text: t('chat.quickQ1', { defaultValue: 'What are the wave conditions and swell off Kochi coast today?' }) },
+    { key: 'q2', text: t('chat.quickQ2', { defaultValue: 'Can passenger ferries safely operate near Mumbai harbour this afternoon?' }) },
+    { key: 'q3', text: t('chat.quickQ3', { defaultValue: 'Why has fish productivity declined near Ratnagiri over recent years?' }) },
+    { key: 'q4', text: t('chat.quickQ4', { defaultValue: 'Is it safe for small craft in Palk Bay today?' }) },
   ];
 
   // Restore existing conversation from server if available
@@ -100,7 +103,7 @@ export default function MaritimeChat({ selectedLang = 'auto' }) {
         } catch (_) {}
       }
 
-      const initialReply = res?.response_text || res?.reply || res?.message || 'Analyzing maritime conditions for your mission area...';
+      const initialReply = res?.response_text || res?.reply || res?.message || t('chat.analyzingMissionArea', { defaultValue: 'Analyzing maritime conditions for your mission area...' });
 
       const botMsg = {
         role: 'assistant',
@@ -113,26 +116,26 @@ export default function MaritimeChat({ selectedLang = 'auto' }) {
       // If an analysis was triggered, poll until done to display real synthesized advice
       if (res?.triggered_analysis_id) {
         try {
-          const completed = await orcaApi.pollAnalysisUntilDone(res.triggered_analysis_id, () => {}, 1500, 30);
+          const completed = await orcaApi.pollAnalysisUntilDone(res.triggered_analysis_id, () => {}, 2000, 300);
           
           let finalDecision = '';
           let trendData = null;
           let routeData = null;
 
           if (completed?.status === 'failed') {
-            finalDecision = completed?.error?.message || 'Analysis could not be completed with current parameters.';
+            finalDecision = completed?.error?.message || t('chat.errorIncompleteParams', { defaultValue: 'Analysis could not be completed with current parameters.' });
           } else if (completed?.final_stage === 'trend' || completed?.trend_result) {
             trendData = completed.trend_result || completed;
-            finalDecision = trendData.explanation || 'Historical oceanographic trend analysis complete:';
+            finalDecision = trendData.explanation || t('chat.trendAnalysisComplete', { defaultValue: 'Historical oceanographic trend analysis complete:' });
           } else if (completed?.final_stage === 'route' || completed?.route_result) {
             routeData = completed.route_result || completed;
-            finalDecision = `Nautical passage analysis complete: ${routeData.total_distance_km ? `${routeData.total_distance_km.toFixed(1)} km` : ''} (${routeData.max_risk_level || 'Evaluated'}).`;
+            finalDecision = `${t('chat.passageAnalysisComplete', { defaultValue: 'Nautical passage analysis complete' })}: ${routeData.total_distance_km ? `${routeData.total_distance_km.toFixed(1)} km` : ''} (${routeData.max_risk_level || t('results.evaluated', { defaultValue: 'Evaluated' })}).`;
           } else {
             finalDecision = completed?.quick_information_result?.answer_text ||
                             completed?.decision?.one_line_recommendation ||
                             completed?.decision?.detailed_recommendation ||
                             completed?.decision?.primary_advice ||
-                            'Maritime advisory analysis complete.';
+                            t('chat.advisoryAnalysisComplete', { defaultValue: 'Maritime advisory analysis complete.' });
           }
 
           setMessages((prev) => {
@@ -158,7 +161,7 @@ export default function MaritimeChat({ selectedLang = 'auto' }) {
     } catch (err) {
       const errorMsg = {
         role: 'assistant',
-        text: `Error connecting to advisory intelligence: ${err.message}. Please verify the backend is running.`,
+        text: `${t('chat.errorConnecting', { defaultValue: 'Error connecting to advisory intelligence' })}: ${err.message}. ${t('chat.verifyBackendRunning', { defaultValue: 'Please verify the backend is running.' })}`,
         isError: true,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
@@ -207,7 +210,7 @@ export default function MaritimeChat({ selectedLang = 'auto' }) {
         console.warn(err);
       }
     } else {
-      alert(`Speech recognition is not available for locale ${localeFor(selectedLang)} in this browser.`);
+      alert(t('chat.speechNotAvailable', { locale: localeFor(selectedLang), defaultValue: `Speech recognition is not available for locale ${localeFor(selectedLang)} in this browser.` }));
     }
   };
 
@@ -221,14 +224,14 @@ export default function MaritimeChat({ selectedLang = 'auto' }) {
           </div>
           <div>
             <h3 className="text-sm font-bold text-white flex items-center space-x-1.5">
-              <span>ORCA Maritime Assistant</span>
+              <span>{t('chat.assistantTitle', { defaultValue: 'ORCA Maritime Assistant' })}</span>
               <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
             </h3>
-            <p className="text-[11px] text-slate-400">Multi-turn Coastal Safety & Weather Dialogue</p>
+            <p className="text-[11px] text-slate-400">{t('chat.dialogueSubtitle', { defaultValue: 'Multi-turn Coastal Safety & Weather Dialogue' })}</p>
           </div>
         </div>
         <span className="text-[11px] font-mono px-2.5 py-1 bg-slate-800 text-cyan-300 rounded-lg border border-slate-700">
-          Locale: {localeFor(selectedLang)}
+          {t('chat.localeLabel', { defaultValue: 'Locale' })}: {localeFor(selectedLang)}
         </span>
       </div>
 
@@ -270,7 +273,7 @@ export default function MaritimeChat({ selectedLang = 'auto' }) {
                     <button
                       onClick={() => handleToggleSpeak(msg.text, idx, msg.language)}
                       className="text-slate-400 hover:text-cyan-400 p-0.5 rounded cursor-pointer"
-                      title={isSpeaking ? 'Stop reading' : 'Read aloud'}
+                      title={isSpeaking ? t('chat.stopReading', { defaultValue: 'Stop reading' }) : t('chat.readAloud', { defaultValue: 'Read aloud' })}
                     >
                       {isSpeaking ? <VolumeX className="w-3.5 h-3.5 text-cyan-400" /> : <Volume2 className="w-3.5 h-3.5" />}
                     </button>
@@ -282,7 +285,7 @@ export default function MaritimeChat({ selectedLang = 'auto' }) {
                 {msg.isAnalyzing && (
                   <div className="mt-2 flex items-center space-x-2 text-cyan-400 text-xs">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Synthesizing verified metocean & risk layers...</span>
+                    <span>{t('chat.synthesizingLayers', { defaultValue: 'Synthesizing verified metocean & risk layers...' })}</span>
                   </div>
                 )}
 
@@ -297,11 +300,11 @@ export default function MaritimeChat({ selectedLang = 'auto' }) {
                 {msg.route_result && (
                   <div className="mt-3 p-3 rounded-xl bg-slate-950 border border-slate-700 text-xs space-y-1">
                     <div className="flex items-center justify-between text-cyan-300 font-bold">
-                      <span>Nautical Passage Overview</span>
-                      <span>{msg.route_result.max_risk_level || 'Evaluated'}</span>
+                      <span>{t('chat.passageOverview', { defaultValue: 'Nautical Passage Overview' })}</span>
+                      <span>{msg.route_result.max_risk_level || t('results.evaluated', { defaultValue: 'Evaluated' })}</span>
                     </div>
                     <p className="text-slate-400">
-                      Distance: {msg.route_result.total_distance_km ? `${msg.route_result.total_distance_km.toFixed(1)} km` : '—'} • Waypoints: {msg.route_result.waypoints?.length || 0}
+                      {t('results.totalDistance', { defaultValue: 'Distance' })}: {msg.route_result.total_distance_km ? `${msg.route_result.total_distance_km.toFixed(1)} km` : '—'} • {t('results.waypoints', { defaultValue: 'Waypoints' })}: {msg.route_result.waypoints?.length || 0}
                     </p>
                   </div>
                 )}
@@ -314,15 +317,15 @@ export default function MaritimeChat({ selectedLang = 'auto' }) {
 
       {/* Suggested Quick Questions */}
       <div className="px-4 py-2 bg-slate-950/60 border-t border-slate-800/80 flex items-center space-x-2 overflow-x-auto">
-        <span className="text-[10px] text-slate-500 uppercase font-bold flex-shrink-0">Suggestions:</span>
-        {quickQuestions.map((q, idx) => (
+        <span className="text-[10px] text-slate-500 uppercase font-bold flex-shrink-0">{t('chat.suggestions', { defaultValue: 'Suggestions:' })}</span>
+        {quickQuestions.map((q) => (
           <button
-            key={idx}
-            onClick={() => handleSend(q)}
+            key={q.key}
+            onClick={() => handleSend(q.text)}
             disabled={isLoading}
             className="px-2.5 py-1 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg text-[11px] text-slate-300 whitespace-nowrap transition-colors cursor-pointer disabled:opacity-50"
           >
-            {q}
+            {q.text}
           </button>
         ))}
       </div>
@@ -337,7 +340,7 @@ export default function MaritimeChat({ selectedLang = 'auto' }) {
               ? 'bg-rose-600 text-white border-rose-500 animate-pulse'
               : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
           }`}
-          title="Voice input"
+          title={t('chat.voiceInputTitle', { defaultValue: 'Voice input' })}
         >
           {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
         </button>
@@ -346,7 +349,7 @@ export default function MaritimeChat({ selectedLang = 'auto' }) {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={`Ask a maritime question in English, Hindi, Tamil, etc. (auto-detect)...`}
+          placeholder={t('chat.inputPlaceholder', { defaultValue: 'Ask a maritime question in English, Hindi, Tamil, etc. (auto-detect)...' })}
           className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
           disabled={isLoading}
         />

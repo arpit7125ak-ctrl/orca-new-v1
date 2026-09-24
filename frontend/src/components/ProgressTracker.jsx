@@ -1,13 +1,16 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, CheckCircle2, AlertCircle, Clock, ShieldCheck } from 'lucide-react';
 
 export default function ProgressTracker({ statusInfo }) {
+  const { t } = useTranslation('ui');
+
   const steps = [
-    { key: 'parse', label: '1. Query NLP & Language Detection', desc: 'Analyzing intent and maritime entities' },
-    { key: 'plan', label: '2. Shoreline Snapping & Agent Planning', desc: 'Validating ocean coordinates & specialists' },
-    { key: 'agents', label: '3. Multi-Agent 9-Point Spatial Execution', desc: 'Weather, waves, tides & hazards' },
-    { key: 'rules', label: '4. Deterministic Constraint Floor Check', desc: 'Strict vessel safety limits enforcement' },
-    { key: 'synthesis', label: '5. LLM Advisory & Audio Generation', desc: 'Gemini reasoning & actionable guidance' },
+    { key: 'parse',     labelKey: 'progress.step1Label', descKey: 'progress.step1Desc' },
+    { key: 'plan',      labelKey: 'progress.step2Label', descKey: 'progress.step2Desc' },
+    { key: 'agents',    labelKey: 'progress.step3Label', descKey: 'progress.step3Desc' },
+    { key: 'rules',     labelKey: 'progress.step4Label', descKey: 'progress.step4Desc' },
+    { key: 'synthesis', labelKey: 'progress.step5Label', descKey: 'progress.step5Desc' },
   ];
 
   const currentStatus = statusInfo?.status || 'queued';
@@ -21,8 +24,8 @@ export default function ProgressTracker({ statusInfo }) {
             <Clock className="w-4 h-4 animate-spin-slow" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white">Multi-Agent Intelligence in Progress</h3>
-            <p className="text-[11px] text-slate-400">Analysis ID: <span className="font-mono text-cyan-400">{statusInfo?.analysis_id || 'Generating...'}</span></p>
+            <h3 className="text-sm font-bold text-white">{t('progress.title')}</h3>
+            <p className="text-[11px] text-slate-400">{t('progress.analysisId')} <span className="font-mono text-cyan-400">{statusInfo?.analysis_id || t('progress.generating')}</span></p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
@@ -65,9 +68,9 @@ export default function ProgressTracker({ statusInfo }) {
                     {idx + 1}
                   </div>
                 )}
-                <span className="truncate">{step.label.split('.')[1] || step.label}</span>
+                <span className="truncate">{t(step.labelKey)}</span>
               </div>
-              <p className="text-[10px] text-slate-400 line-clamp-1">{step.desc}</p>
+              <p className="text-[10px] text-slate-400 line-clamp-1">{t(step.descKey)}</p>
             </div>
           );
         })}

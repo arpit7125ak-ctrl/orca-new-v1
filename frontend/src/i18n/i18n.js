@@ -20,7 +20,7 @@ import hi from './locales/hi.json';
 import bn from './locales/bn.json';
 import ta from './locales/ta.json';
 import te from './locales/te.json';
-import or from './locales/or.json';
+import or_locale from './locales/or.json';
 import mr from './locales/mr.json';
 import ml from './locales/ml.json';
 import kn from './locales/kn.json';
@@ -28,22 +28,25 @@ import gu from './locales/gu.json';
 
 const SUPPORTED_LANGS = ['en', 'hi', 'bn', 'ta', 'te', 'or', 'mr', 'ml', 'kn', 'gu'];
 
+// All 10 supported Indic and English locale bundles
+const resources = {
+  en: { ui: en },
+  hi: { ui: hi },
+  bn: { ui: bn },
+  ta: { ui: ta },
+  te: { ui: te },
+  or: { ui: or_locale },
+  mr: { ui: mr },
+  ml: { ui: ml },
+  kn: { ui: kn },
+  gu: { ui: gu },
+};
+
 i18next
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    resources: {
-      en: { ui: en },
-      hi: { ui: hi },
-      bn: { ui: bn },
-      ta: { ui: ta },
-      te: { ui: te },
-      or: { ui: or },
-      mr: { ui: mr },
-      ml: { ui: ml },
-      kn: { ui: kn },
-      gu: { ui: gu },
-    },
+    resources,
     defaultNS: 'ui',
     ns: ['ui'],
     fallbackLng: 'en',

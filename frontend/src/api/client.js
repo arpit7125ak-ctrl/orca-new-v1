@@ -143,9 +143,9 @@ export const orcaApi = {
   },
 
   /**
-   * Poll analysis until completion or failure
+   * Poll analysis until completion or failure (defaults to 2s intervals, 300 attempts = 600s / 10 minutes)
    */
-  async pollAnalysisUntilDone(analysisId, onProgress = () => { }, intervalMs = 1200, maxAttempts = 50) {
+  async pollAnalysisUntilDone(analysisId, onProgress = () => { }, intervalMs = 2000, maxAttempts = 300) {
     let attempts = 0;
     while (attempts < maxAttempts) {
       attempts++;
@@ -156,12 +156,18 @@ export const orcaApi = {
         return await this.getAnalysis(analysisId);
       }
       if (statusData.status === 'failed') {
-        throw new Error(statusData.error || 'Analysis failed in pipeline processing');
+        const errMsg = typeof statusData.error === 'string'
+          ? statusData.error
+          : statusData.error?.message || statusData.error_message || 'Analysis failed in pipeline processing';
+        const err = new Error(errMsg);
+        err.error_category = statusData.error?.error_category;
+        throw err;
       }
 
       await new Promise((resolve) => setTimeout(resolve, intervalMs));
     }
-    throw new Error('Analysis polling timed out after 60 seconds');
+    const totalSeconds = Math.round((maxAttempts * intervalMs) / 1000);
+    throw new Error(`Analysis polling timed out after ${totalSeconds} seconds`);
   },
 
   /**

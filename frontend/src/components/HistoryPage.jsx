@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Clock, 
   MapPin, 
@@ -16,7 +17,16 @@ import {
 import { orcaApi } from '../api/client';
 import { list, remove, clear } from '../utils/history';
 
+const FILTER_OPTIONS = [
+  { id: 'ALL', labelKey: 'history.filterAll', defaultLabel: 'All' },
+  { id: 'point', labelKey: 'history.filterPoint', defaultLabel: 'Point' },
+  { id: 'route', labelKey: 'history.filterRoute', defaultLabel: 'Route' },
+  { id: 'trend', labelKey: 'history.filterTrend', defaultLabel: 'Trend' },
+  { id: 'chat', labelKey: 'history.filterChat', defaultLabel: 'Chat' },
+];
+
 export default function HistoryPage({ onSelectAnalysis }) {
+  const { t } = useTranslation('ui');
   const [historyItems, setHistoryItems] = useState([]);
   const [filter, setFilter] = useState('ALL'); // 'ALL' | 'point' | 'route' | 'trend' | 'chat'
   const [search, setSearch] = useState('');
@@ -56,7 +66,7 @@ export default function HistoryPage({ onSelectAnalysis }) {
   };
 
   const handleClearAll = () => {
-    if (window.confirm('Are you sure you want to clear your local advisory history?')) {
+    if (window.confirm(t('history.confirmClear', { defaultValue: 'Are you sure you want to clear your local advisory history?' }))) {
       clear();
       refreshList();
     }
@@ -77,13 +87,13 @@ export default function HistoryPage({ onSelectAnalysis }) {
   const getKindBadge = (kind) => {
     switch (kind) {
       case 'route':
-        return { label: 'Route Plan', bg: 'bg-cyan-950 text-cyan-300 border-cyan-800', icon: Navigation };
+        return { labelKey: 'history.badgeRoute', defaultLabel: 'Route Plan', bg: 'bg-cyan-950 text-cyan-300 border-cyan-800', icon: Navigation };
       case 'trend':
-        return { label: 'Trend Series', bg: 'bg-purple-950 text-purple-300 border-purple-800', icon: TrendingUp };
+        return { labelKey: 'history.badgeTrend', defaultLabel: 'Trend Series', bg: 'bg-purple-950 text-purple-300 border-purple-800', icon: TrendingUp };
       case 'chat':
-        return { label: 'Chat Query', bg: 'bg-blue-950 text-blue-300 border-blue-800', icon: MessageSquare };
+        return { labelKey: 'history.badgeChat', defaultLabel: 'Chat Query', bg: 'bg-blue-950 text-blue-300 border-blue-800', icon: MessageSquare };
       default:
-        return { label: 'Point Advisory', bg: 'bg-emerald-950 text-emerald-300 border-emerald-800', icon: Compass };
+        return { labelKey: 'history.badgePoint', defaultLabel: 'Point Advisory', bg: 'bg-emerald-950 text-emerald-300 border-emerald-800', icon: Compass };
     }
   };
 
@@ -96,11 +106,11 @@ export default function HistoryPage({ onSelectAnalysis }) {
           <div className="flex items-center space-x-2">
             <Clock className="w-6 h-6 text-cyan-400" />
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              Advisory & Mission History
+              {t('history.title', { defaultValue: 'Advisory & Mission History' })}
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Local session audit log of recent point analyses, route calculations, and ocean trend evaluations.
+            {t('history.subtitle', { defaultValue: 'Local session audit log of recent point analyses, route calculations, and ocean trend evaluations.' })}
           </p>
         </div>
         
@@ -110,7 +120,7 @@ export default function HistoryPage({ onSelectAnalysis }) {
             className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800 text-xs font-semibold transition-colors cursor-pointer w-fit"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Clear All</span>
+            <span>{t('history.clearAll', { defaultValue: 'Clear All' })}</span>
           </button>
         )}
       </div>
@@ -123,19 +133,13 @@ export default function HistoryPage({ onSelectAnalysis }) {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by location, title or ID..."
+            placeholder={t('history.searchPlaceholder', { defaultValue: 'Search by location, title or ID...' })}
             className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder:text-slate-500"
           />
         </div>
 
         <div className="flex items-center space-x-2 w-full sm:w-auto overflow-x-auto">
-          {[
-            { id: 'ALL', label: 'All' },
-            { id: 'point', label: 'Point' },
-            { id: 'route', label: 'Route' },
-            { id: 'trend', label: 'Trend' },
-            { id: 'chat', label: 'Chat' },
-          ].map((f) => (
+          {FILTER_OPTIONS.map((f) => (
             <button
               key={f.id}
               onClick={() => setFilter(f.id)}
@@ -145,7 +149,7 @@ export default function HistoryPage({ onSelectAnalysis }) {
                   : 'bg-slate-800 text-slate-400 hover:text-white'
               }`}
             >
-              {f.label}
+              {t(f.labelKey, { defaultValue: f.defaultLabel })}
             </button>
           ))}
         </div>
@@ -156,9 +160,9 @@ export default function HistoryPage({ onSelectAnalysis }) {
         {filtered.length === 0 ? (
           <div className="text-center py-16 bg-slate-900/40 border border-slate-800 rounded-3xl p-6 text-slate-400 space-y-2">
             <Clock className="w-8 h-8 text-slate-600 mx-auto" />
-            <p className="text-sm font-semibold text-slate-300">No local advisory history yet.</p>
+            <p className="text-sm font-semibold text-slate-300">{t('history.noHistory', { defaultValue: 'No local advisory history yet.' })}</p>
             <p className="text-xs text-slate-500">
-              Run a safety assessment, plan a nautical route, or request a trend series to view audit logs here.
+              {t('history.noHistorySub', { defaultValue: 'Run a safety assessment, plan a nautical route, or request a trend series to view audit logs here.' })}
             </p>
           </div>
         ) : (
@@ -181,7 +185,7 @@ export default function HistoryPage({ onSelectAnalysis }) {
                   <div className="flex items-center space-x-2">
                     <KindIcon className="w-4 h-4 text-cyan-400 flex-shrink-0" />
                     <span className="text-sm font-bold text-white">
-                      {item.title || item.place || 'Coastal Analysis'}
+                      {item.title || item.place || t('history.coastalAnalysis', { defaultValue: 'Coastal Analysis' })}
                     </span>
                     <span className="text-[10px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
                       {item.analysis_id}
@@ -190,10 +194,10 @@ export default function HistoryPage({ onSelectAnalysis }) {
 
                   <div className="flex items-center space-x-2">
                     <span className={`text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-lg border ${badge.bg}`}>
-                      {badge.label}
+                      {t(badge.labelKey, { defaultValue: badge.defaultLabel })}
                     </span>
                     <span className="text-[10px] font-mono text-slate-400">
-                      {item.created_at ? new Date(item.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Recent'}
+                      {item.created_at ? new Date(item.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : t('history.recent', { defaultValue: 'Recent' })}
                     </span>
                   </div>
                 </div>
@@ -201,18 +205,18 @@ export default function HistoryPage({ onSelectAnalysis }) {
                 <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs text-slate-400">
                   <div className="flex items-center space-x-1 text-slate-400">
                     <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>{item.place || 'Coastal Sector'}</span>
+                    <span>{item.place || t('history.coastalSector', { defaultValue: 'Coastal Sector' })}</span>
                   </div>
 
                   <div className="flex items-center space-x-3">
                     {isUnavailable ? (
                       <div className="flex items-center space-x-2 text-rose-400">
-                        <span className="text-xs">No longer available on server</span>
+                        <span className="text-xs">{t('history.unavailableOnServer', { defaultValue: 'No longer available on server' })}</span>
                         <button
                           onClick={(e) => handleRemove(e, item.analysis_id)}
                           className="px-2 py-0.5 rounded bg-rose-950 hover:bg-rose-900 text-rose-200 border border-rose-800 text-[11px] font-semibold cursor-pointer"
                         >
-                          Remove
+                          {t('history.remove', { defaultValue: 'Remove' })}
                         </button>
                       </div>
                     ) : (
@@ -222,12 +226,12 @@ export default function HistoryPage({ onSelectAnalysis }) {
                           disabled={isLoadingThis}
                           className="text-cyan-400 hover:text-cyan-300 font-semibold flex items-center space-x-1 cursor-pointer disabled:opacity-50"
                         >
-                          <span>{isLoadingThis ? 'Loading...' : 'Open Result'}</span>
+                          <span>{isLoadingThis ? t('history.loading', { defaultValue: 'Loading...' }) : t('history.openResult', { defaultValue: 'Open Result' })}</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={(e) => handleRemove(e, item.analysis_id)}
-                          title="Remove from history"
+                          title={t('history.removeFromHistory', { defaultValue: 'Remove from history' })}
                           className="p-1 rounded-lg hover:bg-slate-800 text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

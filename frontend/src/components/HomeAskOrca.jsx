@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Compass,
   Mic,
@@ -19,11 +20,13 @@ import {
   Globe,
   SlidersHorizontal,
   Navigation,
-  Layers
+  Layers,
+  Crosshair,
+  Loader2
 } from 'lucide-react';
 import L from 'leaflet';
 import { createSpeechRecognizer } from '../utils/speech';
-import { getNearestCoastalPlace, resolvePlaceFromCoordinates } from '../utils/geo';
+import { getNearestCoastalPlace, resolvePlaceFromCoordinates, resolveCoordinatesFromPlace } from '../utils/geo';
 import { ACTIVITIES, VESSEL_TYPES, normalizeActivity, normalizeVesselType } from '../utils/maritimeConfig';
 
 export default function HomeAskOrca({
@@ -33,6 +36,7 @@ export default function HomeAskOrca({
   selectedLang = 'en',
   onSelectLang
 }) {
+  const { t } = useTranslation('ui');
   const [query, setQuery] = useState('');
   const [isRefineOpen, setIsRefineOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -48,12 +52,12 @@ export default function HomeAskOrca({
   const [timeRange, setTimeRange] = useState('');
   const [langOverride, setLangOverride] = useState(selectedLang);
 
-  // Quick asks chips matching §5
+  // Quick asks chips
   const quickAsks = [
-    { label: 'Safe to fish now?', query: 'Is it safe for motorized fishing off Kochi right now?' },
-    { label: 'Nearest PFZ zone', query: 'Where is the nearest Potential Fishing Zone off Kochi coast?' },
-    { label: 'Any alerts near me?', query: 'Are there any active cyclone or squall warnings near Kochi?' },
-    { label: 'Tide conditions', query: 'What are the tidal currents and swell patterns tomorrow morning?' },
+    { labelKey: 'home.quickAskSafe',   query: 'Is it safe for motorized fishing off Kochi right now?' },
+    { labelKey: 'home.quickAskPfz',    query: 'Where is the nearest Potential Fishing Zone off Kochi coast?' },
+    { labelKey: 'home.quickAskAlerts', query: 'Are there any active cyclone or squall warnings near Kochi?' },
+    { labelKey: 'home.quickAskTide',   query: 'What are the tidal currents and swell patterns tomorrow morning?' },
   ];
 
   // Speech recognition setup
@@ -72,7 +76,7 @@ export default function HomeAskOrca({
 
   const toggleMic = () => {
     if (!speechRecognizer) {
-      alert('Speech recognition is not supported in this browser.');
+      alert(t('common.voiceNotSupported'));
       return;
     }
     if (isRecording) {
@@ -93,6 +97,9 @@ export default function HomeAskOrca({
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
 
+  const [isResolvingCoords, setIsResolvingCoords] = useState(false);
+  const [isResolvingPlace, setIsResolvingPlace] = useState(false);
+
   const handleLocationUpdate = async (cLat, cLon) => {
     setLat(String(cLat));
     setLon(String(cLon));
@@ -107,6 +114,65 @@ export default function HomeAskOrca({
       if (enriched) setPlaceName(enriched);
     } catch {}
   };
+
+  // 1. Forward geocode: place name -> coordinates
+  const handleResolveCoordsFromPlace = async () => {
+    if (!placeName || !placeName.trim()) return;
+    setIsResolvingCoords(true);
+    try {
+      const result = await resolveCoordinatesFromPlace(placeName);
+      if (result) {
+        setLat(String(result.lat));
+        setLon(String(result.lon));
+        if (result.name) setPlaceName(result.name);
+        if (markerRef.current) {
+          markerRef.current.setLatLng([result.lat, result.lon]);
+        }
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.panTo([result.lat, result.lon]);
+        }
+      } else {
+        alert(t('home.placeNotFound', 'Location not found in maritime database. You can pin it on the map or enter coordinates.'));
+      }
+    } catch (err) {
+      console.warn('Forward geocoding error:', err);
+    } finally {
+      setIsResolvingCoords(false);
+    }
+  };
+
+  // 2. Reverse geocode: coordinates -> place name
+  const handleResolvePlaceFromCoords = async () => {
+    const pL = parseFloat(lat);
+    const pLon = parseFloat(lon);
+    if (isNaN(pL) || isNaN(pLon)) return;
+    setIsResolvingPlace(true);
+    try {
+      const immediate = getNearestCoastalPlace(pL, pLon);
+      setPlaceName(immediate);
+      if (markerRef.current) {
+        markerRef.current.setLatLng([pL, pLon]);
+      }
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.panTo([pL, pLon]);
+      }
+      const enriched = await resolvePlaceFromCoordinates(pL, pLon);
+      if (enriched) setPlaceName(enriched);
+    } catch (err) {
+      console.warn('Reverse geocoding error:', err);
+    } finally {
+      setIsResolvingPlace(false);
+    }
+  };
+
+  // Keep map marker synchronized when lat/lon inputs change
+  useEffect(() => {
+    const pL = parseFloat(lat);
+    const pLon = parseFloat(lon);
+    if (!isNaN(pL) && !isNaN(pLon) && markerRef.current && mapInstanceRef.current) {
+      markerRef.current.setLatLng([pL, pLon]);
+    }
+  }, [lat, lon]);
 
   useEffect(() => {
     if (!showMapPicker || !mapContainerRef.current) return;
@@ -161,7 +227,6 @@ export default function HomeAskOrca({
 
       mapInstanceRef.current = map;
 
-      // Invalidate size immediately on next tick and after animations complete
       requestAnimationFrame(() => {
         if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
       });
@@ -172,7 +237,6 @@ export default function HomeAskOrca({
         if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
       }, 350);
 
-      // Auto-refresh tiles whenever container expands or resizes
       if (typeof ResizeObserver !== 'undefined' && mapContainerRef.current) {
         resizeObserver = new ResizeObserver(() => {
           if (mapInstanceRef.current) {
@@ -182,7 +246,6 @@ export default function HomeAskOrca({
         resizeObserver.observe(mapContainerRef.current);
       }
     } else {
-      // Map instance already exists, refresh size
       mapInstanceRef.current.invalidateSize();
     }
 
@@ -199,7 +262,7 @@ export default function HomeAskOrca({
 
   const handleUseMyLocation = () => {
     if (!navigator.geolocation) {
-      alert('Geolocation is not available.');
+      alert(t('common.geolocationNotSupported'));
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -211,14 +274,13 @@ export default function HomeAskOrca({
         }
         handleLocationUpdate(cLat, cLon);
       },
-      (err) => alert('GPS location failed: ' + err.message)
+      (err) => alert(t('common.gpsError', { message: err.message }))
     );
   };
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
 
-    // Format ISO date (YYYY-MM-DD) per AnalysisRequest.json contract (only if chosen)
     let isoDate = undefined;
     if (dateOption) {
       const d = new Date();
@@ -230,7 +292,6 @@ export default function HomeAskOrca({
       isoDate = d.toISOString().split('T')[0];
     }
 
-    // Format structured time range object { start, end } (only if chosen)
     const timeRangeMap = {
       morning: { start: '06:00', end: '11:00' },
       afternoon: { start: '12:00', end: '16:00' },
@@ -279,7 +340,7 @@ export default function HomeAskOrca({
   return (
     <div className="max-w-3xl mx-auto space-y-6 py-4 sm:py-8">
 
-      {/* 1. Cached / Recent Advisory Banner (§5 & §85: show age and offline state) */}
+      {/* Cached / Recent Advisory Banner */}
       {cachedAnalysis && (
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-lg backdrop-blur-md">
           <div className="flex items-center space-x-3 min-w-0">
@@ -292,14 +353,14 @@ export default function HomeAskOrca({
             <div className="truncate">
               <div className="flex items-center space-x-2">
                 <span className="text-xs font-bold text-white uppercase tracking-wider">
-                  Latest Mission Advisory
+                  {t('home.recentAdvisory')}
                 </span>
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
                   {cachedAnalysis.analysis_id}
                 </span>
               </div>
               <p className="text-xs text-slate-300 truncate mt-0.5">
-                {cachedAnalysis.decision?.one_line_recommendation || 'Assessment results available.'}
+                {cachedAnalysis.decision?.one_line_recommendation || t('home.noActiveAnalysis')}
               </p>
             </div>
           </div>
@@ -308,28 +369,28 @@ export default function HomeAskOrca({
             onClick={() => onViewCached && onViewCached(cachedAnalysis)}
             className="ml-3 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 text-xs font-semibold flex items-center space-x-1 flex-shrink-0 transition-colors cursor-pointer"
           >
-            <span>Resume</span>
+            <span>{t('home.viewAdvisory')}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
-      {/* 2. Main "Ask ORCA Anything..." Box (§5 layout) */}
+      {/* Main "Ask ORCA" Box */}
       <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Compass className="w-6 h-6 text-cyan-400" />
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              Ask ORCA Marine Copilot
+              {t('home.copilotTitle')}
             </h1>
           </div>
           <div className="text-[11px] font-mono text-cyan-300 bg-cyan-950 px-2.5 py-1 rounded-full border border-cyan-800">
-            Natural Language Pipeline
+            {t('home.nlpBadge')}
           </div>
         </div>
 
         <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-          Ask in English, Hindi, Tamil, Telugu, Malayalam, or Bengali. A single natural query is enough — structured fields are optional refinement.
+          {t('home.subtitle')}
         </p>
 
         {/* Input Text Box with Microphone */}
@@ -339,7 +400,7 @@ export default function HomeAskOrca({
               rows={3}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="e.g. kal subah Kochi coast pe fishing safe hai kya? Ya wind speed zyada hai?"
+              placeholder={t('home.placeholder')}
               className="w-full bg-slate-950 border border-slate-700 rounded-2xl p-4 pr-14 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder:text-slate-500 resize-none font-medium leading-relaxed"
             />
             <button
@@ -349,15 +410,15 @@ export default function HomeAskOrca({
                   ? 'bg-rose-500 text-white border-rose-400 animate-pulse'
                   : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white hover:bg-slate-700'
                 }`}
-              title="Speak in your regional language"
+              title={t('home.micTitle')}
             >
               {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
             </button>
           </div>
 
-          {/* Quick-Question Chips (§5: One-tap questions) */}
+          {/* Quick-Question Chips */}
           <div className="space-y-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Quick Asks:</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('home.quickAsksLabel')}</span>
             <div className="flex flex-wrap gap-2">
               {quickAsks.map((chip, idx) => (
                 <button
@@ -367,13 +428,13 @@ export default function HomeAskOrca({
                   className="px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-cyan-500/60 text-xs text-slate-300 hover:text-white transition-all cursor-pointer flex items-center space-x-1.5"
                 >
                   <Sparkles className="w-3 h-3 text-cyan-400" />
-                  <span>{chip.label}</span>
+                  <span>{t(chip.labelKey)}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Collapsible "Refine" Section (§5: Optional refinement, not a gate) */}
+          {/* Collapsible Refine Section */}
           <div className="pt-2 border-t border-slate-800/80">
             <button
               type="button"
@@ -382,7 +443,7 @@ export default function HomeAskOrca({
             >
               <span className="flex items-center space-x-2">
                 <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400" />
-                <span>▸ Refine (Location, Date, Activity, Vessel Profile)</span>
+                <span>{t('home.refineLabel')}</span>
               </span>
               {isRefineOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
@@ -392,19 +453,34 @@ export default function HomeAskOrca({
                 {/* Location + GPS + Map Picker */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-semibold text-slate-300">Target Location</label>
-                    <div className="flex items-center space-x-2">
+                    <label className="text-xs font-semibold text-slate-300">{t('home.targetLocation')}</label>
+                    <div className="flex items-center space-x-2.5">
+                      <button
+                        type="button"
+                        onClick={handleResolvePlaceFromCoords}
+                        disabled={isResolvingPlace || !lat || !lon}
+                        title="Reverse lookup coordinates to coastal place name"
+                        className="text-[11px] text-cyan-400 hover:text-cyan-300 disabled:opacity-40 disabled:cursor-not-allowed font-semibold flex items-center space-x-1 cursor-pointer"
+                      >
+                        {isResolvingPlace ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <MapPin className="w-3 h-3" />
+                        )}
+                        <span>{t('home.getPlace', 'Get Place')}</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => setShowMapPicker(!showMapPicker)}
-                        className={`text-[11px] font-semibold flex items-center space-x-1 px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                        className={`text-[11px] font-semibold flex items-center space-x-1 px-2 py-0.5 rounded-lg border transition-colors cursor-pointer ${
                           showMapPicker
                             ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400'
                             : 'text-cyan-400 hover:text-cyan-300 border-cyan-900/60 bg-cyan-950/40'
                         }`}
                       >
                         <Navigation className="w-3 h-3" />
-                        <span>{showMapPicker ? 'Hide Map' : 'Pin on Map'}</span>
+                        <span>{showMapPicker ? t('home.hideMap') : t('home.pinOnMap')}</span>
                       </button>
 
                       <button
@@ -413,51 +489,82 @@ export default function HomeAskOrca({
                         className="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold flex items-center space-x-1 cursor-pointer"
                       >
                         <MapPin className="w-3 h-3" />
-                        <span>Use GPS</span>
+                        <span>{t('common.gps')}</span>
                       </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <input
-                      type="text"
-                      value={placeName}
-                      onChange={(e) => setPlaceName(e.target.value)}
-                      placeholder="Place name (auto-filled on map)"
-                      className="sm:col-span-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                    />
-                    <input
-                      type="number"
-                      step="0.0001"
-                      value={lat}
-                      onChange={(e) => {
-                        const newLat = e.target.value;
-                        setLat(newLat);
-                        const pL = parseFloat(newLat);
-                        const pLon = parseFloat(lon);
-                        if (!isNaN(pL) && !isNaN(pLon) && pL >= -90 && pL <= 90) {
-                          setPlaceName(getNearestCoastalPlace(pL, pLon));
-                        }
-                      }}
-                      placeholder="Latitude (e.g. 12.50)"
-                      className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono"
-                    />
-                    <input
-                      type="number"
-                      step="0.0001"
-                      value={lon}
-                      onChange={(e) => {
-                        const newLon = e.target.value;
-                        setLon(newLon);
-                        const pL = parseFloat(lat);
-                        const pLon = parseFloat(newLon);
-                        if (!isNaN(pL) && !isNaN(pLon) && pLon >= -180 && pLon <= 180) {
-                          setPlaceName(getNearestCoastalPlace(pL, pLon));
-                        }
-                      }}
-                      placeholder="Longitude (e.g. 74.80)"
-                      className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                    {/* Place Name with "Get Coords" Button */}
+                    <div className="sm:col-span-6 relative flex items-center">
+                      <input
+                        type="text"
+                        value={placeName}
+                        onChange={(e) => setPlaceName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleResolveCoordsFromPlace();
+                          }
+                        }}
+                        placeholder={t('home.placeNamePlaceholder')}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-3 pr-24 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleResolveCoordsFromPlace}
+                        disabled={isResolvingCoords || !placeName.trim()}
+                        title="Resolve place name to coordinates"
+                        className="absolute right-1.5 px-2.5 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-semibold flex items-center space-x-1 transition-all shadow-sm cursor-pointer"
+                      >
+                        {isResolvingCoords ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Crosshair className="w-3 h-3" />
+                        )}
+                        <span>{t('home.getCoords', 'Get Coords')}</span>
+                      </button>
+                    </div>
+
+                    {/* Latitude */}
+                    <div className="sm:col-span-3">
+                      <input
+                        type="number"
+                        step="0.0001"
+                        value={lat}
+                        onChange={(e) => {
+                          const newLat = e.target.value;
+                          setLat(newLat);
+                          const pL = parseFloat(newLat);
+                          const pLon = parseFloat(lon);
+                          if (!isNaN(pL) && !isNaN(pLon) && pL >= -90 && pL <= 90) {
+                            setPlaceName(getNearestCoastalPlace(pL, pLon));
+                          }
+                        }}
+                        placeholder={t('home.latPlaceholder')}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono"
+                      />
+                    </div>
+
+                    {/* Longitude */}
+                    <div className="sm:col-span-3">
+                      <input
+                        type="number"
+                        step="0.0001"
+                        value={lon}
+                        onChange={(e) => {
+                          const newLon = e.target.value;
+                          setLon(newLon);
+                          const pL = parseFloat(lat);
+                          const pLon = parseFloat(newLon);
+                          if (!isNaN(pL) && !isNaN(pLon) && pLon >= -180 && pLon <= 180) {
+                            setPlaceName(getNearestCoastalPlace(pL, pLon));
+                          }
+                        }}
+                        placeholder={t('home.lonPlaceholder')}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono"
+                      />
+                    </div>
                   </div>
 
                   {/* Interactive Embedded Leaflet Map */}
@@ -466,10 +573,10 @@ export default function HomeAskOrca({
                       <div className="bg-slate-900/90 px-3 py-1.5 border-b border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
                         <span className="font-semibold text-cyan-300 flex items-center space-x-1">
                           <Layers className="w-3.5 h-3.5" />
-                          <span>Click anywhere on water to select origin</span>
+                          <span>{t('home.mapClickHint')}</span>
                         </span>
                         <span className="font-mono text-slate-400">
-                          {lat && lon ? `${lat}°N, ${lon}°E` : 'No pin set'}
+                          {lat && lon ? `${lat}°N, ${lon}°E` : t('home.noPin')}
                         </span>
                       </div>
                       <div
@@ -484,32 +591,32 @@ export default function HomeAskOrca({
                 {/* Activity & Vessel */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">Maritime Activity (7 options)</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">{t('home.maritimeActivity')}</label>
                     <select
                       value={activity}
                       onChange={(e) => setActivity(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                     >
-                      <option value="">-- Select Maritime Activity (Optional) --</option>
+                      <option value="">{t('home.selectActivityOptional')}</option>
                       {ACTIVITIES.map((act) => (
                         <option key={act.id} value={act.id}>
-                          {act.label}
+                          {t(`activities.${act.id}`, { defaultValue: act.label })}
                         </option>
                       ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">Vessel Type (6 profiles)</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">{t('home.vesselType')}</label>
                     <select
                       value={vesselType}
                       onChange={(e) => setVesselType(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                     >
-                      <option value="">-- Select Vessel Classification (Optional) --</option>
+                      <option value="">{t('home.selectVesselOptional')}</option>
                       {VESSEL_TYPES.map((v) => (
                         <option key={v.id} value={v.id}>
-                          {v.label}
+                          {t(`vessels.${v.id}`, { defaultValue: v.label })}
                         </option>
                       ))}
                     </select>
@@ -519,38 +626,38 @@ export default function HomeAskOrca({
                 {/* Date & Time */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">Date</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">{t('home.date')}</label>
                     <select
                       value={dateOption}
                       onChange={(e) => setDateOption(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                     >
-                      <option value="">-- Select Date (Optional) --</option>
-                      <option value="today">📅 Today (Immediate)</option>
-                      <option value="tomorrow">📅 Tomorrow (Forecast)</option>
-                      <option value="day_after">📅 Day After Tomorrow</option>
+                      <option value="">{t('home.selectDateOptional')}</option>
+                      <option value="today">📅 {t('home.today')}</option>
+                      <option value="tomorrow">📅 {t('home.tomorrow')}</option>
+                      <option value="day_after">📅 {t('home.dayAfter')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">Time Window</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">{t('home.timeWindow')}</label>
                     <select
                       value={timeRange}
                       onChange={(e) => setTimeRange(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                     >
-                      <option value="">-- Select Operational Window (Optional) --</option>
-                      <option value="morning">🌅 Morning (06:00 - 11:00 IST)</option>
-                      <option value="afternoon">☀️ Afternoon (12:00 - 16:00 IST)</option>
-                      <option value="evening">🌇 Evening (16:00 - 20:00 IST)</option>
-                      <option value="night">🌙 Night (20:00 - 04:00 IST)</option>
+                      <option value="">{t('home.selectWindowOptional')}</option>
+                      <option value="morning">🌅 {t('home.morning')}</option>
+                      <option value="afternoon">☀️ {t('home.afternoon')}</option>
+                      <option value="evening">🌇 {t('home.evening')}</option>
+                      <option value="night">🌙 {t('home.night')}</option>
                     </select>
                   </div>
                 </div>
 
                 {/* Language Selection */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Query & Response Language (10 Regional Languages)</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">{t('home.languageLabel')}</label>
                   <select
                     value={langOverride || selectedLang || 'auto'}
                     onChange={(e) => {
@@ -559,7 +666,7 @@ export default function HomeAskOrca({
                     }}
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                   >
-                    <option value="auto">🌐 Auto-detect Language (Default)</option>
+                    <option value="auto">🌐 {t('nav.autoDetect')}</option>
                     <option value="en">English (EN)</option>
                     <option value="hi">हिन्दी (HI)</option>
                     <option value="bn">বাংলা (BN)</option>
@@ -576,13 +683,13 @@ export default function HomeAskOrca({
             )}
           </div>
 
-          {/* Primary Action Button: [ Ask ORCA ] */}
+          {/* Primary Action Button */}
           <button
             type="submit"
             className="w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-sm uppercase tracking-wider flex items-center justify-center space-x-2 transition-all shadow-xl shadow-cyan-500/25 cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
           >
             <Sparkles className="w-5 h-5 text-slate-950" />
-            <span>[ Ask ORCA ]</span>
+            <span>{t('home.analyzeButton')}</span>
           </button>
         </form>
       </div>

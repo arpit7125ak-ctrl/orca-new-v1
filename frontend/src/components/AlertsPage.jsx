@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Bell, 
   ShieldAlert, 
@@ -19,58 +20,60 @@ import {
 import { orcaApi } from '../api/client';
 
 const ALERT_TYPE_OPTIONS = [
-  { key: 'cyclone', label: 'Cyclone & Depression', icon: '🌀' },
-  { key: 'strong_wind', label: 'Strong / Gale Winds', icon: '💨' },
-  { key: 'high_wave', label: 'High Waves', icon: '🌊' },
-  { key: 'swell_surge', label: 'Swell Surge / Kallakkadal', icon: '🌊' },
-  { key: 'lightning', label: 'Lightning Strike Risk', icon: '⚡' },
-  { key: 'thunderstorm', label: 'Thunderstorm Squall', icon: '⛈️' },
-  { key: 'poor_visibility', label: 'Poor Visibility / Fog', icon: '🌫️' },
-  { key: 'official_warning', label: 'Official IMD / INCOIS Bulletins', icon: '📢' },
-  { key: 'other_hazard', label: 'Other Maritime Hazards', icon: '⚠️' },
+  { key: 'cyclone', labelKey: 'alerts.typeCyclone', icon: '🌀' },
+  { key: 'strong_wind', labelKey: 'alerts.typeStrongWind', icon: '💨' },
+  { key: 'high_wave', labelKey: 'alerts.typeHighWave', icon: '🌊' },
+  { key: 'swell_surge', labelKey: 'alerts.typeSwellSurge', icon: '🌊' },
+  { key: 'lightning', labelKey: 'alerts.typeLightning', icon: '⚡' },
+  { key: 'thunderstorm', labelKey: 'alerts.typeThunderstorm', icon: '⛈️' },
+  { key: 'poor_visibility', labelKey: 'alerts.typePoorVisibility', icon: '🌫️' },
+  { key: 'official_warning', labelKey: 'alerts.typeOfficialWarning', icon: '📢' },
+  { key: 'other_hazard', labelKey: 'alerts.typeOtherHazard', icon: '⚠️' },
 ];
 
-function urlB64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
-
-function getSubscriberId() {
-  if (typeof window === 'undefined') return 'sub-anonymous';
-  let id = localStorage.getItem('ORCA_SUBSCRIBER_ID');
-  if (!id) {
-    id = typeof crypto !== 'undefined' && crypto.randomUUID 
-      ? crypto.randomUUID() 
-      : `sub-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    localStorage.setItem('ORCA_SUBSCRIBER_ID', id);
-  }
-  return id;
-}
-
-function getStoredSubscriptions() {
-  try {
-    const raw = localStorage.getItem('ORCA_ALERT_SUBSCRIPTIONS');
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveStoredSubscriptions(subs) {
-  try {
-    localStorage.setItem('ORCA_ALERT_SUBSCRIPTIONS', JSON.stringify(subs));
-  } catch (err) {
-    console.error('Failed to persist subscriptions to localStorage:', err);
-  }
-}
-
 export default function AlertsPage() {
+  const { t } = useTranslation('ui');
+
+  function urlB64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  function getSubscriberId() {
+    if (typeof window === 'undefined') return 'sub-anonymous';
+    let id = localStorage.getItem('ORCA_SUBSCRIBER_ID');
+    if (!id) {
+      id = typeof crypto !== 'undefined' && crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : `sub-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      localStorage.setItem('ORCA_SUBSCRIBER_ID', id);
+    }
+    return id;
+  }
+
+  function getStoredSubscriptions() {
+    try {
+      const raw = localStorage.getItem('ORCA_ALERT_SUBSCRIPTIONS');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveStoredSubscriptions(subs) {
+    try {
+      localStorage.setItem('ORCA_ALERT_SUBSCRIPTIONS', JSON.stringify(subs));
+    } catch (err) {
+      console.error('Failed to persist subscriptions to localStorage:', err);
+    }
+  }
+
   const [subscriberId] = useState(getSubscriberId);
   const [locationName, setLocationName] = useState('');
   const [lat, setLat] = useState('');
@@ -127,11 +130,11 @@ export default function AlertsPage() {
   // Request browser push subscription if server has VAPID
   const handleEnableWebPush = async () => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      setErrorMsg('Push messaging is not supported in this browser environment.');
+      setErrorMsg(t('alerts.pushNotSupported'));
       return;
     }
     if (!webPushConfig.vapid_public_key) {
-      setErrorMsg('Server does not provide a VAPID public key.');
+      setErrorMsg(t('alerts.noVapidKey'));
       return;
     }
 
@@ -139,7 +142,7 @@ export default function AlertsPage() {
       const permission = await Notification.requestPermission();
       setBrowserPushPermission(permission);
       if (permission !== 'granted') {
-        setErrorMsg('Notification permission was denied or dismissed.');
+        setErrorMsg(t('alerts.permissionDenied'));
         return;
       }
 
@@ -152,10 +155,10 @@ export default function AlertsPage() {
         });
       }
       setPushSubPayload(sub ? sub.toJSON() : null);
-      setSuccessMsg('Web Push notifications enabled successfully on this device!');
+      setSuccessMsg(t('alerts.pushEnabledSuccess'));
     } catch (err) {
       console.error('Failed to subscribe to Web Push:', err);
-      setErrorMsg(`Web Push subscription error: ${err.message}`);
+      setErrorMsg(`${t('alerts.pushError')}: ${err.message}`);
     }
   };
 
@@ -206,13 +209,13 @@ export default function AlertsPage() {
     const hasCoord = !isNaN(latNum) && !isNaN(lonNum);
 
     if (!placeName && !hasCoord) {
-      setErrorMsg('Please specify a coastal place name or GPS coordinate (latitude & longitude).');
+      setErrorMsg(t('alerts.errorSpecifyLocation'));
       return;
     }
 
     const alertTypesArray = Object.keys(selectedTypes).filter((k) => selectedTypes[k]);
     if (alertTypesArray.length === 0) {
-      setErrorMsg('Please select at least one hazard type to monitor.');
+      setErrorMsg(t('alerts.errorSelectHazard'));
       return;
     }
 
@@ -245,7 +248,7 @@ export default function AlertsPage() {
       const newEntry = {
         subscription_id: subId,
         subscriber_id: subscriberId,
-        location_label: placeName || (hasCoord ? `${latNum.toFixed(2)}°N, ${lonNum.toFixed(2)}°E` : 'Monitored Sector'),
+        location_label: placeName || (hasCoord ? `${latNum.toFixed(2)}°N, ${lonNum.toFixed(2)}°E` : t('alerts.monitoredSector')),
         minimum_level: minLevel,
         alert_types: alertTypesArray,
         channel: 'web_push',
@@ -257,13 +260,13 @@ export default function AlertsPage() {
       setSubscriptions(updated);
       saveStoredSubscriptions(updated);
 
-      setSuccessMsg(`Subscription registered successfully (ID: ${subId.slice(0, 12)}...).`);
+      setSuccessMsg(t('alerts.successRegistered', { id: subId.slice(0, 12) }));
       setLocationName('');
       setLat('');
       setLon('');
       refreshEvents(updated);
     } catch (err) {
-      setErrorMsg(err.message || 'Failed to create subscription on server.');
+      setErrorMsg(err.message || t('alerts.errorCreateFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -290,14 +293,14 @@ export default function AlertsPage() {
           <div className="flex items-center space-x-2">
             <Bell className="w-6 h-6 text-amber-400" />
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              Section 70: Proactive Maritime Alerts
+              {t('alerts.title')}
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
-            Register automated monitoring for adverse weather, extreme swell, lightning, and official IMD/INCOIS bulletins. Alerts deliver via Web Push and in-app directive logs.
+            {t('alerts.subtitle')}
           </p>
           <div className="text-[11px] font-mono text-slate-500 mt-2">
-            Subscriber ID: <span className="text-cyan-400">{subscriberId}</span>
+            {t('alerts.subscriberId')}: <span className="text-cyan-400">{subscriberId}</span>
           </div>
         </div>
 
@@ -307,12 +310,12 @@ export default function AlertsPage() {
             webPushConfig.enabled ? (
               <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/60 px-3 py-1.5 rounded-xl border border-emerald-800/80 flex items-center space-x-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Web Push Server Ready</span>
+                <span>{t('alerts.pushReady')}</span>
               </span>
             ) : (
               <span className="text-xs font-mono font-bold text-amber-400 bg-amber-950/60 px-3 py-1.5 rounded-xl border border-amber-800/80 flex items-center space-x-1.5">
                 <Info className="w-3.5 h-3.5" />
-                <span>Web Push: VAPID Not Configured</span>
+                <span>{t('alerts.pushNotConfigured')}</span>
               </span>
             )
           )}
@@ -324,9 +327,9 @@ export default function AlertsPage() {
         <div className="p-4 rounded-2xl bg-amber-950/30 border border-amber-800/50 flex items-start space-x-3 text-xs text-amber-300">
           <Info className="w-5 h-5 flex-shrink-0 text-amber-400 mt-0.5" />
           <div>
-            <p className="font-semibold text-amber-200">Notice on Web Push Delivery</p>
+            <p className="font-semibold text-amber-200">{t('alerts.pushNoticeTitle')}</p>
             <p className="mt-1 text-slate-300 leading-relaxed">
-              The server host currently does not have VAPID credentials set in its environment (<code className="font-mono text-amber-400">VAPID_PUBLIC_KEY</code>). Alert subscriptions will be stored on the server and verified against incoming hazards, with events appearing in the live directive inbox below. To receive native browser push popups when the browser is closed, operator VAPID keys must be configured.
+              {t('alerts.pushNoticeBody')}
             </p>
           </div>
         </div>
@@ -338,8 +341,8 @@ export default function AlertsPage() {
           <div className="flex items-center space-x-3 text-cyan-200">
             <Zap className="w-5 h-5 text-cyan-400 flex-shrink-0" />
             <div>
-              <div className="font-bold text-white">Enable Browser Push Notifications</div>
-              <div className="text-slate-300 text-[11px]">Receive real-time hazard popups even when ORCA is running in the background.</div>
+              <div className="font-bold text-white">{t('alerts.enableBrowserPush')}</div>
+              <div className="text-slate-300 text-[11px]">{t('alerts.enableBrowserPushDesc')}</div>
             </div>
           </div>
           <button
@@ -347,7 +350,7 @@ export default function AlertsPage() {
             onClick={handleEnableWebPush}
             className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs whitespace-nowrap transition-colors cursor-pointer"
           >
-            Enable Device Push
+            {t('alerts.enableDevicePush')}
           </button>
         </div>
       )}
@@ -373,7 +376,7 @@ export default function AlertsPage() {
           <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center space-x-2">
               <Plus className="w-4 h-4 text-cyan-400" />
-              <span>Configure Alert Subscription</span>
+              <span>{t('alerts.configureSubscription')}</span>
             </h3>
             <span className="text-[11px] font-semibold text-slate-400 font-mono">POST /alerts/subscriptions</span>
           </div>
@@ -381,7 +384,7 @@ export default function AlertsPage() {
           <form onSubmit={handleSaveSubscription} className="space-y-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-                Monitored Place Name
+                {t('alerts.monitoredPlaceName')}
               </label>
               <div className="relative">
                 <MapPin className="w-4 h-4 text-cyan-400 absolute left-3 top-2.5 pointer-events-none" />
@@ -389,7 +392,7 @@ export default function AlertsPage() {
                   type="text"
                   value={locationName}
                   onChange={(e) => setLocationName(e.target.value)}
-                  placeholder="e.g. Kochi Harbor, Visakhapatnam Port"
+                  placeholder={t('alerts.locationPlaceholder')}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                 />
               </div>
@@ -398,7 +401,7 @@ export default function AlertsPage() {
             {/* Coordinates */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-                Or Coordinate (Optional if place given)
+                {t('alerts.orCoordinate')}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <input
@@ -406,7 +409,7 @@ export default function AlertsPage() {
                   step="any"
                   value={lat}
                   onChange={(e) => setLat(e.target.value)}
-                  placeholder="Latitude (e.g. 10.0)"
+                  placeholder={t('alerts.latitudePlaceholder')}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                 />
                 <input
@@ -414,7 +417,7 @@ export default function AlertsPage() {
                   step="any"
                   value={lon}
                   onChange={(e) => setLon(e.target.value)}
-                  placeholder="Longitude (e.g. 76.26)"
+                  placeholder={t('alerts.longitudePlaceholder')}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                 />
               </div>
@@ -423,26 +426,26 @@ export default function AlertsPage() {
             {/* Threshold Severity */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-                Minimum Notification Level (§70.4)
+                {t('alerts.minLevelSection')}
               </label>
               <select
                 value={minLevel}
                 onChange={(e) => setMinLevel(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
               >
-                <option value="CAUTION">🟡 CAUTION (Notify for moderate swell, cautionary bulletins)</option>
-                <option value="UNSAFE">🟠 UNSAFE (Notify for hazardous waves, gale winds, or squall)</option>
-                <option value="DANGEROUS">🔴 DANGEROUS ONLY (Severe cyclone, extreme sea state only)</option>
+                <option value="CAUTION">{t('alerts.levelCautionDesc')}</option>
+                <option value="UNSAFE">{t('alerts.levelUnsafeDesc')}</option>
+                <option value="DANGEROUS">{t('alerts.levelDangerousDesc')}</option>
               </select>
             </div>
 
             {/* Alert Categories */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
-                Monitored Hazard Types (§70.3)
+                {t('alerts.monitoredHazardsSection')}
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                {ALERT_TYPE_OPTIONS.map(({ key, label, icon }) => (
+                {ALERT_TYPE_OPTIONS.map(({ key, labelKey, icon }) => (
                   <label key={key} className="flex items-center space-x-2 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700 transition-colors">
                     <input
                       type="checkbox"
@@ -450,7 +453,7 @@ export default function AlertsPage() {
                       onChange={() => handleToggleType(key)}
                       className="rounded border-slate-700 text-cyan-500 focus:ring-cyan-500"
                     />
-                    <span className="text-slate-300 text-[11px] truncate">{icon} {label}</span>
+                    <span className="text-slate-300 text-[11px] truncate">{icon} {t(labelKey)}</span>
                   </label>
                 ))}
               </div>
@@ -459,29 +462,29 @@ export default function AlertsPage() {
             {/* Quiet Hours */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-                Quiet Hours (Optional, e.g. 22:00 to 06:00)
+                {t('alerts.quietHours')}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="text"
                   value={quietStart}
                   onChange={(e) => setQuietStart(e.target.value)}
-                  placeholder="Start (HH:MM)"
+                  placeholder={t('alerts.quietStartPlaceholder')}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                 />
                 <input
                   type="text"
                   value={quietEnd}
                   onChange={(e) => setQuietEnd(e.target.value)}
-                  placeholder="End (HH:MM)"
+                  placeholder={t('alerts.quietEndPlaceholder')}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
                 />
               </div>
             </div>
 
             <div className="p-3 rounded-xl bg-slate-950/50 border border-slate-800 text-[11px] text-slate-400">
-              <span className="font-bold text-amber-400">Safety Rule: </span>
-              <span>Official DANGEROUS directives always override quiet hours to safeguard seafarers at sea.</span>
+              <span className="font-bold text-amber-400">{t('alerts.safetyRule')}: </span>
+              <span>{t('alerts.safetyRuleDesc')}</span>
             </div>
 
             <button
@@ -489,7 +492,7 @@ export default function AlertsPage() {
               disabled={submitting}
               className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-cyan-500/20 cursor-pointer"
             >
-              {submitting ? 'Registering...' : 'Save Active Subscription'}
+              {submitting ? t('alerts.registering') : t('alerts.saveSubscription')}
             </button>
           </form>
         </div>
@@ -501,22 +504,22 @@ export default function AlertsPage() {
           <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-3">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Active Subscriptions ({subscriptions.length})
+                {t('alerts.activeSubscriptionsCount', { count: subscriptions.length })}
               </h3>
               <button
                 type="button"
                 onClick={() => refreshEvents(subscriptions)}
                 className="text-xs text-slate-400 hover:text-cyan-400 flex items-center space-x-1 cursor-pointer"
-                title="Refresh events"
+                title={t('alerts.refreshEvents')}
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${eventsLoading ? 'animate-spin' : ''}`} />
-                <span>Refresh</span>
+                <span>{t('alerts.refresh')}</span>
               </button>
             </div>
 
             {subscriptions.length === 0 ? (
               <div className="p-6 text-center text-slate-500 text-xs rounded-2xl bg-slate-950/40 border border-slate-800/60">
-                No active alert subscriptions registered. Use the configuration form to monitor a coastal sector.
+                {t('alerts.noSubscriptionsRegistered')}
               </div>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
@@ -535,7 +538,7 @@ export default function AlertsPage() {
                         }`}>
                           {s.minimum_level}+
                         </span>
-                        <span>{s.alert_types?.length || 0} hazard types</span>
+                        <span>{s.alert_types?.length || 0} {t('alerts.hazardTypesCount')}</span>
                         <span>•</span>
                         <span className="font-mono text-slate-500">{new Date(s.created_at).toLocaleDateString()}</span>
                       </div>
@@ -543,7 +546,7 @@ export default function AlertsPage() {
                     <button
                       onClick={() => handleDeleteSub(s.subscription_id)}
                       className="p-2 rounded-lg bg-slate-800/80 hover:bg-rose-950 hover:text-rose-400 text-slate-400 transition-colors cursor-pointer flex-shrink-0"
-                      title="Deactivate subscription"
+                      title={t('alerts.deactivateSubscription')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -558,19 +561,19 @@ export default function AlertsPage() {
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
                 <Radio className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
-                <span>Delivered Directive Events ({events.length})</span>
+                <span>{t('alerts.deliveredEventsCount', { count: events.length })}</span>
               </h3>
-              <span className="text-[10px] font-mono text-slate-500">Live Worker Log</span>
+              <span className="text-[10px] font-mono text-slate-500">{t('alerts.liveWorkerLog')}</span>
             </div>
 
             {eventsLoading ? (
               <div className="p-6 text-center text-slate-400 text-xs flex items-center justify-center space-x-2">
                 <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
-                <span>Checking subscription event logs...</span>
+                <span>{t('alerts.checkingLogs')}</span>
               </div>
             ) : events.length === 0 ? (
               <div className="p-6 text-center text-slate-500 text-xs rounded-2xl bg-slate-950/40 border border-slate-800/60">
-                No alert events triggered for your active subscriptions yet. When metocean hazards or official bulletins cross your configured threshold, they will be logged here.
+                {t('alerts.noEventsTriggered')}
               </div>
             ) : (
               <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
@@ -592,11 +595,11 @@ export default function AlertsPage() {
                           {item.level || item.severity || 'ALERT'}
                         </span>
                         <span className="text-[10px] text-slate-400 font-mono">
-                          {item.created_at ? new Date(item.created_at).toLocaleTimeString() : 'Recent'}
+                          {item.created_at ? new Date(item.created_at).toLocaleTimeString() : t('alerts.recent')}
                         </span>
                       </div>
                       <h4 className="text-xs font-bold text-white mt-1">
-                        {item.title || item.alert_type || 'Maritime Safety Directive'}
+                        {item.title || item.alert_type || t('alerts.directiveDefaultTitle')}
                       </h4>
                       <p className="text-xs text-slate-300 leading-relaxed">
                         {item.message || item.text || item.summary || JSON.stringify(item)}
@@ -604,7 +607,7 @@ export default function AlertsPage() {
                       {item.subscription_label && (
                         <div className="text-[10px] text-slate-400 flex items-center space-x-1">
                           <MapPin className="w-3 h-3 text-cyan-400" />
-                          <span>Sector: {item.subscription_label}</span>
+                          <span>{t('alerts.sector')}: {item.subscription_label}</span>
                         </div>
                       )}
                     </div>

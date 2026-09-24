@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   CheckCircle2, 
   Loader2, 
@@ -21,57 +22,58 @@ export default function AnalysisLoadingPage({
   onViewResults, 
   isCompleted 
 }) {
+  const { t } = useTranslation('ui');
   const [elapsed, setElapsed] = useState(0);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
 
   const agentSteps = [
     {
       id: 'location',
-      name: 'Location Agent',
+      nameKey: 'loading.locationAgent',
       icon: MapPin,
-      detailPending: 'Waiting to verify coordinates...',
-      detailActive: 'Resolving coordinates, land-sea boundary & shoreline snapping...',
-      detailDone: 'Target coordinates validated and offshore boundary checked.',
+      pendingKey: 'loading.location_pending',
+      activeKey: 'loading.location_active',
+      doneKey: 'loading.location_done',
     },
     {
       id: 'weather',
-      name: 'Weather Agent',
+      nameKey: 'loading.weatherAgent',
       icon: CloudSun,
-      detailPending: 'Waiting for IMD meteorological model...',
-      detailActive: 'Querying IMD numerical weather prediction, wind gusts & rain...',
-      detailDone: 'Meteorological telemetry and atmospheric parameters retrieved.',
+      pendingKey: 'loading.weather_pending',
+      activeKey: 'loading.weather_active',
+      doneKey: 'loading.weather_done',
     },
     {
       id: 'ocean',
-      name: 'Ocean Agent',
+      nameKey: 'loading.oceanAgent',
       icon: Waves,
-      detailPending: 'Waiting for INCOIS oceanography model...',
-      detailActive: 'Analyzing wave height, primary swell period & ocean current vectors...',
-      detailDone: 'Wave height, swell parameters and sea state analyzed.',
+      pendingKey: 'loading.ocean_pending',
+      activeKey: 'loading.ocean_active',
+      doneKey: 'loading.ocean_done',
     },
     {
       id: 'ecosystem',
-      name: 'Ecosystem & GIS Agent',
+      nameKey: 'loading.ecosystemAgent',
       icon: ShieldAlert,
-      detailPending: 'Waiting for spatial GIS boundaries...',
-      detailActive: 'Screening Marine Protected Areas, IMBL borders & navigation hazards...',
-      detailDone: 'Marine spatial boundaries and territorial limits screened.',
+      pendingKey: 'loading.ecosystem_pending',
+      activeKey: 'loading.ecosystem_active',
+      doneKey: 'loading.ecosystem_done',
     },
     {
       id: 'risk',
-      name: 'Risk Synthesis Agent',
+      nameKey: 'loading.riskAgent',
       icon: Scale,
-      detailPending: 'Waiting for metocean parameters...',
-      detailActive: 'Enforcing deterministic IMD safety floors & 9-point grid scoring...',
-      detailDone: 'Multi-factor risk matrix evaluated across vessel envelope.',
+      pendingKey: 'loading.risk_pending',
+      activeKey: 'loading.risk_active',
+      doneKey: 'loading.risk_done',
     },
     {
       id: 'decision',
-      name: 'Decision Agent',
+      nameKey: 'loading.decisionAgent',
       icon: Compass,
-      detailPending: 'Waiting for risk synthesis...',
-      detailActive: 'Synthesizing operational directives, best quadrant & safe harbors...',
-      detailDone: 'Advisory directives and navigational recommendations generated.',
+      pendingKey: 'loading.decision_pending',
+      activeKey: 'loading.decision_active',
+      doneKey: 'loading.decision_done',
     },
   ];
 
@@ -96,41 +98,41 @@ export default function AnalysisLoadingPage({
   return (
     <div className="max-w-3xl mx-auto py-6 sm:py-10 space-y-6">
       
-      {/* Top Banner — Matching Image 4: "ORCA IS ANALYZING" */}
+      {/* Top Banner */}
       <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md text-center space-y-3 relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 animate-pulse" />
 
         <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 text-xs font-mono font-bold">
           <Cpu className="w-3.5 h-3.5 animate-spin-slow" />
-          <span>Multi-Agent Swarm Orchestration Active</span>
+          <span>{t('loading.swarmActive')}</span>
         </div>
 
         <h2 className="text-2xl sm:text-3xl font-black text-white tracking-wide">
-          ORCA IS ANALYZING
+          {t('loading.title')}
         </h2>
 
         <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto">
-          Autonomous agents are currently synthesizing live satellite telemetry, IMD numerical forecasts, and INCOIS ocean state models.
+          {t('loading.subtitle')}
         </p>
 
         <div className="flex items-center justify-center space-x-4 text-xs font-mono pt-2 text-slate-400">
-          <span>Mission: <b className="text-cyan-300">{analysisId || 'req_live_query'}</b></span>
+          <span>{t('loading.mission')} <b className="text-cyan-300">{analysisId || 'req_live_query'}</b></span>
           <span>•</span>
           <span className="flex items-center space-x-1">
             <Clock className="w-3.5 h-3.5 text-cyan-400" />
-            <span>{(elapsed / 1000).toFixed(1)}s elapsed</span>
+            <span>{t('loading.elapsed', { n: (elapsed / 1000).toFixed(1) })}</span>
           </span>
         </div>
       </div>
 
-      {/* Step-by-Step Multi-Agent Visual Checklist (Matching Image 4) */}
+      {/* Step-by-Step Multi-Agent Visual Checklist */}
       <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-4">
         <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Autonomous Pipeline Execution Steps
+            {t('loading.pipelineSteps')}
           </h3>
           <span className="text-xs font-mono text-cyan-400 font-bold">
-            {isCompleted ? '6 / 6 Completed' : `${Math.min(6, activeStepIndex + 1)} / 6 in progress`}
+            {isCompleted ? t('loading.allCompleted', { count: 6 }) : t('loading.inProgressSteps', { step: Math.min(6, activeStepIndex + 1), total: 6 })}
           </span>
         </div>
 
@@ -170,7 +172,7 @@ export default function AnalysisLoadingPage({
                       <div className="flex items-center space-x-2">
                         <Icon className={`w-4 h-4 ${isDone ? 'text-emerald-400' : isActive ? 'text-cyan-400' : 'text-slate-600'}`} />
                         <h4 className={`text-sm font-bold tracking-tight ${isDone ? 'text-white' : isActive ? 'text-cyan-300' : 'text-slate-400'}`}>
-                          {agent.name}
+                          {t(agent.nameKey)}
                         </h4>
                       </div>
 
@@ -182,14 +184,14 @@ export default function AnalysisLoadingPage({
                           ? 'bg-cyan-950 text-cyan-300 border border-cyan-800 animate-pulse'
                           : 'bg-slate-900 text-slate-600'
                       }`}>
-                        {isDone ? 'Completed' : isActive ? 'Executing...' : 'Waiting...'}
+                        {isDone ? t('common.completed') : isActive ? t('common.executing') : t('common.waiting')}
                       </span>
                     </div>
 
                     <p className={`text-xs mt-1 leading-relaxed ${
                       isDone ? 'text-slate-300' : isActive ? 'text-cyan-100/90 font-medium' : 'text-slate-500'
                     }`}>
-                      {isDone ? agent.detailDone : isActive ? agent.detailActive : agent.detailPending}
+                      {isDone ? t(agent.doneKey) : isActive ? t(agent.activeKey) : t(agent.pendingKey)}
                     </p>
                   </div>
                 </div>
@@ -205,7 +207,7 @@ export default function AnalysisLoadingPage({
               onClick={onViewResults}
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-sm uppercase tracking-wider flex items-center justify-center space-x-2 transition-all shadow-xl shadow-emerald-500/20 cursor-pointer"
             >
-              <span>View Advisory Decision & Verdict</span>
+              <span>{t('loading.viewAdvisory')}</span>
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>

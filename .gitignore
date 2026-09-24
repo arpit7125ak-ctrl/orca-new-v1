@@ -7,3 +7,6 @@ ai-service/.env
 backend/.env
 result.md
 test_runtime_e2e.py
+*.png
+scratch/
+frontend/scratch/

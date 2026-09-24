@@ -295,7 +295,9 @@ def resolve(
                 return None, "invalid_location"
             water_lat, water_lon = nearest["offshore"]
             dist_km = haversine_km(original_lat, original_lon, water_lat, water_lon)
-            if dist_km > 25.0:
+            # If the user explicitly provided a recognized gazetteer place name, use its curated offshore point
+            is_explicit_gazetteer_hit = bool(place_name and _geocode(place_name))
+            if dist_km > 25.0 and not is_explicit_gazetteer_hit:
                 log.warning("[location] Point %.4f, %.4f is inland (%.1f km > 25 km from water); rejected", original_lat, original_lon, dist_km)
                 return None, "invalid_location"
 

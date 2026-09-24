@@ -27,7 +27,14 @@ import re
 from typing import Any, Dict, List, Optional
 
 from app.clients import gemini_client
-from app.decision.fallback_strings import get_fallback_one_line, get_fallback_detailed
+from app.decision.fallback_strings import (
+    get_fallback_one_line,
+    get_fallback_detailed,
+    get_parameter_label,
+    get_zone_category_label,
+    get_zone_name_label,
+    sanitize_user_facing_text,
+)
 from app.observability.logger import log
 
 
@@ -305,8 +312,14 @@ async def build_decision(
                 recommendation_type, preferred, excluded, agents_missing, merged_points,
                 language=response_language,
             )
+        one_line = sanitize_user_facing_text(one_line, response_language)
+        detailed = sanitize_user_facing_text(detailed, response_language)
         major_hazard = llm.data.get("major_hazard")
+        if major_hazard:
+            major_hazard = sanitize_user_facing_text(major_hazard, response_language)
         main_uncertainty = llm.data.get("main_uncertainty")
+        if main_uncertainty:
+            main_uncertainty = sanitize_user_facing_text(main_uncertainty, response_language)
     else:
         log.info("[decision] LLM unavailable (%s) - deterministic advisory", llm.reason)
         one_line = get_fallback_one_line(recommendation_type, preferred, language=response_language)
@@ -317,13 +330,18 @@ async def build_decision(
         major_hazard = None
         main_uncertainty = None
 
-    extra_findings = list((preferred or worst or {}).get("key_findings", [])[:2])
+    extra_findings = [
+        sanitize_user_facing_text(f, response_language)
+        for f in list((preferred or worst or {}).get("key_findings", [])[:2])
+    ]
     if preferred:
         pref_meas = merged_points.get(preferred["point_id"], {}).get("measurements", {}) or {}
         b_name = (pref_meas.get("nearest_boundary_name") or {}).get("value")
         b_dist = (pref_meas.get("distance_to_boundary_km") or {}).get("value")
         if b_name and b_dist is not None:
-            extra_findings.append(f"Nearest boundary: {b_name} ({b_dist} km)")
+            b_label = get_parameter_label("nearest_boundary_name", response_language)
+            b_loc = get_zone_name_label(b_name, response_language)
+            extra_findings.append(f"{b_label}: {b_loc} ({b_dist} km)")
 
     # Section 58 - key_findings is a STRUCTURED OBJECT, not a string array.
     key_findings: Dict[str, Any] = {
@@ -331,7 +349,7 @@ async def build_decision(
         "highest_risk_point": worst["point_id"] if worst else None,
         "major_hazard": major_hazard or _derive_major_hazard(preferred or worst),
         "official_warning_status": _official_warning_status(assessments),
-        "gis_restriction": _derive_gis_restriction(excluded, merged_points),
+        "gis_restriction": _derive_gis_restriction(excluded, merged_points, language=response_language),
         "pfz_opportunity": _derive_pfz_opportunity(preferred, merged_points),
         "best_time": best_windows[0]["start"] if best_windows else None,
         "main_uncertainty": main_uncertainty or _derive_uncertainty(assessments, agents_missing),
@@ -418,7 +436,9 @@ def _fallback_one_line(recommendation_type: str, preferred: Optional[Dict[str, A
 
 
 def _derive_gis_restriction(
-    excluded: List[Dict[str, str]], merged_points: Dict[str, Dict[str, Any]]
+    excluded: List[Dict[str, str]],
+    merged_points: Dict[str, Dict[str, Any]],
+    language: str = "en",
 ) -> Optional[str]:
     prohibited_items = [e for e in excluded if e["reason"] == "gis_prohibited"]
     if not prohibited_items:
@@ -430,11 +450,13 @@ def _derive_gis_restriction(
         z_name = (meas.get("zone_name") or {}).get("value")
         z_cat = (meas.get("zone_category") or {}).get("value")
         if z_name:
-            cat_desc = f" ({z_cat})" if z_cat else ""
-            names.append(f"{pid} inside {z_name}{cat_desc}")
+            z_loc = get_zone_name_label(z_name, language)
+            cat_loc = f" - {get_zone_category_label(z_cat, language)}" if z_cat and z_cat != "prohibited_zone" else ""
+            names.append(f"{pid} ({z_loc}{cat_loc})")
         else:
             names.append(pid)
-    return f"Excluded: {', '.join(names)}"
+    prefix = "Excluded" if language == "en" else "वर्जित" if language == "hi" else "Excluded"
+    return f"{prefix}: {', '.join(names)}"
 
 
 def _derive_pfz_opportunity(
@@ -561,7 +583,9 @@ def _build_decision_prompt(**kw) -> str:
             z_name = (meas.get("zone_name") or {}).get("value")
             z_cat = (meas.get("zone_category") or {}).get("value")
             if z_name:
-                prohibited_details.append(f"{pid} (inside {z_name} - {z_cat or 'restricted'})")
+                z_loc = get_zone_name_label(z_name, kw["response_language"])
+                cat_loc = f" - {get_zone_category_label(z_cat, kw['response_language'])}" if z_cat else ""
+                prohibited_details.append(f"{pid} ({z_loc}{cat_loc})")
             else:
                 prohibited_details.append(pid)
     if prohibited_details:

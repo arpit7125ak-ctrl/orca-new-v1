@@ -1,15 +1,17 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Scale, 
   Cpu, 
   ShieldCheck, 
   Activity, 
-  AlertTriangle,
-  BarChart3,
-  Database
+  AlertTriangle, 
+  BarChart3, 
+  Database 
 } from 'lucide-react';
 
 export default function ExplainableAi({ analysis }) {
+  const { t } = useTranslation('ui');
   if (!analysis) return null;
 
   const explainability = analysis.explainability || {};
@@ -17,14 +19,23 @@ export default function ExplainableAi({ analysis }) {
   const decision = analysis.decision || {};
   const p0 = analysis.points?.find(p => p.point_id === 'P0') || analysis.points?.[0] || {};
   const p0Risk = p0.risk || decision.point_summaries?.[0] || {};
+  const displayPointId = p0.point_id || 'P0';
 
   const rawBaseline = explainability.baseline_score ?? p0Risk.baseline_score ?? null;
   const llmAdjustment = explainability.llm_adjustment ?? p0Risk.llm_adjustment ?? null;
   const constraintFloor = p0Risk.constraint_floor !== null && p0Risk.constraint_floor !== undefined;
   const officialWarning = Array.isArray(p0Risk.official_warnings) && p0Risk.official_warnings.length > 0 ? p0Risk.official_warnings[0] : null;
+  const warningAuthority = officialWarning?.issuing_authority || officialWarning?.source || t('xai.officialAuthority', 'Official Maritime Authority');
+  const warningBulletin = officialWarning?.bulletin_id || officialWarning?.warning_id || officialWarning?.title || t('xai.activeBulletin', 'Active Marine Advisory');
+
   const constraintReason = officialWarning
-    ? `Enforced by official ${officialWarning.issuing_authority || 'IMD'} ${officialWarning.warning_type || 'warning'} (${officialWarning.bulletin_id || 'IMD-Active'}) at score ${officialWarning.floor_score}`
-    : explainability.constraint_floor_reason || 'No overriding safety floor triggered';
+    ? t('xai.enforcedWarningReason', {
+        authority: warningAuthority,
+        type: officialWarning.warning_type || 'warning',
+        bulletin: warningBulletin,
+        score: officialWarning.floor_score,
+      })
+    : explainability.constraint_floor_reason || t('xai.noOverrideReason');
   
   const rawFinal = p0Risk.final_score ?? decision.overall_risk_score ?? null;
   const finalScore = rawFinal !== null ? Math.round(rawFinal) : null;
@@ -32,14 +43,16 @@ export default function ExplainableAi({ analysis }) {
   // Real dimension scores if available
   const dimensionScores = explainability.dimension_scores || null;
 
-  const rawFindings = p0Risk.key_findings || explainability.key_findings;
+  const rawFindings = p0Risk.key_findings || explainability.key_findings || decision.key_findings;
   const keyFindings = Array.isArray(rawFindings) && rawFindings.length > 0
     ? (typeof rawFindings[0] === 'string'
-        ? rawFindings.map((f, i) => ({ factor: `Safety Factor 0${i+1}`, value: 'Evaluated', impact: f }))
+        ? rawFindings.map((f, i) => ({ factor: `${t('xai.safetyFactorPrefix')} 0${i+1}`, value: t('results.evaluated'), impact: f }))
         : rawFindings)
     : [];
 
-  const dataQuality = (p0Risk.data_quality && typeof p0Risk.data_quality === 'object') ? p0Risk.data_quality : {};
+  const dataQuality = (p0Risk.data_quality && typeof p0Risk.data_quality === 'object' && Object.keys(p0Risk.data_quality).length > 0)
+    ? p0Risk.data_quality
+    : ((analysis.data_quality && typeof analysis.data_quality === 'object') ? analysis.data_quality : {});
 
   return (
     <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-6">
@@ -47,14 +60,14 @@ export default function ExplainableAi({ analysis }) {
         <div>
           <div className="flex items-center space-x-2">
             <Scale className="w-5 h-5 text-cyan-400" />
-            <h3 className="text-base font-bold text-white">Section 78: Explainable AI & Score Breakdown</h3>
+            <h3 className="text-base font-bold text-white">{t('xai.title')}</h3>
           </div>
           <p className="text-xs text-slate-400">
-            Auditable score synthesis: Numerical baseline &rarr; Deterministic constraint floor &rarr; LLM interpretation
+            {t('xai.subtitle')}
           </p>
         </div>
         <span className="text-xs px-2.5 py-1 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 font-mono font-bold">
-          XAI Engine
+          {t('xai.badge')}
         </span>
       </div>
 
@@ -63,8 +76,12 @@ export default function ExplainableAi({ analysis }) {
         <div className="bg-rose-950/40 border border-rose-600/70 p-3 rounded-xl flex items-start space-x-2.5 text-xs text-rose-200">
           <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
           <div>
-            <strong className="text-white">Active {officialWarning.issuing_authority} Weather Directive:</strong>{' '}
-            Bulletin <span className="font-mono text-cyan-300 font-bold">{officialWarning.bulletin_id}</span> ({officialWarning.floor_level}) enforces a mandatory safety floor of <span className="font-mono font-bold">{officialWarning.floor_score}/100</span>.
+            <strong className="text-white">{t('xai.activeWarningTitle', { authority: warningAuthority })}:</strong>{' '}
+            {t('xai.warningMandatoryFloor', {
+              bulletin: warningBulletin,
+              level: officialWarning.floor_level || 'WARNING',
+              score: officialWarning.floor_score ?? 65,
+            })}
           </div>
         </div>
       )}
@@ -74,7 +91,7 @@ export default function ExplainableAi({ analysis }) {
         {/* Baseline Card */}
         <div className="bg-slate-950/60 border border-slate-800 p-3.5 rounded-xl">
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-            <span>1. Sensor Baseline</span>
+            <span>{t('xai.card1Baseline')}</span>
             <Activity className="w-3.5 h-3.5 text-blue-400" />
           </div>
           <div className="text-2xl font-black text-white font-mono">
@@ -83,11 +100,11 @@ export default function ExplainableAi({ analysis }) {
                 {Math.round(rawBaseline)}<span className="text-xs text-slate-400">/100</span>
               </>
             ) : (
-              <span className="text-sm text-slate-500 font-normal">Unavailable</span>
+              <span className="text-sm text-slate-500 font-normal">{t('pointDetail.unavailable')}</span>
             )}
           </div>
           <p className="text-[10px] text-slate-400 mt-1">
-            Raw numerical model score from INCOIS & IMD
+            {t('xai.card1Desc')}
           </p>
         </div>
 
@@ -98,12 +115,12 @@ export default function ExplainableAi({ analysis }) {
             : 'bg-slate-950/60 border-slate-800'
         }`}>
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-            <span>2. Safety Floor</span>
+            <span>{t('xai.card2Floor')}</span>
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
           </div>
           <div className="text-lg font-black font-mono flex items-center space-x-1">
             <span className={constraintFloor ? 'text-amber-400' : 'text-emerald-400'}>
-              {constraintFloor ? `${p0Risk.constraint_floor}/100` : 'None'}
+              {constraintFloor ? `${p0Risk.constraint_floor}/100` : t('xai.none')}
             </span>
           </div>
           <p className="text-[10px] text-slate-400 mt-1 truncate" title={constraintReason}>
@@ -114,7 +131,7 @@ export default function ExplainableAi({ analysis }) {
         {/* LLM Adjustment Card */}
         <div className="bg-slate-950/60 border border-slate-800 p-3.5 rounded-xl">
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
-            <span>3. LLM Delta</span>
+            <span>{t('xai.card3Delta')}</span>
             <Cpu className="w-3.5 h-3.5 text-purple-400" />
           </div>
           <div className="text-2xl font-black font-mono text-purple-300">
@@ -125,14 +142,14 @@ export default function ExplainableAi({ analysis }) {
             )}
           </div>
           <p className="text-[10px] text-slate-400 mt-1">
-            Gemini contextual adjustment
+            {t('xai.card3Desc')}
           </p>
         </div>
 
         {/* Final Synthesized Score Card */}
         <div className="bg-cyan-950/30 border border-cyan-500/40 p-3.5 rounded-xl">
           <div className="text-[11px] font-semibold text-cyan-300 uppercase tracking-wider mb-1 flex items-center justify-between">
-            <span>Final Synthesized</span>
+            <span>{t('xai.card4Final')}</span>
             <BarChart3 className="w-3.5 h-3.5 text-cyan-400" />
           </div>
           <div className="text-2xl font-black font-mono text-cyan-300">
@@ -141,11 +158,11 @@ export default function ExplainableAi({ analysis }) {
                 {finalScore}<span className="text-xs text-slate-400">/100</span>
               </>
             ) : (
-              <span className="text-sm text-slate-500 font-normal">Unavailable</span>
+              <span className="text-sm text-slate-500 font-normal">{t('pointDetail.unavailable')}</span>
             )}
           </div>
           <p className="text-[10px] text-cyan-400/80 mt-1">
-            Binding operational risk score
+            {t('xai.card4Desc')}
           </p>
         </div>
       </div>
@@ -169,7 +186,7 @@ export default function ExplainableAi({ analysis }) {
       {/* Key Auditable Findings */}
       <div>
         <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2.5">
-          Auditable Model Findings (Point P0)
+          {t('xai.auditableFindingsTitle', { pointId: displayPointId })}
         </h4>
         {keyFindings.length > 0 ? (
           <div className="space-y-2">
@@ -187,7 +204,7 @@ export default function ExplainableAi({ analysis }) {
           </div>
         ) : (
           <div className="p-3 bg-slate-950/40 rounded-xl border border-slate-800 text-slate-500 text-xs text-center">
-            No specific safety factor highlights recorded for this point.
+            {t('xai.noHighlights')}
           </div>
         )}
       </div>
@@ -197,13 +214,13 @@ export default function ExplainableAi({ analysis }) {
         <div className="bg-slate-950/40 p-3.5 rounded-xl border border-slate-800">
           <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-300 uppercase tracking-wider mb-2.5">
             <Database className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Telemetry Provenance & Source Citations</span>
+            <span>{t('xai.telemetryProvenanceTitle')}</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
             {Object.entries(dataQuality).slice(0, 8).map(([param, info]) => (
               <div key={param} className="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
                 <span className="text-slate-400 block text-[10px] truncate capitalize">{String(param).replace(/_/g, ' ')}</span>
-                <span className="text-cyan-300 font-mono font-semibold text-[10px] block truncate">{info?.source_note || 'INCOIS / IMD'}</span>
+                <span className="text-cyan-300 font-mono font-semibold text-[10px] block truncate">{info?.source_note || t('xai.provenanceUnavailable')}</span>
               </div>
             ))}
           </div>

@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Compass, Waves, Wind, AlertTriangle, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
 export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
+  const { t } = useTranslation('ui');
   const plan = analysis?.plan || {};
   const rawPoints = analysis?.points || [];
 
@@ -9,23 +11,23 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
   const validLon = plan.location?.validated?.lon ?? plan.location?.original?.lon ?? (rawPoints[0] ? rawPoints[0].lon : null);
 
   const dirMap = {
-    P0: { label: 'Center (Origin)', compass: '🎯' },
-    P1: { label: 'North', compass: '⬆️' },
-    P2: { label: 'Northeast', compass: '↗️' },
-    P3: { label: 'East', compass: '➡️' },
-    P4: { label: 'Southeast', compass: '↘️' },
-    P5: { label: 'South', compass: '⬇️' },
-    P6: { label: 'Southwest', compass: '↙️' },
-    P7: { label: 'West', compass: '⬅️' },
-    P8: { label: 'Northwest', compass: '↖️' },
+    P0: { labelKey: 'grid.dirP0', compass: '🎯' },
+    P1: { labelKey: 'grid.dirP1', compass: '⬆️' },
+    P2: { labelKey: 'grid.dirP2', compass: '↗️' },
+    P3: { labelKey: 'grid.dirP3', compass: '➡️' },
+    P4: { labelKey: 'grid.dirP4', compass: '↘️' },
+    P5: { labelKey: 'grid.dirP5', compass: '⬇️' },
+    P6: { labelKey: 'grid.dirP6', compass: '↙️' },
+    P7: { labelKey: 'grid.dirP7', compass: '⬅️' },
+    P8: { labelKey: 'grid.dirP8', compass: '↖️' },
   };
 
   if (rawPoints.length === 0) {
     return (
       <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 text-center text-slate-400">
         <Compass className="w-8 h-8 text-cyan-400 mx-auto mb-2 animate-spin-slow" />
-        <p className="text-sm font-semibold">No active 9-point spatial matrix loaded.</p>
-        <p className="text-xs text-slate-500 mt-1">Submit an operational query to screen surrounding quadrants.</p>
+        <p className="text-sm font-semibold">{t('grid.noMatrixLoaded')}</p>
+        <p className="text-xs text-slate-500 mt-1">{t('grid.submitQueryHint')}</p>
       </div>
     );
   }
@@ -34,9 +36,13 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
     const pRisk = p.risk || {};
     const factors = Array.isArray(pRisk.risk_factors) ? pRisk.risk_factors : [];
     const formattedFactors = factors.map((f) => String(f).replace(/_/g, ' ')).join(', ');
-    const finding = (Array.isArray(pRisk.key_findings) ? pRisk.key_findings[0] : null) || pRisk.reasoning || 'Evaluated';
+    const finding = (Array.isArray(pRisk.key_findings) ? pRisk.key_findings[0] : null) || pRisk.reasoning || t('results.evaluated');
     const isPreferred = analysis?.decision?.preferred_point === (p.point_id || `P${idx}`);
     const isWorst = analysis?.decision?.worst_point === (p.point_id || `P${idx}`);
+
+    const meas = p.measurements || {};
+    const waveVal = meas.wave_height_m?.value != null ? `${meas.wave_height_m.value}m` : null;
+    const windVal = meas.wind_speed_ms?.value != null ? `${meas.wind_speed_ms.value}m/s` : null;
 
     return {
       point_id: p.point_id || `P${idx}`,
@@ -44,12 +50,15 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
       lon: p.lon,
       risk_score: pRisk.final_score ?? null,
       status: pRisk.risk_level || 'UNRATED',
-      dominant_hazard: formattedFactors || 'None reported',
+      dominant_hazard: formattedFactors || t('grid.noneReported'),
       finding,
       isPreferred,
       isWorst,
       official_warning: pRisk.official_warnings?.[0] || null,
       point_status: p.point_status || null,
+      waveVal,
+      windVal,
+      rawPoint: p,
     };
   });
 
@@ -59,14 +68,14 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
         <div>
           <h3 className="text-sm sm:text-base font-bold text-white flex items-center space-x-2">
             <Compass className="w-4 h-4 text-cyan-400" />
-            <span>9-Point Spatial Grid Assessment Matrix</span>
+            <span>{t('grid.title')}</span>
           </h3>
           <p className="text-xs text-slate-400">
-            Real sensor-backed safety screening across all evaluated marine quadrants
+            {t('grid.subtitle')}
           </p>
         </div>
         <span className="text-xs font-mono font-bold text-cyan-400 bg-cyan-950 px-2.5 py-1 rounded-lg border border-cyan-800">
-          {points.length} / 9 Evaluated
+          {t('grid.evaluatedCount', { count: points.length })}
         </span>
       </div>
 
@@ -74,7 +83,8 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {points.map((pt) => {
           const id = pt.point_id || 'P0';
-          const info = dirMap[id] || { label: id, compass: '📍' };
+          const info = dirMap[id] || { labelKey: null, compass: '📍' };
+          const labelText = info.labelKey ? t(info.labelKey) : id;
           const hasScore = pt.risk_score !== null && pt.risk_score !== undefined;
           const score = hasScore ? Math.round(pt.risk_score) : null;
           const isSelected = selectedPoint?.point_id === id || selectedPoint?.id === id;
@@ -101,7 +111,7 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
           return (
             <div
               key={id}
-              onClick={() => onSelectPoint && onSelectPoint(pt)}
+              onClick={() => onSelectPoint && onSelectPoint(pt.rawPoint || pt)}
               className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
                 isSelected
                   ? 'bg-cyan-950/40 border-cyan-500 ring-2 ring-cyan-500/40 shadow-lg'
@@ -113,23 +123,23 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
                   <span className="text-base">{info.compass}</span>
                   <div>
                     <span className="text-xs font-bold text-white">{id}</span>
-                    <span className="text-[10px] text-slate-400 ml-1.5">({info.label})</span>
+                    <span className="text-[10px] text-slate-400 ml-1.5">({labelText})</span>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-1">
                   {pt.isPreferred && (
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
-                      Best
+                      {t('grid.best')}
                     </span>
                   )}
                   {pt.isWorst && (
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800">
-                      Worst
+                      {t('grid.worst')}
                     </span>
                   )}
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeColor}`}>
-                    {hasScore ? `${score}/100` : 'Unrated'}
+                    {hasScore ? `${score}/100` : t('grid.unrated')}
                   </span>
                 </div>
               </div>
@@ -146,9 +156,25 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
               {/* Coordinates and Hazard Factors */}
               <div className="text-[11px] text-slate-300 space-y-1">
                 <div className="flex justify-between text-slate-400 text-[10px]">
-                  <span>Lat: {typeof pt.lat === 'number' ? pt.lat.toFixed(3) : (validLat !== null ? validLat.toFixed(3) : '—')}°N</span>
-                  <span>Lon: {typeof pt.lon === 'number' ? pt.lon.toFixed(3) : (validLon !== null ? validLon.toFixed(3) : '—')}°E</span>
+                  <span>{t('map.latLabel')}: {typeof pt.lat === 'number' ? pt.lat.toFixed(3) : (validLat !== null ? validLat.toFixed(3) : '—')}°N</span>
+                  <span>{t('map.lonLabel')}: {typeof pt.lon === 'number' ? pt.lon.toFixed(3) : (validLon !== null ? validLon.toFixed(3) : '—')}°E</span>
                 </div>
+
+                {/* Key quick telemetry tags */}
+                {(pt.waveVal || pt.windVal) && (
+                  <div className="flex items-center space-x-2 text-[10px] py-0.5 font-mono">
+                    {pt.waveVal && (
+                      <span className="text-cyan-300 bg-cyan-950/50 px-1.5 py-0.5 rounded border border-cyan-800/60">
+                        🌊 {pt.waveVal}
+                      </span>
+                    )}
+                    {pt.windVal && (
+                      <span className="text-sky-300 bg-sky-950/50 px-1.5 py-0.5 rounded border border-sky-800/60">
+                        💨 {pt.windVal}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {pt.official_warning && (
                   <div className="text-[10px] font-bold text-rose-400 truncate">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Navigation, 
   MapPin, 
@@ -24,6 +25,7 @@ import { addEntry } from '../utils/history';
 import { VESSEL_TYPES } from '../utils/maritimeConfig';
 
 export default function RoutePlannerPage({ selectedLang = 'auto' }) {
+  const { t } = useTranslation('ui');
   const [originName, setOriginName] = useState('');
   const [destName, setDestName] = useState('');
   const [originCoords, setOriginCoords] = useState(null);
@@ -103,6 +105,15 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
     return '#ef4444'; // Rose DANGEROUS
   };
 
+  const getRiskLevelName = (score, level) => {
+    if (level && level !== 'undefined') return level;
+    if (score === null || score === undefined) return t('route.legendNoForecast');
+    if (score <= 34) return 'SAFE';
+    if (score <= 64) return 'CAUTION';
+    if (score <= 79) return 'UNSAFE';
+    return 'DANGEROUS';
+  };
+
   // Render Route Polyline & Markers on Map
   useEffect(() => {
     if (!mapInstanceRef.current) return;
@@ -124,7 +135,7 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
         iconAnchor: [7, 7],
       });
       L.marker([originCoords.lat, originCoords.lon], { icon: originIcon })
-        .bindPopup(`<b>Origin:</b> ${originName || 'Departure Waypoint'}<br><span style="font-family:monospace;font-size:11px;">${originCoords.lat}°N, ${originCoords.lon}°E</span>`)
+        .bindPopup(`<b>${t('route.originPopup')}:</b> ${originName || t('route.departureWaypoint')}<br><span style="font-family:monospace;font-size:11px;">${originCoords.lat}°N, ${originCoords.lon}°E</span>`)
         .addTo(group);
     }
 
@@ -137,7 +148,7 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
         iconAnchor: [7, 7],
       });
       L.marker([destCoords.lat, destCoords.lon], { icon: destIcon })
-        .bindPopup(`<b>Destination:</b> ${destName || 'Target Waypoint'}<br><span style="font-family:monospace;font-size:11px;">${destCoords.lat}°N, ${destCoords.lon}°E</span>`)
+        .bindPopup(`<b>${t('route.destPopup')}:</b> ${destName || t('route.targetWaypoint')}<br><span style="font-family:monospace;font-size:11px;">${destCoords.lat}°N, ${destCoords.lon}°E</span>`)
         .addTo(group);
     }
 
@@ -170,15 +181,15 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
         });
 
         const scoreText = wp.risk_score !== null && wp.risk_score !== undefined
-          ? `${Math.round(wp.risk_score)}/100 (${wp.risk_level || 'Evaluated'})`
-          : 'No forecast data';
+          ? `${Math.round(wp.risk_score)}/100 (${wp.risk_level || t('results.evaluated')})`
+          : t('route.noForecastData');
 
         wpMarker.bindPopup(`
           <div style="font-family:sans-serif;font-size:12px;color:#0f172a;">
-            <b>Waypoint ${wp.seq}</b> (${wp.point_id || 'WP'})<br/>
+            <b>${t('route.waypointLabel')} ${wp.seq}</b> (${wp.point_id || 'WP'})<br/>
             <span>Coords: ${wp.lat.toFixed(3)}°N, ${wp.lon.toFixed(3)}°E</span><br/>
-            <span>Distance: ${wp.cumulative_distance_km ? `${wp.cumulative_distance_km.toFixed(1)} km` : '0 km'}</span><br/>
-            <b>Risk Score:</b> ${scoreText}
+            <span>${t('results.totalDistance')}: ${wp.cumulative_distance_km ? `${wp.cumulative_distance_km.toFixed(1)} km` : '0 km'}</span><br/>
+            <b>${t('hero.riskScore')}:</b> ${scoreText}
           </div>
         `);
         wpMarker.addTo(group);
@@ -188,28 +199,28 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
       const latlngs = wps.map((wp) => [wp.lat, wp.lon]);
       mapInstanceRef.current.fitBounds(latlngs, { padding: [40, 40] });
     }
-  }, [originCoords, destCoords, originName, destName, routeResult]);
+  }, [originCoords, destCoords, originName, destName, routeResult, t]);
 
   const handleCalculateRoute = async (e) => {
     if (e) e.preventDefault();
 
     if (!originCoords && !originName) {
-      setErrorMessage('Please select or enter a valid origin waypoint.');
+      setErrorMessage(t('route.errorOrigin'));
       return;
     }
     if (!destCoords && !destName) {
-      setErrorMessage('Please select or enter a valid destination waypoint.');
+      setErrorMessage(t('route.errorDest'));
       return;
     }
     if (!vesselType) {
-      setErrorMessage('Vessel Classification is required to evaluate seaworthiness and clearance depths.');
+      setErrorMessage(t('route.errorVessel'));
       return;
     }
 
     setIsCalculating(true);
     setErrorMessage(null);
     setRouteResult(null);
-    setStatusMessage('Submitting nautical route request to real routing engine...');
+    setStatusMessage(t('route.statusSubmitting'));
 
     try {
       const payload = {
@@ -236,10 +247,10 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
       const routeId = res.route_id;
 
       if (!routeId) {
-        throw new Error('Server did not return a valid route_id.');
+        throw new Error(t('route.errorNoId'));
       }
 
-      setStatusMessage('Solving hydrographic pathfinding & metocean risks along corridor...');
+      setStatusMessage(t('route.statusSolving'));
 
       // Poll until completed | no_safe_route | failed
       let attempts = 0;
@@ -266,17 +277,17 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
           setRouteResult(check);
         } else if (check.status === 'failed') {
           finished = true;
-          throw new Error(check.error?.message || 'Route pathfinding failed on the server.');
+          throw new Error(check.error?.message || t('route.errorFailed'));
         }
       }
 
       if (!finished) {
-        throw new Error('Route calculation timed out after 50 seconds.');
+        throw new Error(t('route.errorTimeout'));
       }
 
     } catch (err) {
       console.error('Route calculation error:', err);
-      setErrorMessage(err.message || 'Error occurred while calculating nautical route.');
+      setErrorMessage(err.message || t('route.errorGeneral'));
     } finally {
       setIsCalculating(false);
       setStatusMessage(null);
@@ -292,16 +303,16 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
           <div className="flex items-center space-x-2.5">
             <Navigation className="w-6 h-6 text-cyan-400" />
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              Nautical Passage & Corridor Risk Planner
+              {t('route.title')}
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Section 71: Sovereign territorial waters routing, UNCLOS IMBL buffer enforcement, and time-of-passage metocean risk synthesis.
+            {t('route.subtitle')}
           </p>
         </div>
 
         <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-950 px-3 py-1.5 rounded-xl border border-cyan-800 w-fit">
-          Real Passage Engine
+          {t('route.badge')}
         </span>
       </div>
 
@@ -310,11 +321,11 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
         <div className="p-4 rounded-2xl bg-rose-950/80 border border-rose-800 text-rose-200 flex items-start space-x-3 text-xs sm:text-sm shadow-lg">
           <AlertCircle className="w-5 h-5 text-rose-400 mt-0.5 flex-shrink-0" />
           <div className="flex-1">
-            <span className="font-bold">Routing Error: </span>
+            <span className="font-bold">{t('route.routingError')}: </span>
             <span className="whitespace-pre-line">{errorMessage}</span>
           </div>
           <button onClick={() => setErrorMessage(null)} className="text-rose-400 hover:text-white font-semibold">
-            Dismiss
+            {t('route.dismiss')}
           </button>
         </div>
       )}
@@ -331,7 +342,7 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
               <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
                 <span className="flex items-center space-x-1.5">
                   <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Origin Port / Waypoint</span>
+                  <span>{t('route.originLabel')}</span>
                 </span>
                 <button
                   type="button"
@@ -340,19 +351,19 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
                     targetMode === 'origin' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-400'
                   }`}
                 >
-                  Click Map to Set
+                  {t('route.clickMapToSet')}
                 </button>
               </label>
               <input
                 type="text"
                 value={originName}
                 onChange={(e) => setOriginName(e.target.value)}
-                placeholder="e.g. Kochi Harbor"
+                placeholder={t('route.originPlaceholder')}
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 font-medium"
               />
               {originCoords && (
                 <div className="text-[11px] font-mono text-slate-400 flex items-center justify-between">
-                  <span>Pin: {originCoords.lat}°N, {originCoords.lon}°E</span>
+                  <span>{t('route.pin')}: {originCoords.lat}°N, {originCoords.lon}°E</span>
                 </div>
               )}
             </div>
@@ -362,7 +373,7 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
               <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
                 <span className="flex items-center space-x-1.5">
                   <MapPin className="w-3.5 h-3.5 text-purple-400" />
-                  <span>Destination Port / Waypoint</span>
+                  <span>{t('route.destLabel')}</span>
                 </span>
                 <button
                   type="button"
@@ -371,19 +382,19 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
                     targetMode === 'dest' ? 'bg-purple-500 text-white' : 'bg-slate-800 text-slate-400'
                   }`}
                 >
-                  Click Map to Set
+                  {t('route.clickMapToSet')}
                 </button>
               </label>
               <input
                 type="text"
                 value={destName}
                 onChange={(e) => setDestName(e.target.value)}
-                placeholder="e.g. Mangalore Port"
+                placeholder={t('route.destPlaceholder')}
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 font-medium"
               />
               {destCoords && (
                 <div className="text-[11px] font-mono text-slate-400 flex items-center justify-between">
-                  <span>Pin: {destCoords.lat}°N, {destCoords.lon}°E</span>
+                  <span>{t('route.pin')}: {destCoords.lat}°N, {destCoords.lon}°E</span>
                 </div>
               )}
             </div>
@@ -392,7 +403,7 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
                 <Ship className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Vessel Classification <span className="text-rose-400">*</span></span>
+                <span>{t('route.vesselClass')} <span className="text-rose-400">*</span></span>
               </label>
               <select
                 value={vesselType}
@@ -401,10 +412,10 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
                   !vesselType ? 'border-amber-700/80 bg-amber-950/20' : 'border-slate-700'
                 }`}
               >
-                <option value="">-- Select Vessel Type (Required) --</option>
+                <option value="">{t('route.selectVesselRequired')}</option>
                 {VESSEL_TYPES.map((v) => (
                   <option key={v.id} value={v.id}>
-                    {v.label}
+                    {t(`vessels.${v.id}`, { defaultValue: v.label })}
                   </option>
                 ))}
               </select>
@@ -414,7 +425,7 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>Scheduled Departure Time (Optional)</span>
+                <span>{t('route.departureTimeLabel')}</span>
               </label>
               <input
                 type="datetime-local"
@@ -433,12 +444,12 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
               {isCalculating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Computing Nautical Route...</span>
+                  <span>{t('route.computingRoute')}</span>
                 </>
               ) : (
                 <>
                   <Navigation className="w-4 h-4" />
-                  <span>Calculate Safe Route</span>
+                  <span>{t('route.calculateRoute')}</span>
                 </>
               )}
             </button>
@@ -446,27 +457,27 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
 
           {/* Map Color Legend */}
           <div className="p-4 bg-slate-900/80 border border-slate-800 rounded-2xl text-xs space-y-2">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Waypoint Risk Legend</div>
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('route.legendTitle')}</div>
             <div className="flex flex-wrap items-center gap-3">
               <span className="flex items-center space-x-1.5 text-emerald-400">
                 <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-                <span>Safe (&le;34)</span>
+                <span>{t('route.legendSafe')}</span>
               </span>
               <span className="flex items-center space-x-1.5 text-amber-400">
                 <span className="w-3 h-3 rounded-full bg-amber-500"></span>
-                <span>Caution (35-64)</span>
+                <span>{t('route.legendCaution')}</span>
               </span>
               <span className="flex items-center space-x-1.5 text-orange-400">
                 <span className="w-3 h-3 rounded-full bg-orange-500"></span>
-                <span>Unsafe (65-79)</span>
+                <span>{t('route.legendUnsafe')}</span>
               </span>
               <span className="flex items-center space-x-1.5 text-rose-400">
                 <span className="w-3 h-3 rounded-full bg-rose-500"></span>
-                <span>Dangerous (&ge;80)</span>
+                <span>{t('route.legendDangerous')}</span>
               </span>
               <span className="flex items-center space-x-1.5 text-slate-400">
                 <span className="w-3 h-3 rounded-full bg-slate-500"></span>
-                <span>No forecast</span>
+                <span>{t('route.legendNoForecast')}</span>
               </span>
             </div>
           </div>
@@ -480,10 +491,10 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
             <div className="bg-slate-950/90 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs">
               <span className="font-bold text-white flex items-center space-x-1.5">
                 <Compass className="w-4 h-4 text-cyan-400" />
-                <span>Nautical Navigation Chart</span>
+                <span>{t('route.chartTitle')}</span>
               </span>
               <span className="font-mono text-[11px] text-slate-400">
-                Mode: Setting <b className="text-cyan-400 uppercase">{targetMode}</b>
+                {t('route.modeSetting')} <b className="text-cyan-400 uppercase">{targetMode}</b>
               </span>
             </div>
             
@@ -503,14 +514,14 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
                 <div className="p-6 rounded-3xl bg-rose-950/40 border border-rose-800 text-rose-200 space-y-3">
                   <div className="flex items-center space-x-2 text-rose-400 font-black text-base">
                     <AlertTriangle className="w-5 h-5" />
-                    <span>NO SAFE NAUTICAL ROUTE FOUND</span>
+                    <span>{t('route.noSafeRouteFound')}</span>
                   </div>
                   <p className="text-xs leading-relaxed text-rose-300">
-                    All navigable corridors between origin and destination violate sovereign boundary exclusion buffers or severe metocean thresholds.
+                    {t('route.noSafeRouteDesc')}
                   </p>
                   {Array.isArray(routeResult.blocking_reasons) && routeResult.blocking_reasons.length > 0 && (
                     <div className="space-y-1.5 pt-2 border-t border-rose-900/60">
-                      <span className="text-xs font-bold uppercase tracking-wider text-rose-300">Blocking Conditions:</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-rose-300">{t('route.blockingConditions')}:</span>
                       {routeResult.blocking_reasons.map((reason, i) => (
                         <div key={i} className="text-xs flex items-start space-x-1.5">
                           <span className="text-rose-400">•</span>
@@ -525,8 +536,8 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
                 <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-base font-bold text-white">Nautical Passage Plan</h3>
-                      <p className="text-xs text-slate-400 font-mono">Route ID: {routeResult.route_id}</p>
+                      <h3 className="text-base font-bold text-white">{t('route.passagePlanTitle')}</h3>
+                      <p className="text-xs text-slate-400 font-mono">{t('route.routeId')}: {routeResult.route_id}</p>
                     </div>
                     <span className={`px-3 py-1 rounded-xl text-xs font-bold uppercase border ${
                       routeResult.max_risk_level === 'SAFE' 
@@ -535,36 +546,36 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
                           ? 'bg-amber-950 text-amber-300 border-amber-800'
                           : 'bg-rose-950 text-rose-300 border-rose-800'
                     }`}>
-                      Max Corridor: {routeResult.max_risk_level || 'Evaluated'}
+                      {t('route.maxCorridor')}: {routeResult.max_risk_level || t('results.evaluated')}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                     <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block text-[11px]">Total Distance</span>
+                      <span className="text-slate-400 block text-[11px]">{t('results.totalDistance')}</span>
                       <span className="text-lg font-black text-white">
                         {routeResult.total_distance_km ? `${routeResult.total_distance_km.toFixed(1)} km` : '—'}
                       </span>
                     </div>
 
                     <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block text-[11px]">Estimated Duration</span>
+                      <span className="text-slate-400 block text-[11px]">{t('results.estPassageTime')}</span>
                       <span className="text-lg font-black text-cyan-400">
                         {routeResult.estimated_duration_hours ? `${routeResult.estimated_duration_hours.toFixed(1)} hrs` : '—'}
                       </span>
                     </div>
 
                     <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block text-[11px]">Max Risk Score</span>
+                      <span className="text-slate-400 block text-[11px]">{t('route.maxRiskScore')}</span>
                       <span className="text-lg font-black text-white">
                         {routeResult.max_risk_score !== null && routeResult.max_risk_score !== undefined 
                           ? `${Math.round(routeResult.max_risk_score)}/100` 
-                          : 'Unavailable'}
+                          : t('pointDetail.unavailable')}
                       </span>
                     </div>
 
                     <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block text-[11px]">Waypoints</span>
+                      <span className="text-slate-400 block text-[11px]">{t('results.waypoints')}</span>
                       <span className="text-lg font-black text-purple-400">
                         {routeResult.waypoints?.length || 0}
                       </span>
@@ -574,15 +585,15 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
                   {/* Waypoint Table */}
                   {Array.isArray(routeResult.waypoints) && routeResult.waypoints.length > 0 && (
                     <div className="space-y-2">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-300">Corridor Waypoint Schedule</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-300">{t('route.waypointSchedule')}</span>
                       <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950">
                         <table className="w-full text-left text-[11px]">
                           <thead className="bg-slate-900 border-b border-slate-800 text-slate-400 font-mono">
                             <tr>
                               <th className="p-2">#</th>
-                              <th className="p-2">Coordinates</th>
-                              <th className="p-2">Distance</th>
-                              <th className="p-2">Risk Level</th>
+                              <th className="p-2">{t('route.thCoordinates')}</th>
+                              <th className="p-2">{t('route.thDistance')}</th>
+                              <th className="p-2">{t('route.thRiskLevel')}</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-800/60 font-mono text-slate-300">
@@ -593,7 +604,7 @@ export default function RoutePlannerPage({ selectedLang = 'auto' }) {
                                 <td className="p-2">{wp.cumulative_distance_km ? `${wp.cumulative_distance_km.toFixed(1)} km` : '0 km'}</td>
                                 <td className="p-2">
                                   <span style={{ color: getRiskColor(wp.risk_score) }} className="font-bold">
-                                    {wp.risk_score !== null && wp.risk_score !== undefined ? `${Math.round(wp.risk_score)} (${wp.risk_level})` : 'No forecast'}
+                                    {wp.risk_score !== null && wp.risk_score !== undefined ? `${Math.round(wp.risk_score)} (${getRiskLevelName(wp.risk_score, wp.risk_level)})` : t('route.legendNoForecast')}
                                   </span>
                                 </td>
                               </tr>

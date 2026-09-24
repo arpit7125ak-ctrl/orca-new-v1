@@ -138,7 +138,17 @@ async def generate_json(
 
             return client.invoke(messages)
 
-        response = await asyncio.to_thread(_call)
+        try:
+            response = await asyncio.wait_for(asyncio.to_thread(_call), timeout=600.0)
+        except asyncio.TimeoutError:
+            log.warning(
+                "[gemini] call timed out after 600s (10 min) (purpose=%s) - using deterministic fallback",
+                purpose,
+            )
+            return LLMResult(
+                available=False,
+                reason="gemini_call_timed_out",
+            )
 
         # LangChain structured output can return a Python dictionary directly.
         if isinstance(response, dict):

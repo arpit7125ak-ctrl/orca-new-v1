@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   CheckCircle2, 
   AlertTriangle, 
@@ -14,8 +15,11 @@ import {
   ShieldCheck 
 } from 'lucide-react';
 import { speakText, stopSpeaking } from '../utils/speech';
+import { orcaApi } from '../api/client';
+import { haversineDistanceKm } from '../utils/geo';
 
 export default function DecisionHero({ analysis, onOpenReport, language = 'en' }) {
+  const { t } = useTranslation('ui');
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
   if (!analysis) return null;
@@ -25,24 +29,39 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
   const plan = analysis.plan || {};
   const explainability = analysis.explainability || {};
 
-  // Extract summary point (worst or P0 or preferred)
-  const p0 = analysis.points?.find(p => p.point_id === 'P0') || analysis.points?.[0] || {};
-  const p0Risk = p0.risk || {};
-  const p0Summary = decision.point_summaries?.find(p => p.point_id === 'P0') || decision.point_summaries?.[0] || p0Risk;
+  // Extract the target summary point for Hero telemetry & Quick Metrics.
+  // CRITICAL RULE: For multi-point analyses (9-point grid or 25-point regional scan),
+  // this MUST pull from decision.preferred_point (the safest/recommended point).
+  // Only if no preferred_point is designated does it fall back to 'P0', first applicable sea point, or points[0].
+  const summaryPoint = (decision.preferred_point ? analysis.points?.find(p => p.point_id === decision.preferred_point) : null) ||
+                       analysis.points?.find(p => p.point_id === 'P0') || 
+                       analysis.points?.find(p => p.point_status === 'applicable') || 
+                       analysis.points?.[0] || {};
+  const p0 = summaryPoint;
+  const p0Risk = summaryPoint.risk || {};
+  const p0Summary = decision.point_summaries?.find(p => p.point_id === summaryPoint.point_id) || 
+                    decision.point_summaries?.find(p => p.point_id === 'P0') || 
+                    decision.point_summaries?.[0] || 
+                    p0Risk;
 
   const recType = String(decision.recommendation_type || '').toLowerCase();
-  let fallbackFromRec = 'SAFE';
+  let fallbackFromRec = null;
   if (recType.includes('danger') || recType === 'return_immediately') {
     fallbackFromRec = 'DANGEROUS';
   } else if (recType.includes('not') || recType.includes('do_not') || recType.includes('no_go') || recType === 'do_not_venture') {
     fallbackFromRec = 'UNSAFE';
   } else if (recType.includes('caution')) {
     fallbackFromRec = 'CAUTION';
+  } else if (recType.includes('safe') || recType === 'proceed_with_caution') {
+    fallbackFromRec = recType.includes('caution') ? 'CAUTION' : 'SAFE';
   }
 
   const rawLevel = decision.safety_category || decision.category || p0Risk.risk_level || p0Summary.risk_level || fallbackFromRec;
-  const category = (rawLevel || 'SAFE').toUpperCase();
-  const score = Math.round(decision.overall_risk_score ?? p0Risk.final_score ?? decision.risk_score ?? p0Summary.final_score ?? risk.overall_risk_score ?? 25);
+  const category = (rawLevel || 'UNAVAILABLE').toUpperCase();
+
+  const rawScore = decision.overall_risk_score ?? p0Risk.final_score ?? decision.risk_score ?? p0Summary.final_score ?? risk.overall_risk_score;
+  const hasScore = rawScore !== null && rawScore !== undefined && !isNaN(Number(rawScore));
+  const score = hasScore ? Math.round(Number(rawScore)) : null;
   
   const advice = analysis.quick_information_result?.answer_text ||
                  decision.one_line_recommendation || 
@@ -51,7 +70,7 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
                  p0Risk.reasoning || 
                  p0Summary.reasoning || 
                  decision.preferred_point_reason || 
-                 'Proceed according to standard maritime safety procedures.';
+                 t('hero.noRecommendations');
 
   // Build list of actionable recommendations
   let recommendations = [];
@@ -72,7 +91,53 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
   }
 
   const safeWindows = decision.safe_windows || [];
-  const safeHarbors = decision.safe_harbor_recommendations || ['Kochi Fisheries Harbor', 'Thoppumpady Safe Haven'];
+  const [safeHarbors, setSafeHarbors] = useState(
+    Array.isArray(decision.safe_harbor_recommendations) ? decision.safe_harbor_recommendations : []
+  );
+
+  useEffect(() => {
+    if (Array.isArray(decision.safe_harbor_recommendations) && decision.safe_harbor_recommendations.length > 0) {
+      setSafeHarbors(decision.safe_harbor_recommendations);
+      return;
+    }
+
+    const lat = plan.location?.validated?.lat ?? plan.location?.original?.lat ?? p0.lat;
+    const lon = plan.location?.validated?.lon ?? plan.location?.original?.lon ?? p0.lon;
+    if (lat == null || lon == null || !Number.isFinite(Number(lat)) || !Number.isFinite(Number(lon))) {
+      setSafeHarbors([]);
+      return;
+    }
+
+    let active = true;
+    orcaApi.getMapLayers()
+      .then((data) => {
+        if (!active) return;
+        const layers = (data && Array.isArray(data.layers)) ? data.layers : [];
+        const shelterPorts = layers.filter(
+          (l) => l.layer_type === 'port' && l.properties?.shelter_suitable && Array.isArray(l.geometry?.coordinates) && l.geometry.coordinates.length >= 2
+        );
+        const MAX_RADIUS_KM = 150;
+        const nearest = shelterPorts
+          .map((p) => {
+            const [pLon, pLat] = p.geometry.coordinates;
+            return {
+              name: p.layer_name,
+              dist: haversineDistanceKm(Number(lat), Number(lon), Number(pLat), Number(pLon)),
+            };
+          })
+          .filter((p) => p.dist <= MAX_RADIUS_KM)
+          .sort((a, b) => a.dist - b.dist)
+          .slice(0, 2);
+
+        setSafeHarbors(nearest.map((p) => p.name));
+      })
+      .catch((err) => {
+        console.warn('Failed to load emergency shelters:', err);
+        if (active) setSafeHarbors([]);
+      });
+
+    return () => { active = false; };
+  }, [decision.safe_harbor_recommendations, plan.location, p0.lat, p0.lon]);
 
   // Config based on traffic light
   const config = {
@@ -81,8 +146,8 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
       border: 'border-emerald-500/50',
       badgeBg: 'bg-emerald-500 text-slate-950',
       ringColor: '#10b981',
-      title: 'SAFE TO SAIL',
-      titleLocal: 'समुद्र यात्रा सुरक्षित है',
+      title: t('hero.safeToSail'),
+      titleLocal: t('hero.safeToSail', { lng: language }),
       icon: CheckCircle2,
       textColor: 'text-emerald-400',
     },
@@ -91,8 +156,8 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
       border: 'border-amber-500/50',
       badgeBg: 'bg-amber-400 text-slate-950',
       ringColor: '#f59e0b',
-      title: 'PROCEED WITH CAUTION',
-      titleLocal: 'सावधानी से आगे बढ़ें',
+      title: t('hero.proceedWithCaution'),
+      titleLocal: t('hero.proceedWithCaution', { lng: language }),
       icon: AlertTriangle,
       textColor: 'text-amber-400',
     },
@@ -101,8 +166,8 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
       border: 'border-rose-500/50',
       badgeBg: 'bg-rose-500 text-white',
       ringColor: '#f43f5e',
-      title: 'DO NOT SAIL / RETREAT',
-      titleLocal: 'समुद्र में न जाएं / वापस लौटें',
+      title: t('hero.doNotSail'),
+      titleLocal: t('hero.doNotSail', { lng: language }),
       icon: XOctagon,
       textColor: 'text-rose-400',
     },
@@ -111,20 +176,20 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
       border: 'border-red-600',
       badgeBg: 'bg-red-600 text-white animate-pulse',
       ringColor: '#dc2626',
-      title: 'CRITICAL MARITIME DANGER',
-      titleLocal: 'गंभीर समुद्री खतरा',
+      title: t('hero.criticalDanger'),
+      titleLocal: t('hero.criticalDanger', { lng: language }),
       icon: AlertOctagon,
       textColor: 'text-red-400',
     },
   }[category] || {
-    bg: 'from-blue-950/80 to-slate-900/90',
-    border: 'border-blue-500/50',
-    badgeBg: 'bg-blue-500 text-white',
-    ringColor: '#3b82f6',
-    title: 'CONDITIONS ASSESSED',
-    titleLocal: 'स्थिति का मूल्यांकन',
-    icon: CheckCircle2,
-    textColor: 'text-blue-400',
+    bg: 'from-slate-900 via-slate-950 to-slate-900',
+    border: 'border-slate-700/60',
+    badgeBg: 'bg-slate-700 text-slate-200',
+    ringColor: '#64748b',
+    title: t('hero.assessmentUnavailable'),
+    titleLocal: t('hero.assessmentUnavailable', { lng: language }),
+    icon: AlertTriangle,
+    textColor: 'text-slate-400',
   };
 
   const Icon = config.icon;
@@ -156,11 +221,11 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
             </div>
 
             <div className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-800/80 border border-slate-700 text-slate-300">
-              Vessel: <span className="text-cyan-400 font-bold capitalize">{plan.vessel_type || 'Motorized Craft'}</span>
+              {t('hero.vesselLabel')}: <span className="text-cyan-400 font-bold capitalize">{plan.vessel_type ? t(`vessels.${plan.vessel_type}`, { defaultValue: plan.vessel_type.replace(/_/g, ' ') }) : t('hero.defaultVessel')}</span>
             </div>
 
             <div className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-800/80 border border-slate-700 text-slate-300">
-              Activity: <span className="text-cyan-400 font-bold capitalize">{plan.activity || 'Fishing'}</span>
+              {t('hero.activityLabel')}: <span className="text-cyan-400 font-bold capitalize">{plan.activity ? t(`activities.${plan.activity}`, { defaultValue: plan.activity.replace(/_/g, ' ') }) : t('hero.defaultActivity')}</span>
             </div>
           </div>
 
@@ -188,7 +253,7 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
               }`}
             >
               {isPlayingAudio ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-              <span>{isPlayingAudio ? 'Stop Audio' : 'Listen / सुनें / கேளுங்கள்'}</span>
+              <span>{isPlayingAudio ? t('hero.stopAudio') : t('hero.playAudio')}</span>
             </button>
 
             {/* Official Report Button */}
@@ -197,7 +262,7 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
               className="px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 flex items-center space-x-2 transition-all"
             >
               <FileText className="w-4 h-4 text-cyan-400" />
-              <span>Advisory Bulletin</span>
+              <span>{t('results.advisoryBulletin')}</span>
             </button>
           </div>
         </div>
@@ -222,7 +287,7 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
                 stroke={config.ringColor}
                 strokeWidth="10"
                 strokeDasharray="264"
-                strokeDashoffset={264 - (264 * Math.min(100, Math.max(0, score))) / 100}
+                strokeDashoffset={hasScore ? 264 - (264 * Math.min(100, Math.max(0, score))) / 100 : 264}
                 strokeLinecap="round"
                 fill="none"
                 className="transition-all duration-1000 ease-out"
@@ -230,29 +295,62 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
             </svg>
             <div className="absolute flex flex-col items-center justify-center text-center">
               <span className={`text-2xl sm:text-3xl font-black ${config.textColor}`}>
-                {score}
+                {hasScore ? score : '--'}
               </span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Risk Score
+                {t('hero.riskScore')}
               </span>
             </div>
           </div>
 
-          {/* Quick Metrics */}
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center space-x-2 text-slate-300">
-              <Waves className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-              <span>Wave Status: <b className="text-white">{(p0Risk.risk_factors || p0Summary.risk_factors || []).includes('wave_height_m') ? 'High / Rough' : 'Inspected'}</b></span>
-            </div>
-            <div className="flex items-center space-x-2 text-slate-300">
-              <Wind className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-              <span>Wind Status: <b className="text-white">{(p0Risk.risk_factors || p0Summary.risk_factors || []).some(f => f.includes('wind')) ? 'Hazardous Gusts' : 'Favorable'}</b></span>
-            </div>
-            <div className="flex items-center space-x-2 text-slate-300">
-              <Compass className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-              <span>Safe Quadrant: <b className="text-cyan-300 font-bold">{decision.preferred_point || 'P0'}</b></span>
-            </div>
-          </div>
+          {/* Quick Metrics — real numeric values from summaryPoint.measurements when available */}
+          {(() => {
+            const meas = summaryPoint.measurements || {};
+            const waveM  = meas.wave_height_m;
+            const periodM = meas.wave_period_s;
+            const windM  = meas.wind_speed_ms;
+            const gustM  = meas.wind_gust_ms;
+            const riskFactors = p0Risk.risk_factors || p0Summary.risk_factors || [];
+
+            const waveVal = waveM?.value !== null && waveM?.value !== undefined ? `${waveM.value} m` : null;
+            const periodVal = periodM?.value !== null && periodM?.value !== undefined ? `${periodM.value} s` : null;
+            const windVal = windM?.value !== null && windM?.value !== undefined ? `${windM.value} m/s` : null;
+            const gustVal = gustM?.value !== null && gustM?.value !== undefined ? `${gustM.value} m/s` : null;
+
+            const waveIsHazard = riskFactors.includes('wave_height_m');
+            const windIsHazard = riskFactors.some(f => f.includes('wind'));
+
+            return (
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center space-x-2 text-slate-300">
+                  <Waves className={`w-4 h-4 flex-shrink-0 ${waveIsHazard ? 'text-amber-400' : 'text-cyan-400'}`} />
+                  {waveVal ? (
+                    <span>
+                      {t('hero.waveStatus')}: <b className={waveIsHazard ? 'text-amber-300' : 'text-white'}>{waveVal}</b>
+                      {periodVal && <span className="text-slate-500"> · {periodVal}</span>}
+                    </span>
+                  ) : (
+                    <span>{t('hero.waveStatus')}: <b className="text-white">{waveIsHazard ? t('hero.highRough') : t('hero.inspected')}</b></span>
+                  )}
+                </div>
+                <div className="flex items-center space-x-2 text-slate-300">
+                  <Wind className={`w-4 h-4 flex-shrink-0 ${windIsHazard ? 'text-amber-400' : 'text-cyan-400'}`} />
+                  {windVal ? (
+                    <span>
+                      {t('hero.windStatus')}: <b className={windIsHazard ? 'text-amber-300' : 'text-white'}>{windVal}</b>
+                      {gustVal && <span className="text-slate-500"> (gust {gustVal})</span>}
+                    </span>
+                  ) : (
+                    <span>{t('hero.windStatus')}: <b className="text-white">{windIsHazard ? t('hero.hazardousGusts') : t('hero.favorable')}</b></span>
+                  )}
+                </div>
+                <div className="flex items-center space-x-2 text-slate-300">
+                  <Compass className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                  <span>{t('hero.safeQuadrant')}: <b className="text-cyan-300 font-bold">{decision.preferred_point || (status === 'DANGEROUS' ? t('hero.noneStayInPort', 'None (Stay in Port)') : t('pointDetail.unavailable', 'N/A'))}</b></span>
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
       </div>
@@ -262,7 +360,7 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
         <div className="mt-5 pt-4 border-t border-slate-800/80">
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center space-x-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Operational Safety Directives</span>
+            <span>{t('hero.operationalDirectives')}</span>
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {recommendations.map((rec, i) => (
@@ -279,7 +377,7 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
       {safeHarbors.length > 0 && (
         <div className="mt-3 text-xs text-slate-300 bg-slate-950/50 p-2.5 rounded-lg border border-slate-800 flex items-center space-x-2">
           <Compass className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-          <span>Recommended Safe Harbors in emergency: <strong className="text-emerald-300">{safeHarbors.join(', ')}</strong></span>
+          <span>{t('hero.recommendedSafeHarbors')}: <strong className="text-emerald-300">{safeHarbors.join(', ')}</strong></span>
         </div>
       )}
     </div>

@@ -1,4 +1,5 @@
-﻿import React from 'react';
+import React from 'react';
+import i18next from 'i18next';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 export default class ErrorBoundary extends React.Component {
@@ -22,6 +23,7 @@ export default class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
+      const t = i18next.t.bind(i18next);
       return (
         <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
           <div className="max-w-lg w-full bg-slate-900 border border-rose-800/80 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-5 text-center">
@@ -30,14 +32,14 @@ export default class ErrorBoundary extends React.Component {
             </div>
 
             <div>
-              <h2 className="text-xl font-black text-white">ORCA Maritime Dashboard Notice</h2>
+              <h2 className="text-xl font-black text-white">{t('error.boundaryTitle', { ns: 'ui' })}</h2>
               <p className="text-xs text-slate-400 mt-1">
-                A client-side rendering exception was intercepted safely.
+                {t('error.boundarySubtitle', { ns: 'ui' })}
               </p>
             </div>
 
             <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 text-left text-xs font-mono text-rose-300 overflow-x-auto max-h-40">
-              {this.state.error?.toString() || 'Unknown runtime error'}
+              {this.state.error?.toString() || t('error.unknownRuntime', { ns: 'ui' })}
             </div>
 
             <button
@@ -45,7 +47,7 @@ export default class ErrorBoundary extends React.Component {
               className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-all shadow-lg shadow-cyan-500/20"
             >
               <RefreshCw className="w-4 h-4" />
-              <span>Reload Maritime Dashboard</span>
+              <span>{t('error.reloadButton', { ns: 'ui' })}</span>
             </button>
           </div>
         </div>

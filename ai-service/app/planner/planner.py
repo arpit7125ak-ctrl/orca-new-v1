@@ -47,14 +47,16 @@ STAGES = ["risk", "decision", "route", "trend", "report"]
 ALL_AGENTS = ["weather", "ocean", "tide", "cyclone", "ecosystem", "pfz", "gis"]
 
 # Section 20.2 - enforced by configuration, not left to the LLM.
+# Configured to run ALL 7 agents without skipping any.
 MANDATORY_BY_INTENT: Dict[str, List[str]] = {
-    # Every safety verdict needs wind/visibility, wave/swell, official
-    # warnings, and the GIS constraints that decide whether a point may even
-    # be recommended.
-    "point_safety": ["weather", "ocean", "cyclone", "gis"],
-    "regional_search": ["weather", "ocean", "cyclone", "gis"],
-    "route_planning": ["weather", "ocean", "cyclone", "gis"],
-    "alert_check": ["weather", "ocean", "cyclone"],
+    "point_safety": ALL_AGENTS,
+    "regional_search": ALL_AGENTS,
+    "route_planning": ALL_AGENTS,
+    "alert_check": ALL_AGENTS,
+    "quick_information": ALL_AGENTS,
+    "historical_trend": ALL_AGENTS,
+    "report_advisory": ALL_AGENTS,
+    "conversational_followup": ALL_AGENTS,
 }
 
 INTENT_TO_STAGES: Dict[str, List[str]] = {
@@ -105,10 +107,9 @@ Valid intents:
 - conversational_followup: a follow-up that refines a previous question
 
 Rules you must follow:
-- Select the FEWEST agents that genuinely answer the question. Every extra agent costs time and may fail.
-- Give a specific reason per agent, referencing what the user actually asked. Never write a generic reason.
-- Also list agents you deliberately skipped, with reasons.
-- Safety questions are answered conservatively. When in doubt about a safety-relevant agent, include it.
+- Run ALL 7 specialist agents (weather, ocean, tide, cyclone, ecosystem, pfz, gis) to provide a complete, comprehensive marine intelligence assessment.
+- Give a specific operational reason per agent for why it contributes to this marine evaluation.
+- Do not skip any agent. Keep skipped_agents as an empty list [].
 - Respond with JSON only."""
 
 _PLANNER_RESPONSE_SCHEMA: Dict[str, Any] = {
@@ -215,31 +216,14 @@ def _heuristic_agents(intent: str, query: Optional[str]) -> List[Dict[str, str]]
 def _apply_mandatory_policy(
     intent: str, selected: List[Dict[str, Any]], query: Optional[str] = None, request: Optional[Dict[str, Any]] = None
 ) -> List[Dict[str, Any]]:
-    """Section 20.2 - add back any mandatory agent the LLM omitted.
-
-    The LLM may propose extra agents; it may never drop a safety-critical one.
-    Anything added here is marked mandatory_by_policy so the reason is visible
-    in the explainability panel rather than looking like the LLM's choice.
-    """
+    """Ensure ALL 7 specialist agents run without skipping any."""
     chosen = {s["agent"] for s in selected}
-    for agent in MANDATORY_BY_INTENT.get(intent, []):
+    for agent in ALL_AGENTS:
         if agent not in chosen:
-            log.info("[planner] adding mandatory agent '%s' omitted by the LLM", agent)
             selected.append(
-                {"agent": agent, "reason": "mandatory_by_policy", "mandatory_by_policy": True}
+                {"agent": agent, "reason": "Full multi-agent swarm evaluation", "mandatory_by_policy": True}
             )
             chosen.add(agent)
-
-    # Ensure query keywords like tide are honored
-    q = (query or "").lower()
-    if any(w in q for w in ("tide", "low tide", "high tide", "tidal")) and "tide" not in chosen:
-        selected.append({"agent": "tide", "reason": "Query mentions tidal conditions"})
-        chosen.add("tide")
-
-    activity = ((request.get("activity") if request else "") or "").lower()
-    if (any(w in q for w in ("fish", "fishing", "catch", "pfz", "tuna", "mackerel")) or activity == "fishing") and "pfz" not in chosen:
-        selected.append({"agent": "pfz", "reason": "Fishing activity or query requested"})
-        chosen.add("pfz")
 
     return selected
 

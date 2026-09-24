@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Send, 
   Mic, 
@@ -14,6 +15,7 @@ import {
 import { createSpeechRecognizer } from '../utils/speech';
 
 export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
+  const { t } = useTranslation('ui');
   const [query, setQuery] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -89,7 +91,7 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
 
   const toggleRecording = () => {
     if (!speechRecognizer) {
-      alert('Speech recognition is not supported in this browser. Please type your query.');
+      alert(t('common.voiceNotSupported'));
       return;
     }
 
@@ -116,7 +118,7 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
 
   const handleUseGps = () => {
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser.');
+      alert(t('common.geolocationNotSupported'));
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -125,7 +127,7 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
         setLon(pos.coords.longitude.toFixed(4));
         setShowAdvanced(true);
       },
-      (err) => alert(`Unable to retrieve GPS: ${err.message}`)
+      (err) => alert(t('common.gpsError', { message: err.message }))
     );
   };
 
@@ -163,9 +165,9 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
           <div className="flex items-center justify-between mb-2">
             <label className="text-xs sm:text-sm font-semibold text-slate-200 flex items-center space-x-1.5">
               <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span>Ask ORCA Maritime Safety Intelligence</span>
+              <span>{t('home.title')}</span>
             </label>
-            <span className="text-[11px] text-slate-400">Natural Language or Structured Input</span>
+            <span className="text-[11px] text-slate-400">{t('home.subtitle')}</span>
           </div>
 
           <div className="relative flex items-center">
@@ -173,7 +175,7 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="e.g. Can I take my 8m fibreglass boat fishing 15km off Kochi tomorrow at 6 AM?"
+              placeholder={t('home.placeholder')}
               disabled={isLoading}
               className="w-full pl-4 pr-24 sm:pr-28 py-3.5 bg-slate-950/80 border border-slate-700/80 rounded-xl text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all shadow-inner"
             />
@@ -188,7 +190,7 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
                     ? 'bg-rose-600 text-white animate-pulse ring-2 ring-rose-400/50'
                     : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700'
                 }`}
-                title={isRecording ? 'Listening... click to stop' : 'Voice Input (Section 77)'}
+                title={isRecording ? t('queryForm.listeningTitle') : t('queryForm.voiceInputTitle')}
               >
                 {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </button>
@@ -200,14 +202,14 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
                 className="px-3.5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold rounded-lg text-sm flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-cyan-500/20 transition-all"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Assess</span>
+                <span className="hidden sm:inline">{t('common.assess')}</span>
               </button>
             </div>
           </div>
           {isRecording && (
             <p className="text-xs text-rose-400 mt-1.5 font-medium animate-pulse flex items-center space-x-1">
               <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />
-              <span>Listening to your voice... Speak your query clearly.</span>
+              <span>{t('common.listening')}</span>
             </p>
           )}
         </div>
@@ -216,7 +218,7 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-              Quick Safety Scenarios
+              {t('home.quickScenarios')}
             </span>
             <button
               type="button"
@@ -224,7 +226,7 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
               className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center space-x-1 font-medium"
             >
               <SlidersHorizontal className="w-3 h-3" />
-              <span>{showAdvanced ? 'Hide Advanced Controls' : 'Configure Coordinates & Vessel'}</span>
+              <span>{showAdvanced ? t('home.hideAdvanced') : t('home.configureVessel')}</span>
             </button>
           </div>
 
@@ -252,20 +254,20 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1 flex items-center space-x-1">
                 <Fish className="w-3 h-3 text-cyan-400" />
-                <span>Maritime Activity</span>
+                <span>{t('home.maritimeActivity')}</span>
               </label>
               <select
                 value={activity}
                 onChange={(e) => setActivity(e.target.value)}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:ring-1 focus:ring-cyan-500"
               >
-                <option value="fishing">Fishing</option>
-                <option value="boating">Boating / Leisure</option>
-                <option value="diving">Diving / Underwater Ops</option>
-                <option value="marine_research">Marine Research</option>
-                <option value="shipping">Commercial Shipping</option>
-                <option value="surfing">Surfing / Coastal Watersports</option>
-                <option value="tourism">Coastal Tourism</option>
+                <option value="fishing">{t('activities.fishing')}</option>
+                <option value="boating">{t('activities.boating')}</option>
+                <option value="diving">{t('activities.diving')}</option>
+                <option value="marine_research">{t('activities.marine_research')}</option>
+                <option value="shipping">{t('activities.shipping')}</option>
+                <option value="surfing">{t('activities.surfing')}</option>
+                <option value="tourism">{t('activities.tourism')}</option>
               </select>
             </div>
 
@@ -273,19 +275,19 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1 flex items-center space-x-1">
                 <Ship className="w-3 h-3 text-cyan-400" />
-                <span>Vessel Type</span>
+                <span>{t('home.vesselType')}</span>
               </label>
               <select
                 value={vesselType}
                 onChange={(e) => setVesselType(e.target.value)}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:ring-1 focus:ring-cyan-500"
               >
-                <option value="motorized_country_craft">Motorized Country Craft (FRP/Wood)</option>
-                <option value="traditional_non_motorized">Traditional Non-Motorized Boat</option>
-                <option value="mechanized_fishing_vessel">Mechanized Fishing Vessel / Trawler</option>
-                <option value="recreational_boat">Recreational Speedboat</option>
-                <option value="research_vessel">Marine Research Vessel</option>
-                <option value="large_commercial_vessel">Large Commercial Vessel</option>
+                <option value="motorized_country_craft">{t('vessels.motorized_country_craft')}</option>
+                <option value="traditional_non_motorized">{t('vessels.traditional_non_motorized')}</option>
+                <option value="mechanized_fishing_vessel">{t('vessels.mechanized_fishing_vessel')}</option>
+                <option value="recreational_boat">{t('vessels.recreational_boat')}</option>
+                <option value="research_vessel">{t('vessels.research_vessel')}</option>
+                <option value="large_commercial_vessel">{t('vessels.large_commercial_vessel')}</option>
               </select>
             </div>
 
@@ -294,7 +296,7 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
               <div className="flex items-center justify-between mb-1">
                 <label className="text-[11px] font-semibold text-slate-300 flex items-center space-x-1">
                   <MapPin className="w-3 h-3 text-cyan-400" />
-                  <span>Target Coordinates</span>
+                  <span>{t('home.targetCoords')}</span>
                 </label>
                 <button
                   type="button"
@@ -302,7 +304,7 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
                   className="text-[10px] text-cyan-400 hover:underline flex items-center space-x-0.5"
                 >
                   <Navigation className="w-2.5 h-2.5" />
-                  <span>GPS</span>
+                  <span>{t('common.gps')}</span>
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-1.5">
@@ -311,7 +313,7 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
                   step="0.0001"
                   value={lat}
                   onChange={(e) => setLat(e.target.value)}
-                  placeholder="Latitude"
+                  placeholder={t('home.latitude')}
                   className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white"
                 />
                 <input
@@ -319,7 +321,7 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
                   step="0.0001"
                   value={lon}
                   onChange={(e) => setLon(e.target.value)}
-                  placeholder="Longitude"
+                  placeholder={t('home.longitude')}
                   className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white"
                 />
               </div>
@@ -329,7 +331,7 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1 flex items-center space-x-1">
                 <Compass className="w-3 h-3 text-cyan-400" />
-                <span>Voyage Duration (Hours)</span>
+                <span>{t('home.voyageDuration')}</span>
               </label>
               <input
                 type="number"
@@ -337,7 +339,7 @@ export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
                 max="72"
                 value={durationHours}
                 onChange={(e) => setDurationHours(e.target.value)}
-                placeholder="e.g. 4"
+                placeholder={t('home.durationPlaceholder')}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"
               />
             </div>

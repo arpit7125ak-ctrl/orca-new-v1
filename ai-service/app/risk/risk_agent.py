@@ -31,6 +31,15 @@ from typing import Any, Dict, List, Optional
 
 from app.clients import gemini_client
 from app.config.settings import settings
+from app.decision.fallback_strings import (
+    get_fallback_findings,
+    get_fallback_incomplete_warning,
+    get_fallback_reasoning,
+    get_zone_category_label,
+    get_constraint_type_label,
+    get_zone_name_label,
+    sanitize_user_facing_text,
+)
 from app.observability.logger import log
 from app.risk import baseline as baseline_mod
 
@@ -67,6 +76,8 @@ Hard rules you must obey:
 - If a constraint floor is present, it exists because of an official warning or a hard safety limit. Never argue against it.
 - Reason ONLY from the evidence provided. If a parameter is missing, say it is missing - never estimate or assume a value.
 - Write for someone deciding whether to take a small boat to sea. Be direct and concrete, not hedged.
+- CRITICAL FORMATTING RULE: Never output raw internal code variable names, debug syntax, or raw enums (such as '(zone_category = ...)', 'constraint_type = ...', or 'seasonal_fishing_ban_area') in any user-facing text. Always use clean, natural language expressions.
+- CRITICAL LANGUAGE RULE: When responding in an Indian language, write purely in that language without inserting untranslated English phrases (such as 'Ban Area', 'monsoon', etc.).
 
 Respond with JSON only."""
 
@@ -97,8 +108,15 @@ Hard rules you must obey:
 - If a constraint floor is present, it exists because of an official warning or a hard safety limit. Never argue against it.
 - Reason ONLY from the evidence provided. If a parameter is missing, say it is missing - never estimate or assume a value.
 - Write for someone deciding whether to take a small boat to sea. Be direct and concrete, not hedged.
+- CRITICAL LANGUAGE RULE: When responding in an Indian language, write purely in that language without inserting untranslated English phrases (such as 'Ban Area', 'monsoon', etc.).
 
-Respond with JSON only containing an "assessments" array with an object for every point_id."""
+Respond with JSON only containing an "assessments" array with an object for every point_id using these exact keys:
+- "point_id": string (e.g. "P0", "P1")
+- "reasoning": plain-language interpretation string explaining conditions
+- "key_findings": array of short finding strings
+- "llm_adjustment": integer score adjustment (-10 to +10, 0 if none)
+- "adjustment_reason": string explaining adjustment if non-zero, else null
+- "confidence": float between 0.1 and 1.0"""
 
 _RISK_BATCH_RESPONSE_SCHEMA: Dict[str, Any] = {
     "type": "object",
@@ -337,7 +355,18 @@ def _build_batch_risk_prompt(
             if m.get("status") in ("available", "derived"):
                 any_avail = True
                 src = m.get("source") or "unknown"
-                lines.append(f"  - {parameter} = {m.get('value')} {m.get('unit') or ''} (source: {src})")
+                val = m.get("value")
+                if parameter == "zone_category":
+                    val_loc = get_zone_category_label(str(val), response_language)
+                    lines.append(f"  - {parameter} = {val_loc} (source: {src})")
+                elif parameter == "constraint_type":
+                    val_loc = get_constraint_type_label(str(val), response_language)
+                    lines.append(f"  - {parameter} = {val_loc} (source: {src})")
+                elif parameter == "zone_name":
+                    val_loc = get_zone_name_label(str(val), response_language)
+                    lines.append(f"  - {parameter} = {val_loc} (source: {src})")
+                else:
+                    lines.append(f"  - {parameter} = {val} {m.get('unit') or ''} (source: {src})")
             else:
                 lines.append(f"  - {parameter}: NOT AVAILABLE (status: {m.get('status')})")
         if not any_avail:
@@ -467,18 +496,43 @@ async def assess_points(
         measurements = item["measurements"]
 
         point_llm = llm_data_by_point.get(point_id)
-        pt_llm_avail = bool(point_llm)
+        # Robust key extraction: LLM may return 'reasoning' or 'explanation',
+        # 'llm_adjustment' or 'score_adjustment', 'adjustment_reason' or 'adjustment_reasoning'.
+        raw_reasoning = ""
+        raw_adj = 0
+        raw_adj_reason = None
+        raw_findings = []
 
-        if pt_llm_avail:
-            llm_adjustment = _clamp_adjustment(
-                point_llm.get("llm_adjustment", 0), baseline_score, constraint_floor
-            )
-            adjustment_reason = point_llm.get("adjustment_reason") if llm_adjustment != 0 else None
-            key_findings = [str(k) for k in (point_llm.get("key_findings") or [])][:6]
+        if point_llm and isinstance(point_llm, dict):
+            raw_reasoning = str(point_llm.get("reasoning") or point_llm.get("explanation") or "").strip()
+            raw_adj = point_llm.get("llm_adjustment") if point_llm.get("llm_adjustment") is not None else point_llm.get("score_adjustment", 0)
+            raw_adj_reason = point_llm.get("adjustment_reason") or point_llm.get("adjustment_reasoning") or None
+            raw_findings = point_llm.get("key_findings") or []
+
+        has_narrative = bool(raw_reasoning)
+
+        if has_narrative:
+            llm_adjustment = _clamp_adjustment(raw_adj, baseline_score, constraint_floor)
+            adjustment_reason = raw_adj_reason if llm_adjustment != 0 else None
+            if adjustment_reason:
+                adjustment_reason = sanitize_user_facing_text(adjustment_reason, response_language)
+            key_findings = [
+                sanitize_user_facing_text(str(k), response_language)
+                for k in raw_findings
+            ][:6]
+            reasoning = sanitize_user_facing_text(raw_reasoning, response_language)
         else:
             llm_adjustment = 0
             adjustment_reason = None
-            key_findings = _fallback_findings(base, measurements, agents_missing)
+            key_findings = get_fallback_findings(base, measurements, agents_missing, language=response_language)
+            reasoning = get_fallback_reasoning(
+                base,
+                measurements,
+                final_score=None,  # computed below
+                official_warnings=item["official_warnings"],
+                hard_rules=item["hard_rules_applied"],
+                language=response_language,
+            )
 
         proposed = baseline_score + llm_adjustment
         if constraint_floor is not None:
@@ -497,17 +551,17 @@ async def assess_points(
         if missing_critical and risk_level == "SAFE":
             final_score = max(final_score, 35)
             risk_level = "CAUTION"
-            key_findings.append("Wave or wind observations incomplete; minimum CAUTION advisory enforced.")
+            key_findings.append(get_fallback_incomplete_warning(language=response_language))
 
-        if pt_llm_avail and point_llm.get("reasoning"):
-            reasoning = point_llm.get("reasoning")
-        else:
-            reasoning = _fallback_reasoning(
+        # Re-evaluate fallback reasoning with the exact final_score if narrative was unavailable
+        if not has_narrative:
+            reasoning = get_fallback_reasoning(
                 base,
                 measurements,
                 final_score=final_score,
                 official_warnings=item["official_warnings"],
                 hard_rules=item["hard_rules_applied"],
+                language=response_language,
             )
 
         assessments.append({
@@ -527,10 +581,10 @@ async def assess_points(
             "confidence": _compute_confidence(
                 scoreable_count=base["scoreable_count"],
                 agents_missing=agents_missing,
-                llm_available=pt_llm_avail,
+                llm_available=has_narrative,
             ),
             "data_quality": _data_quality(measurements, agents_missing),
-            "llm_interpretation_unavailable": not pt_llm_avail,
+            "llm_interpretation_unavailable": not has_narrative,
         })
 
     return assessments
@@ -597,7 +651,18 @@ def _build_risk_prompt(**kw) -> str:
         if m.get("status") in ("available", "derived"):
             any_available = True
             src = m.get("source") or "unknown source"
-            lines.append(f"  - {parameter} = {m.get('value')} {m.get('unit') or ''} (source: {src})")
+            val = m.get("value")
+            if parameter == "zone_category":
+                val_loc = get_zone_category_label(str(val), kw["response_language"])
+                lines.append(f"  - {parameter} = {val_loc} (source: {src})")
+            elif parameter == "constraint_type":
+                val_loc = get_constraint_type_label(str(val), kw["response_language"])
+                lines.append(f"  - {parameter} = {val_loc} (source: {src})")
+            elif parameter == "zone_name":
+                val_loc = get_zone_name_label(str(val), kw["response_language"])
+                lines.append(f"  - {parameter} = {val_loc} (source: {src})")
+            else:
+                lines.append(f"  - {parameter} = {val} {m.get('unit') or ''} (source: {src})")
         else:
             lines.append(f"  - {parameter}: NOT AVAILABLE (status: {m.get('status')})")
 
@@ -614,74 +679,6 @@ def _build_risk_prompt(**kw) -> str:
     lines.append(f"Write the reasoning in this language code: {kw['response_language']}")
 
     return "\n".join(lines)
-
-
-def _fallback_reasoning(
-    base: Dict[str, Any],
-    measurements: Dict[str, Any],
-    final_score: Optional[int] = None,
-    official_warnings: Optional[List[Dict[str, Any]]] = None,
-    hard_rules: Optional[List[Dict[str, Any]]] = None,
-) -> str:
-    """Deterministic explanation when the LLM is unavailable.
-
-    Describes only the actual numbers and binding official warnings/constraints.
-    """
-    parts = []
-    for parameter, score in sorted(base["contributing"].items(), key=lambda kv: -kv[1])[:3]:
-        m = measurements.get(parameter, {})
-        parts.append(f"{parameter.replace('_', ' ')} at {m.get('value')} {m.get('unit') or ''}".strip())
-
-    local_conds = f"Local conditions: {', '.join(parts)}." if parts else "Local sensor readings unavailable."
-
-    effective_score = final_score if final_score is not None else base["baseline_score"]
-    level = baseline_mod.level_for_score(effective_score)
-
-    if official_warnings:
-        w = official_warnings[0]
-        auth = w.get("issuing_authority") or "Official Disaster Authority"
-        bulletin = f" (Bulletin: {w['bulletin_id']})" if w.get("bulletin_id") else ""
-        return (
-            f"Assessed as {level} (Score {effective_score}) due to active official {w.get('warning_type', 'marine warning')} "
-            f"from {auth}{bulletin}. {local_conds} This assessment is deterministic; narrative interpretation was unavailable."
-        )
-
-    if hard_rules:
-        r = hard_rules[0]
-        return (
-            f"Assessed as {level} (Score {effective_score}) due to safety constraint '{r.get('rule_id', 'rule')}'. "
-            f"{local_conds} This assessment is deterministic; narrative interpretation was unavailable."
-        )
-
-    if not parts:
-        return "No usable measurements were available to assess this point."
-
-    return (
-        f"Assessed as {level} based on {', '.join(parts)}. "
-        "This assessment is deterministic; narrative interpretation was unavailable."
-    )
-
-
-def _fallback_findings(
-    base: Dict[str, Any], measurements: Dict[str, Any], agents_missing: List[Dict[str, Any]]
-) -> List[str]:
-    findings = []
-
-    for parameter in base["risk_factors"][:3]:
-        m = measurements.get(parameter, {})
-        findings.append(f"{parameter.replace('_', ' ')}: {m.get('value')} {m.get('unit') or ''}".strip())
-
-    unavailable = [
-        p for p, m in measurements.items()
-        if isinstance(m, dict) and m.get("status") in ("missing", "not_mapped")
-    ]
-    if unavailable:
-        findings.append(f"Unavailable and not estimated: {', '.join(sorted(unavailable)[:3])}")
-
-    for a in agents_missing[:2]:
-        findings.append(f"{a['agent']} data could not be retrieved")
-
-    return findings or ["Insufficient evidence for detailed findings"]
 
 
 def _data_quality(

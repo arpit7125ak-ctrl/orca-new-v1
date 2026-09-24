@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   User, 
   Settings, 
@@ -20,6 +21,7 @@ export default function ProfileSettingsPage({
   selectedLang,
   setSelectedLang,
 }) {
+  const { t } = useTranslation('ui');
   const [name, setName] = useState('');
   const [role, setRole] = useState('fisherman');
   const [homePort, setHomePort] = useState('');
@@ -31,7 +33,7 @@ export default function ProfileSettingsPage({
   const handleDownloadOffline = () => {
     setOfflineDownloaded(true);
     setTimeout(() => {
-      alert('Offline Boundary Layers (India EEZ, MPAs, 12 NM Territorial Seas) cached to device storage.');
+      alert(t('profile.offlineAlert', { defaultValue: 'Offline Boundary Layers (India EEZ, MPAs, 12 NM Territorial Seas) cached to device storage.' }));
     }, 400);
   };
 
@@ -50,15 +52,15 @@ export default function ProfileSettingsPage({
           <div className="flex items-center space-x-2">
             <User className="w-6 h-6 text-cyan-400" />
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              Page 14: Profile & Operating Settings
+              Page 14: {t('profile.pageTitle', { defaultValue: 'Profile & Operating Settings' })}
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Configure your maritime role, default vessel profile, accessibility preferences, and offline coastal boundary cache.
+            {t('profile.pageSubtitle', { defaultValue: 'Configure your maritime role, default vessel profile, accessibility preferences, and offline coastal boundary cache.' })}
           </p>
         </div>
         <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-950 px-3 py-1.5 rounded-xl border border-cyan-800 w-fit">
-          Section 99.12 User Profile
+          {t('profile.sectionBadge', { defaultValue: 'Section 99.12 User Profile' })}
         </span>
       </div>
 
@@ -68,31 +70,31 @@ export default function ProfileSettingsPage({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-              Operator / Fisher Name
+              {t('profile.operatorName', { defaultValue: 'Operator / Fisher Name' })}
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. K. R. Murugan"
+              placeholder={t('profile.namePlaceholder', { defaultValue: 'e.g. K. R. Murugan' })}
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
             />
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-              System Role Classification
+              {t('profile.systemRole', { defaultValue: 'System Role Classification' })}
             </label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
             >
-              <option value="fisherman">🎣 Traditional / Coastal Fisherman</option>
-              <option value="coastal_authority">⚓ Coastal Port Authority / MMD</option>
-              <option value="disaster_management">🚨 Disaster Management (NDRF/SDMA)</option>
-              <option value="maritime_operator">🚢 Commercial Maritime Operator</option>
-              <option value="researcher">🔬 Oceanographic Researcher</option>
+              <option value="fisherman">🎣 {t('profile.roleFisherman', { defaultValue: 'Traditional / Coastal Fisherman' })}</option>
+              <option value="coastal_authority">⚓ {t('profile.roleCoastalAuthority', { defaultValue: 'Coastal Port Authority / MMD' })}</option>
+              <option value="disaster_management">🚨 {t('profile.roleDisasterManagement', { defaultValue: 'Disaster Management (NDRF/SDMA)' })}</option>
+              <option value="maritime_operator">🚢 {t('profile.roleMaritimeOperator', { defaultValue: 'Commercial Maritime Operator' })}</option>
+              <option value="researcher">🔬 {t('profile.roleResearcher', { defaultValue: 'Oceanographic Researcher' })}</option>
             </select>
           </div>
         </div>
@@ -101,7 +103,7 @@ export default function ProfileSettingsPage({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-              Default Vessel Profile
+              {t('profile.defaultVessel', { defaultValue: 'Default Vessel Profile' })}
             </label>
             <select
               value={defaultVessel}
@@ -110,7 +112,7 @@ export default function ProfileSettingsPage({
             >
               {VESSEL_TYPES.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.label}
+                  {t(`vessels.${v.id}`, { defaultValue: v.label })}
                 </option>
               ))}
             </select>
@@ -118,7 +120,7 @@ export default function ProfileSettingsPage({
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-              Default Mission Activity
+              {t('profile.defaultActivity', { defaultValue: 'Default Mission Activity' })}
             </label>
             <select
               value={defaultActivity}
@@ -127,7 +129,7 @@ export default function ProfileSettingsPage({
             >
               {ACTIVITIES.map((act) => (
                 <option key={act.id} value={act.id}>
-                  {act.label}
+                  {t(`activities.${act.id}`, { defaultValue: act.label })}
                 </option>
               ))}
             </select>
@@ -137,7 +139,7 @@ export default function ProfileSettingsPage({
         {/* Home Coastal Base */}
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-            Home Port / Landing Center
+            {t('profile.homePort', { defaultValue: 'Home Port / Landing Center' })}
           </label>
           <div className="relative">
             <MapPin className="w-4 h-4 text-cyan-400 absolute left-3 top-3 pointer-events-none" />
@@ -145,7 +147,7 @@ export default function ProfileSettingsPage({
               type="text"
               value={homePort}
               onChange={(e) => setHomePort(e.target.value)}
-              placeholder="e.g. Kochi Fisheries Harbor, Kerala"
+              placeholder={t('profile.homePortPlaceholder', { defaultValue: 'e.g. Kochi Fisheries Harbor, Kerala' })}
               className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
             />
           </div>
@@ -154,15 +156,15 @@ export default function ProfileSettingsPage({
         {/* Accessibility & High Contrast (Sunlight Mode) */}
         <div className="pt-4 border-t border-slate-800 space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Display & Accessibility Preferences
+            {t('profile.displayPreferences', { defaultValue: 'Display & Accessibility Preferences' })}
           </h3>
 
           <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-950 border border-slate-800">
             <div className="flex items-center space-x-3">
               <Sun className="w-5 h-5 text-amber-400" />
               <div>
-                <div className="text-xs font-bold text-white">Sunlight High-Contrast Deck Mode</div>
-                <div className="text-[11px] text-slate-400">Maximizes glare visibility on boat decks under bright sunlight</div>
+                <div className="text-xs font-bold text-white">{t('profile.sunlightModeTitle', { defaultValue: 'Sunlight High-Contrast Deck Mode' })}</div>
+                <div className="text-[11px] text-slate-400">{t('profile.sunlightModeDesc', { defaultValue: 'Maximizes glare visibility on boat decks under bright sunlight' })}</div>
               </div>
             </div>
             <button
@@ -174,7 +176,7 @@ export default function ProfileSettingsPage({
                   : 'bg-slate-800 text-slate-300 border border-slate-700'
               }`}
             >
-              {sunlightMode ? 'ENABLED' : 'DISABLED'}
+              {sunlightMode ? t('profile.enabled', { defaultValue: 'ENABLED' }) : t('profile.disabled', { defaultValue: 'DISABLED' })}
             </button>
           </div>
         </div>
@@ -182,13 +184,13 @@ export default function ProfileSettingsPage({
         {/* Offline Cache Manager (§85) */}
         <div className="pt-4 border-t border-slate-800 space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Offline Resiliency (§85)
+            {t('profile.offlineResiliency', { defaultValue: 'Offline Resiliency (§85)' })}
           </h3>
 
           <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="text-xs font-bold text-white">Download Maritime Boundaries for Offline At-Sea Use</div>
-              <div className="text-[11px] text-slate-400">Saves EEZ, MPAs, and 12 NM territorial limits locally to stay protected with zero cell signal</div>
+              <div className="text-xs font-bold text-white">{t('profile.downloadBoundariesTitle', { defaultValue: 'Download Maritime Boundaries for Offline At-Sea Use' })}</div>
+              <div className="text-[11px] text-slate-400">{t('profile.downloadBoundariesDesc', { defaultValue: 'Saves EEZ, MPAs, and 12 NM territorial limits locally to stay protected with zero cell signal' })}</div>
             </div>
             <button
               type="button"
@@ -200,7 +202,7 @@ export default function ProfileSettingsPage({
               }`}
             >
               <Download className="w-3.5 h-3.5" />
-              <span>{offlineDownloaded ? '✓ Boundaries Cached' : 'Download Layers'}</span>
+              <span>{offlineDownloaded ? t('profile.boundariesCached', { defaultValue: '✓ Boundaries Cached' }) : t('profile.downloadLayers', { defaultValue: 'Download Layers' })}</span>
             </button>
           </div>
         </div>
@@ -211,7 +213,7 @@ export default function ProfileSettingsPage({
             type="submit"
             className="w-full py-3.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-cyan-500/20 cursor-pointer"
           >
-            {saveToast ? '✓ Preferences Saved Successfully!' : 'Save Operator Profile'}
+            {saveToast ? t('profile.savedSuccess', { defaultValue: '✓ Preferences Saved Successfully!' }) : t('profile.saveProfile', { defaultValue: 'Save Operator Profile' })}
           </button>
         </div>
 

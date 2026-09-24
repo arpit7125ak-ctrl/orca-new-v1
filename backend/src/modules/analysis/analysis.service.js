@@ -286,15 +286,28 @@ async function applyProgress(analysisId, message) {
 
   const isTerminalStage = ['completed', 'partial', 'failed', 'skipped'].includes(message.status);
 
+  // Per-agent timing: data agents (weather, ocean, etc.) report started_at and
+  // duration_ms inside message.metadata (compliant with ProgressMessage.json) or
+  // message.data. Use them so we capture the true perf_counter elapsed time.
+  const msgStartedAt = message.metadata?.started_at || message.data?.started_at || message.started_at || null;
+  const msgCompletedAt = message.metadata?.completed_at || message.data?.completed_at || message.completed_at || null;
+  const rawDuration = message.metadata?.duration_ms ?? message.data?.duration_ms ?? message.duration_ms;
+  const msgDurationMs = (typeof rawDuration === 'number' && !isNaN(rawDuration))
+    ? rawDuration
+    : null;
+
   const entry = {
     stage: agent,
     selected: message.status !== 'skipped',
     selection_reason: message.selection_reason || previous?.selection_reason || null,
     status: message.status,
     status_code: message.status_code ?? null,
-    // Preserve the original start so duration stays truthful across updates.
-    started_at: previous?.started_at || message.timestamp || nowIso(),
-    completed_at: isTerminalStage ? (message.timestamp || nowIso()) : null,
+    // If the agent sent its own started_at, use it. Otherwise preserve the
+    // existing started_at (set on the "running" message) or fall back to now.
+    started_at: msgStartedAt || previous?.started_at || message.timestamp || nowIso(),
+    completed_at: isTerminalStage
+      ? (msgCompletedAt || message.timestamp || nowIso())
+      : null,
     duration_ms: null,
     retry_count: errorInfo?.retry_count ?? previous?.retry_count ?? 0,
     error: errorInfo?.message || null,
@@ -302,10 +315,14 @@ async function applyProgress(analysisId, message) {
     summary: null,
   };
 
-  // Only compute a duration once the stage has actually finished. An unfinished
-  // stage keeps duration null - never a tidy 0.
-  if (isTerminalStage && entry.started_at) {
-    entry.duration_ms = new Date(entry.completed_at).getTime() - new Date(entry.started_at).getTime();
+  // Use the agent-reported duration when available (most accurate - measured
+  // with perf_counter inside the agent). Fall back to timestamp arithmetic.
+  if (isTerminalStage) {
+    if (msgDurationMs !== null) {
+      entry.duration_ms = msgDurationMs;
+    } else if (entry.started_at && entry.completed_at) {
+      entry.duration_ms = new Date(entry.completed_at).getTime() - new Date(entry.started_at).getTime();
+    }
   }
 
   if (existingIndex >= 0) analysis.execution_trace[existingIndex] = entry;

@@ -1,14 +1,13 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   CheckCircle2, 
   Clock, 
-  Cpu, 
-  Workflow, 
-  ShieldCheck, 
-  AlertCircle 
+  Workflow
 } from 'lucide-react';
 
 export default function AgenticReasoning({ analysis }) {
+  const { t } = useTranslation('ui');
   if (!analysis) return null;
 
   const plan = analysis.plan || {};
@@ -17,49 +16,61 @@ export default function AgenticReasoning({ analysis }) {
   const confidence = Math.round((plan.language_detection?.detection_confidence || 1) * 100);
 
   // Real selected agents from plan (may be objects [{agent, reason}] or strings)
-  const rawAgents = plan.selected_agents || ['weather', 'ocean', 'gis', 'risk', 'decision'];
+  const rawAgents = Array.isArray(plan.selected_agents) ? plan.selected_agents : [];
   const selectedAgentsList = rawAgents.map((a) => {
     if (typeof a === 'string') {
       return { agent: a, reason: null };
     }
     return {
       agent: a?.agent || 'specialist',
-      reason: a?.reason || (a?.mandatory_by_policy ? 'Mandatory domain policy' : null),
+      reason: a?.reason || (a?.mandatory_by_policy ? t('reasoning.mandatoryPolicy') : null),
     };
   });
 
   const agentDescriptions = {
-    backend_validation: 'Structural JSON Schema contract enforcement (Section 7)',
-    planner: 'Autonomous NLP query interpretation and location snapping (Section 8)',
-    weather: 'IMD / Open-Meteo numerical weather prediction, wind gusts, and precipitation models',
-    ocean: 'Copernicus / INCOIS wave, primary swell period, and ocean surface current vectors',
-    tide: 'Astronomical harmonic tidal stream calculations (M2, S2, K1, O1) and SOI/INCOIS tidal curves',
-    cyclone: 'Regional Specialized Meteorological Centre (RSMC) & NDMA SACHET cyclonic disturbance screening',
-    ecosystem: 'Copernicus Marine CMEMS BGC chlorophyll-a, dissolved oxygen, and ISRO MOSDAC OCM-3 model',
-    gis: 'Spatial geofence evaluation against IMBL, EEZ, and Marine Protected Areas',
-    pfz: 'INCOIS Potential Fishing Zone (PFZ) WFS satellite advisories and sea surface thermal fronts',
-    risk: 'Deterministic constraint floor enforcement and batched spatial multi-quadrant risk synthesis',
-    decision: 'Operational action directive generation and preferred quadrant selection',
+    backend_validation: t('reasoning.descBackendValidation'),
+    ai_service_handoff: t('reasoning.descAiHandoff', 'AI Service handoff & dispatch'),
+    planner: t('reasoning.descPlanner'),
+    weather: t('reasoning.descWeather'),
+    ocean: t('reasoning.descOcean'),
+    tide: t('reasoning.descTide'),
+    cyclone: t('reasoning.descCyclone'),
+    ecosystem: t('reasoning.descEcosystem'),
+    gis: t('reasoning.descGis'),
+    pfz: t('reasoning.descPfz'),
+    risk: t('reasoning.descRisk'),
+    decision: t('reasoning.descDecision'),
   };
 
   // Real execution trace from backend
-  const rawTrace = analysis.execution_trace || [];
-  const trace = rawTrace.length > 0 ? rawTrace.map((t, idx) => ({
-    agent: t.agent,
-    step: t.selection_reason || agentDescriptions[t.agent] || `Specialist Agent: ${t.agent}`,
-    duration_ms: t.duration_ms ?? 25,
-    status: t.status || 'completed',
-    timestamp: t.completed_at ? new Date(t.completed_at).toLocaleTimeString() : null,
-  })) : [
-    { agent: 'backend_validation', step: 'Structural JSON Schema contract validation', duration_ms: 15, status: 'completed' },
-    { agent: 'planner', step: 'Autonomous entity normalization & coordinate snapping', duration_ms: 280, status: 'completed' },
-    { agent: 'weather', step: 'IMD weather model data retrieval', duration_ms: 120, status: 'completed' },
-    { agent: 'ocean', step: 'INCOIS wave & swell grid evaluation', duration_ms: 140, status: 'completed' },
-    { agent: 'risk', step: 'Safety floor checks & risk matrix generation', duration_ms: 45, status: 'completed' },
-    { agent: 'decision', step: 'Advisory synthesis & harbor recommendations', duration_ms: 320, status: 'completed' },
-  ];
+  const rawTrace = Array.isArray(analysis.execution_trace) ? analysis.execution_trace : [];
+  const trace = rawTrace.map((tr) => {
+    const agent = tr.agent || tr.stage;
+    return {
+      agent,
+      step: tr.selection_reason || agentDescriptions[agent] || (agent ? `${t('reasoning.specialistPrefix', 'Specialist')}: ${agent}` : t('reasoning.pipelineStep', 'Pipeline Step')),
+      duration_ms: (typeof tr.duration_ms === 'number' && !isNaN(tr.duration_ms)) ? tr.duration_ms : null,
+      status: tr.status || 'completed',
+      timestamp: tr.completed_at ? new Date(tr.completed_at).toLocaleTimeString() : null,
+    };
+  });
 
-  const totalDuration = trace.reduce((acc, curr) => acc + (curr.duration_ms || 0), 0);
+  const totalDuration = (() => {
+    // True end-to-end latency: earliest started_at to latest completed_at
+    // across the entire trace. This reflects wall-clock pipeline time rather
+    // than summing sequential durations (which excluded parallel agents).
+    const starts = rawTrace
+      .map((tr) => tr.started_at ? new Date(tr.started_at).getTime() : null)
+      .filter((v) => v !== null && !isNaN(v));
+    const ends = rawTrace
+      .map((tr) => tr.completed_at ? new Date(tr.completed_at).getTime() : null)
+      .filter((v) => v !== null && !isNaN(v));
+    if (starts.length > 0 && ends.length > 0) {
+      return Math.max(...ends) - Math.min(...starts);
+    }
+    // Fallback: sum individual durations
+    return trace.reduce((acc, curr) => acc + (curr.duration_ms || 0), 0);
+  })();
   const samplingMode = plan.sampling?.mode || plan.sampling_mode || '9-Point Local Grid';
 
   return (
@@ -68,30 +79,30 @@ export default function AgenticReasoning({ analysis }) {
         <div>
           <div className="flex items-center space-x-2">
             <Workflow className="w-5 h-5 text-purple-400" />
-            <h3 className="text-base font-bold text-white">Section 79: Visible Agentic Reasoning</h3>
+            <h3 className="text-base font-bold text-white">{t('reasoning.title')}</h3>
           </div>
           <p className="text-xs text-slate-400">
-            Real multi-agent execution pipeline trace with live duration telemetry
+            {t('reasoning.subtitle')}
           </p>
         </div>
         <div className="flex items-center space-x-2 text-xs font-mono text-purple-300 bg-purple-950/60 px-2.5 py-1 rounded-full border border-purple-800">
           <Clock className="w-3.5 h-3.5" />
-          <span>Pipeline Latency: {totalDuration}ms</span>
+          <span>{t('reasoning.pipelineLatency', { ms: totalDuration })}</span>
         </div>
       </div>
 
       {/* Orchestrator Plan Metadata */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
         <div>
-          <span className="text-[10px] text-slate-400 uppercase font-semibold block">Mission Intent</span>
+          <span className="text-[10px] text-slate-400 uppercase font-semibold block">{t('reasoning.missionIntent')}</span>
           <span className="text-xs font-bold text-cyan-400 capitalize">{String(intent).replace(/_/g, ' ')}</span>
         </div>
         <div>
-          <span className="text-[10px] text-slate-400 uppercase font-semibold block">Language Detection</span>
-          <span className="text-xs font-bold text-white uppercase">{detectedLanguage} ({confidence}% confidence)</span>
+          <span className="text-[10px] text-slate-400 uppercase font-semibold block">{t('reasoning.languageDetection')}</span>
+          <span className="text-xs font-bold text-white uppercase">{detectedLanguage} ({confidence}% {t('reasoning.confidence')})</span>
         </div>
         <div>
-          <span className="text-[10px] text-slate-400 uppercase font-semibold block">Grid Sampling Mode</span>
+          <span className="text-[10px] text-slate-400 uppercase font-semibold block">{t('reasoning.gridSamplingMode')}</span>
           <span className="text-xs font-bold text-purple-300 capitalize">{String(samplingMode).replace(/_/g, ' ')}</span>
         </div>
       </div>
@@ -100,48 +111,69 @@ export default function AgenticReasoning({ analysis }) {
       <div>
         <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2.5 flex items-center space-x-1.5">
           <CheckCircle2 className="w-3.5 h-3.5" />
-          <span>Activated Specialist Agents ({selectedAgentsList.length})</span>
+          <span>{t('reasoning.activatedAgents', { count: selectedAgentsList.length })}</span>
         </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {selectedAgentsList.map((item, idx) => {
-            const agentName = item.agent;
-            const description = agentDescriptions[agentName] || item.reason || 'Specialized marine safety evaluation module';
-            return (
-              <div key={idx} className="bg-slate-950/50 border border-emerald-900/30 p-2.5 rounded-xl text-xs space-y-0.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-emerald-300 capitalize">{String(agentName).replace(/_/g, ' ')} Agent</span>
-                  <span className="text-[9px] font-semibold bg-emerald-950 text-emerald-400 px-1.5 py-0.2 rounded border border-emerald-800">
-                    Executed
-                  </span>
+        {selectedAgentsList.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {selectedAgentsList.map((item, idx) => {
+              const agentName = item.agent;
+              const description = agentDescriptions[agentName] || item.reason || t('reasoning.defaultSpecialistDesc');
+              return (
+                <div key={idx} className="bg-slate-950/50 border border-emerald-900/30 p-2.5 rounded-xl text-xs space-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-emerald-300 capitalize">{String(agentName).replace(/_/g, ' ')} {t('reasoning.agentSuffix')}</span>
+                    <span className="text-[9px] font-semibold bg-emerald-950 text-emerald-400 px-1.5 py-0.2 rounded border border-emerald-800">
+                      {t('reasoning.executed')}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 truncate" title={description}>{description}</p>
                 </div>
-                <p className="text-[10px] text-slate-400 truncate" title={description}>{description}</p>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="p-3 bg-slate-950/40 rounded-xl border border-slate-800 text-slate-500 text-xs text-center">
+            {t('reasoning.noAgentsSelected', 'No specialist agents required for this query.')}
+          </div>
+        )}
       </div>
 
       {/* Real Execution Trace Log */}
       <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800/80">
         <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center space-x-1.5">
           <Clock className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Chronological Multi-Agent Step Trace</span>
+          <span>{t('reasoning.chronologicalTrace')}</span>
         </h4>
-        <div className="space-y-2">
-          {trace.map((step, idx) => (
-            <div key={idx} className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-slate-900/60 border border-slate-800/60">
-              <div className="flex items-center space-x-2 truncate mr-2">
-                <span className="text-[10px] font-mono text-slate-500">0{idx + 1}</span>
-                <span className="font-medium text-slate-200 truncate">{step.step}</span>
-                <span className="text-[10px] font-mono text-cyan-400/80 hidden sm:inline">({step.agent})</span>
-              </div>
-              <div className="flex items-center space-x-3 flex-shrink-0">
-                <span className="font-mono text-[11px] text-slate-400">{step.duration_ms}ms</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              </div>
-            </div>
-          ))}
-        </div>
+        {trace.length > 0 ? (
+          <div className="space-y-2">
+            {trace.map((step, idx) => {
+              const isCompleted = step.status === 'completed' || step.status === 200 || step.status === 202;
+              const isFailed = step.status === 'failed' || step.status === 'error';
+              const dotColor = isCompleted ? 'bg-emerald-400' : isFailed ? 'bg-rose-400' : 'bg-amber-400';
+              const durationLabel = step.duration_ms !== null 
+                ? (step.duration_ms >= 1000 ? `${(step.duration_ms / 1000).toFixed(2)}s` : `${step.duration_ms}ms`)
+                : '—';
+
+              return (
+                <div key={idx} className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-slate-900/60 border border-slate-800/60">
+                  <div className="flex items-center space-x-2 truncate mr-2">
+                    <span className="text-[10px] font-mono text-slate-500">{String(idx + 1).padStart(2, '0')}</span>
+                    <span className="font-medium text-slate-200 truncate">{step.step}</span>
+                    <span className="text-[10px] font-mono text-cyan-400/80 hidden sm:inline">({step.agent})</span>
+                  </div>
+                  <div className="flex items-center space-x-3 flex-shrink-0">
+                    <span className="font-mono text-[11px] text-slate-400">{durationLabel}</span>
+                    <span className={`w-2 h-2 rounded-full ${dotColor}`} title={step.status} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="p-3 bg-slate-950/40 rounded-xl border border-slate-800 text-slate-500 text-xs text-center">
+            {t('reasoning.traceNotAvailable', 'Execution trace not recorded for this analysis.')}
+          </div>
+        )}
       </div>
     </div>
   );

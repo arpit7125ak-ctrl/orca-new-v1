@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   MapPin, 
   Compass, 
@@ -13,14 +14,18 @@ import {
   Layers, 
   Sparkles, 
   LocateFixed, 
-  CheckCircle2 
+  CheckCircle2,
+  Crosshair,
+  Loader2
 } from 'lucide-react';
 import L from 'leaflet';
 import { createSpeechRecognizer } from '../utils/speech';
-import { getNearestCoastalPlace, resolvePlaceFromCoordinates } from '../utils/geo';
+import { getNearestCoastalPlace, resolvePlaceFromCoordinates, resolveCoordinatesFromPlace } from '../utils/geo';
 import { ACTIVITIES, VESSEL_TYPES, normalizeActivity, normalizeVesselType } from '../utils/maritimeConfig';
 
 export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultValues = {} }) {
+  const { t } = useTranslation('ui');
+
   // Input fields matching Image 2 & Image 3
   const [locationName, setLocationName] = useState(defaultValues.place_name || '');
   const [lat, setLat] = useState(defaultValues.lat ? String(defaultValues.lat) : '');
@@ -65,7 +70,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
 
   const toggleVoice = () => {
     if (!speechRecognizer) {
-      alert('Speech recognition is not supported in this browser.');
+      alert(t('common.voiceNotSupported'));
       return;
     }
     if (isRecording) {
@@ -215,7 +220,47 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
     } catch {}
   };
 
-  // Update map marker when lat/lon input changes manually
+  const [isResolvingCoords, setIsResolvingCoords] = useState(false);
+  const [isResolvingPlace, setIsResolvingPlace] = useState(false);
+
+  // 1. Forward geocode: place name -> coordinates
+  const handleResolveCoordsFromPlace = async () => {
+    if (!locationName || !locationName.trim()) return;
+    setIsResolvingCoords(true);
+    try {
+      const result = await resolveCoordinatesFromPlace(locationName);
+      if (result) {
+        handleLocationUpdate(result.lat, result.lon, true);
+        if (result.name) setLocationName(result.name);
+      } else {
+        alert(t('home.placeNotFound', 'Location not found in maritime database. You can pin it on the map or enter coordinates.'));
+      }
+    } catch (err) {
+      console.warn('Forward geocoding error:', err);
+    } finally {
+      setIsResolvingCoords(false);
+    }
+  };
+
+  // 2. Reverse geocode: coordinates -> place name
+  const handleResolvePlaceFromCoords = async () => {
+    const pL = parseFloat(lat);
+    const pLon = parseFloat(lon);
+    if (isNaN(pL) || isNaN(pLon)) return;
+    setIsResolvingPlace(true);
+    try {
+      const immediate = getNearestCoastalPlace(pL, pLon);
+      setLocationName(immediate);
+      const enriched = await resolvePlaceFromCoordinates(pL, pLon);
+      if (enriched) setLocationName(enriched);
+      if (markerRef.current) markerRef.current.setLatLng([pL, pLon]);
+      if (mapInstanceRef.current) mapInstanceRef.current.panTo([pL, pLon]);
+    } catch (err) {
+      console.warn('Reverse geocoding error:', err);
+    } finally {
+      setIsResolvingPlace(false);
+    }
+  };
   useEffect(() => {
     const pLat = parseFloat(lat);
     const pLon = parseFloat(lon);
@@ -228,7 +273,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
   // "Use my location" button
   const handleUseMyLocation = () => {
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser.');
+      alert(t('common.geolocationNotSupported'));
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -241,7 +286,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
         handleLocationUpdate(myLat, myLon, true);
       },
       (err) => {
-        alert('Could not retrieve GPS location: ' + err.message);
+        alert(t('common.gpsError', { message: err.message }));
       }
     );
   };
@@ -319,21 +364,21 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
             <div className="flex items-center space-x-2">
               <Compass className="w-6 h-6 text-cyan-400" />
               <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                Page 2: ORCA Maritime Mission Setup
+                {t('input.pageTitle')}
               </h2>
             </div>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Specify your target coastal location, mission activity, and vessel to trigger autonomous multi-agent evaluation
+              {t('input.subtitle')}
             </p>
           </div>
           <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-950 px-3 py-1.5 rounded-lg border border-cyan-800 w-fit">
-            Interactive GIS Interface
+            {t('input.badgeGis')}
           </span>
         </div>
 
         {/* Preset Location Pills */}
         <div className="mt-4 pt-4 border-t border-slate-800 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-slate-400 mr-1">Quick Scenarios:</span>
+          <span className="text-xs font-semibold text-slate-400 mr-1">{t('home.quickScenarios')}:</span>
           {presets.map((p, idx) => (
             <button
               key={idx}
@@ -348,41 +393,61 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
         </div>
       </div>
 
-      {/* Split Screen Form + Map Layout (Image 3: MAP on left/right + Location inputs) */}
+      {/* Split Screen Form + Map Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
-        {/* Left 7 Columns: Structured Input Form (Matching Image 2) */}
+        {/* Left Structured Input Form */}
         <div className="lg:col-span-6 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-md flex flex-col justify-between space-y-5">
           <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
             <h3 className="text-sm font-bold uppercase tracking-wider text-white flex items-center space-x-2">
               <Ship className="w-4 h-4 text-cyan-400" />
-              <span>Operational Parameters</span>
+              <span>{t('input.operationalParameters')}</span>
             </h3>
-            <span className="text-[11px] font-semibold text-slate-400">Step 2 of 4</span>
+            <span className="text-[11px] font-semibold text-slate-400">{t('input.stepCounter')}</span>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* 1. Location Input with Location Buttons */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Target Coastal Location
+                {t('input.locationSection')}
               </label>
-              <div className="relative">
-                <MapPin className="w-4 h-4 text-cyan-400 absolute left-3.5 top-3 pointer-events-none" />
+              <div className="relative flex items-center">
+                <MapPin className="w-4 h-4 text-cyan-400 absolute left-3.5 pointer-events-none" />
                 <input
                   type="text"
                   value={locationName}
                   onChange={(e) => setLocationName(e.target.value)}
-                  placeholder="e.g. Kochi, Mumbai, Veraval, Puri"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleResolveCoordsFromPlace();
+                    }
+                  }}
+                  placeholder={t('input.locationPlaceholder')}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-28 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
+                <button
+                  type="button"
+                  onClick={handleResolveCoordsFromPlace}
+                  disabled={isResolvingCoords || !locationName.trim()}
+                  title="Resolve place name to coordinates"
+                  className="absolute right-2 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-sm cursor-pointer"
+                >
+                  {isResolvingCoords ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Crosshair className="w-3.5 h-3.5" />
+                  )}
+                  <span>{t('home.getCoords', 'Get Coords')}</span>
+                </button>
               </div>
 
-              {/* Coordinates Inputs (Auto-filled by clicking map, or editable directly) */}
+              {/* Coordinates Inputs */}
               <div className="grid grid-cols-2 gap-2 mt-2.5">
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-400 mb-1">
-                    Latitude (°N)
+                    {t('input.lat')} (°N)
                   </label>
                   <input
                     type="number"
@@ -404,7 +469,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-400 mb-1">
-                    Longitude (°E)
+                    {t('input.lon')} (°E)
                   </label>
                   <input
                     type="number"
@@ -430,16 +495,30 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
               <div className="mt-2.5 flex flex-wrap items-center gap-2">
                 <button
                   type="button"
+                  onClick={handleResolvePlaceFromCoords}
+                  disabled={isResolvingPlace || !lat || !lon}
+                  className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center space-x-1.5 transition-colors cursor-pointer"
+                >
+                  {isResolvingPlace ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+                  ) : (
+                    <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                  )}
+                  <span>{t('home.getPlace', 'Get Place Name')}</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleUseMyLocation}
                   className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center space-x-1.5 transition-colors cursor-pointer"
                 >
                   <LocateFixed className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Use my GPS location</span>
+                  <span>{t('input.useMyGps')}</span>
                 </button>
 
                 <div className="text-[11px] text-cyan-400 font-medium flex items-center space-x-1.5 bg-cyan-950/60 border border-cyan-800/80 px-2.5 py-1.5 rounded-lg">
                   <Navigation className="w-3 h-3 text-cyan-400 animate-pulse" />
-                  <span>Click anywhere on map to auto-fill</span>
+                  <span>{t('input.clickToAutoFill')}</span>
                 </div>
               </div>
             </div>
@@ -448,7 +527,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                  Maritime Activity
+                  {t('input.activity')}
                 </label>
                 <div className="relative">
                   <Fish className="w-4 h-4 text-cyan-400 absolute left-3.5 top-3 pointer-events-none" />
@@ -457,10 +536,10 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                     onChange={(e) => setActivity(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-8 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
-                    <option value="">-- Select Maritime Activity (Optional) --</option>
+                    <option value="">{t('home.selectActivityOptional')}</option>
                     {ACTIVITIES.map((act) => (
                       <option key={act.id} value={act.id}>
-                        {act.label}
+                        {t(`activities.${act.id}`, { defaultValue: act.label })}
                       </option>
                     ))}
                   </select>
@@ -469,7 +548,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                  Vessel Classification
+                  {t('input.vesselType')}
                 </label>
                 <div className="relative">
                   <Ship className="w-4 h-4 text-cyan-400 absolute left-3.5 top-3 pointer-events-none" />
@@ -478,10 +557,10 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                     onChange={(e) => setVesselType(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-8 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
-                    <option value="">-- Select Vessel Classification (Optional) --</option>
+                    <option value="">{t('home.selectVesselOptional')}</option>
                     {VESSEL_TYPES.map((v) => (
                       <option key={v.id} value={v.id}>
-                        {v.label}
+                        {t(`vessels.${v.id}`, { defaultValue: v.label })}
                       </option>
                     ))}
                   </select>
@@ -493,7 +572,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                  Assessment Date
+                  {t('input.date')}
                 </label>
                 <div className="relative">
                   <Calendar className="w-4 h-4 text-cyan-400 absolute left-3.5 top-3 pointer-events-none" />
@@ -502,17 +581,17 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                     onChange={(e) => setDateOption(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-8 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
-                    <option value="">-- Select Date (Optional) --</option>
-                    <option value="today">📅 Today (Immediate)</option>
-                    <option value="tomorrow">📅 Tomorrow (Forecast)</option>
-                    <option value="day_after">📅 Day After Tomorrow</option>
+                    <option value="">{t('home.selectDateOptional')}</option>
+                    <option value="today">📅 {t('input.today')}</option>
+                    <option value="tomorrow">📅 {t('input.tomorrow')}</option>
+                    <option value="day_after">📅 {t('home.dayAfter')}</option>
                   </select>
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                  Operational Window
+                  {t('input.timeRange')}
                 </label>
                 <div className="relative">
                   <Clock className="w-4 h-4 text-cyan-400 absolute left-3.5 top-3 pointer-events-none" />
@@ -521,11 +600,11 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                     onChange={(e) => setTimeRange(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-8 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
-                    <option value="">-- Select Operational Window (Optional) --</option>
-                    <option value="morning">🌅 Morning (04:00 - 10:00)</option>
-                    <option value="afternoon">☀️ Afternoon (12:00 - 16:00)</option>
-                    <option value="evening">🌇 Evening (16:00 - 20:00)</option>
-                    <option value="night">🌙 Night (20:00 - 04:00)</option>
+                    <option value="">{t('home.selectWindowOptional')}</option>
+                    <option value="morning">🌅 {t('input.morning')}</option>
+                    <option value="afternoon">☀️ {t('input.afternoon')}</option>
+                    <option value="evening">🌇 {t('input.evening')}</option>
+                    <option value="night">🌙 {t('home.night')}</option>
                   </select>
                 </div>
               </div>
@@ -535,16 +614,16 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                  Mission Statement (Voice or Text)
+                  {t('input.customQuery')}
                 </label>
-                <span className="text-[10px] text-cyan-400 font-mono">NLP Interpreter Active</span>
+                <span className="text-[10px] text-cyan-400 font-mono">{t('input.nlpActive')}</span>
               </div>
               <div className="relative">
                 <input
                   type="text"
                   value={customQuery}
                   onChange={(e) => setCustomQuery(e.target.value)}
-                  placeholder="e.g. Can we go fishing 15km off Kochi tomorrow morning?"
+                  placeholder={t('input.customQueryPlaceholder')}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-3.5 pr-12 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
                 <button
@@ -555,14 +634,14 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                       ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
                       : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
                   }`}
-                  title="Speak query"
+                  title={t('input.voiceInput')}
                 >
                   {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            {/* Big ANALYZE Button (Matching Mockup) */}
+            {/* Big ANALYZE Button */}
             <div className="pt-2">
               <button
                 type="submit"
@@ -570,23 +649,23 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                 className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-sm uppercase tracking-wider flex items-center justify-center space-x-2 transition-all shadow-xl shadow-cyan-500/20 cursor-pointer disabled:opacity-50"
               >
                 <Sparkles className="w-5 h-5 text-slate-950" />
-                <span>[ ANALYZE SAFETY ]</span>
+                <span>{isLoading ? t('input.running') : t('input.analyzeButton')}</span>
               </button>
             </div>
           </form>
         </div>
 
-        {/* Right 6 Columns: Interactive Leaflet Map (Matching Image 3) */}
+        {/* Right Interactive Leaflet Map */}
         <div className="lg:col-span-6 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl backdrop-blur-md flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3 px-1">
             <div className="flex items-center space-x-2">
               <Layers className="w-4 h-4 text-cyan-400" />
               <span className="text-xs font-bold text-white uppercase tracking-wider">
-                Geospatial Pin Drop Canvas
+                {t('input.canvasTitle')}
               </span>
             </div>
             <span className="text-[11px] text-slate-400">
-              Click on the water to position origin
+              {t('input.canvasHint')}
             </span>
           </div>
 
@@ -595,7 +674,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
             
             {/* Overlay hint */}
             <div className="absolute top-3 left-3 z-[400] bg-slate-950/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-700 text-xs text-slate-200 shadow-xl pointer-events-none max-w-[85%] truncate">
-              <span className="font-bold text-cyan-400">📍 Target:</span> {locationName || 'Click water on map to pin'}
+              <span className="font-bold text-cyan-400">{t('input.targetLabel')}</span> {locationName || t('input.clickWaterHint')}
               {(lat && lon) && (
                 <span className="text-slate-400 ml-1.5 font-mono text-[11px]">
                   ({lat}°N, {lon}°E)
@@ -604,7 +683,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
             </div>
 
             <div className="absolute bottom-3 left-3 z-[400] bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-md border border-slate-800 text-[10px] text-slate-400 pointer-events-none">
-              🔵 Dashed line: 12 NM Territorial Water Limit
+              {t('input.limitNote')}
             </div>
           </div>
         </div>

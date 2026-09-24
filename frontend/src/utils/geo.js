@@ -24,6 +24,12 @@ export const INDIAN_COASTAL_HUBS = [
   { name: 'Dahanu Coast', shortName: 'Dahanu', state: 'Maharashtra', lat: 19.9700, lon: 72.7300 },
 
   // West Coast - Gujarat
+  { name: 'Offshore Valsad', shortName: 'Valsad', state: 'Gujarat', lat: 20.6060, lon: 72.8716 },
+  { name: 'Dholai Fishing Harbour', shortName: 'Dholai', state: 'Gujarat', lat: 20.8000, lon: 72.8700 },
+  { name: 'Hazira Port', shortName: 'Hazira', state: 'Gujarat', lat: 21.1000, lon: 72.6500 },
+  { name: 'Alang Shipyard Coast', shortName: 'Alang', state: 'Gujarat', lat: 21.4100, lon: 72.2200 },
+  { name: 'Diu Coast', shortName: 'Diu', state: 'Daman & Diu', lat: 20.7100, lon: 70.9800 },
+  { name: 'Daman Coast', shortName: 'Daman', state: 'Dadra and Nagar Haveli and Daman and Diu', lat: 20.4200, lon: 72.8300 },
   { name: 'Veraval Fishing Harbor', shortName: 'Veraval', state: 'Gujarat', lat: 20.9000, lon: 70.3600 },
   { name: 'Porbandar Port', shortName: 'Porbandar', state: 'Gujarat', lat: 21.6400, lon: 69.6000 },
   { name: 'Okha / Dwarka', shortName: 'Okha', state: 'Gujarat', lat: 22.4600, lon: 69.0700 },
@@ -36,8 +42,10 @@ export const INDIAN_COASTAL_HUBS = [
   { name: 'Rameswaram / Palk Bay', shortName: 'Rameswaram', state: 'Tamil Nadu', lat: 9.2880, lon: 79.3130 },
   { name: 'Dhanushkodi Point', shortName: 'Dhanushkodi', state: 'Tamil Nadu', lat: 9.1700, lon: 79.4200 },
   { name: 'Nagapattinam Harbor', shortName: 'Nagapattinam', state: 'Tamil Nadu', lat: 10.7600, lon: 79.8400 },
+  { name: 'Cuddalore Port', shortName: 'Cuddalore', state: 'Tamil Nadu', lat: 11.7500, lon: 79.7700 },
   { name: 'Puducherry Harbor', shortName: 'Puducherry', state: 'Puducherry', lat: 11.9100, lon: 79.8300 },
   { name: 'Kasimedu Fisheries Harbor, Chennai', shortName: 'Chennai', state: 'Tamil Nadu', lat: 13.1200, lon: 80.3000 },
+  { name: 'Kasimedu', shortName: 'Kasimedu', state: 'Tamil Nadu', lat: 13.1367, lon: 80.3120 },
   { name: 'Ennore Port', shortName: 'Ennore', state: 'Tamil Nadu', lat: 13.2500, lon: 80.3400 },
 
   // East Coast - Andhra Pradesh
@@ -45,14 +53,18 @@ export const INDIAN_COASTAL_HUBS = [
   { name: 'Machilipatnam Coast', shortName: 'Machilipatnam', state: 'Andhra Pradesh', lat: 16.1800, lon: 81.1600 },
   { name: 'Kakinada Deepwater Port', shortName: 'Kakinada', state: 'Andhra Pradesh', lat: 16.9600, lon: 82.2600 },
   { name: 'Visakhapatnam Harbor', shortName: 'Visakhapatnam', state: 'Andhra Pradesh', lat: 17.6800, lon: 83.2800 },
+  { name: 'Kalingapatnam Port', shortName: 'Kalingapatnam', state: 'Andhra Pradesh', lat: 18.3300, lon: 84.1300 },
 
   // East Coast - Odisha & West Bengal
   { name: 'Gopalpur Port', shortName: 'Gopalpur', state: 'Odisha', lat: 19.2600, lon: 84.9100 },
   { name: 'Puri Coast', shortName: 'Puri', state: 'Odisha', lat: 19.8000, lon: 85.8300 },
   { name: 'Paradip Port', shortName: 'Paradip', state: 'Odisha', lat: 20.3100, lon: 86.6100 },
   { name: 'Dhamra Port', shortName: 'Dhamra', state: 'Odisha', lat: 20.8000, lon: 86.9700 },
+  { name: 'Chandipur Coast', shortName: 'Chandipur', state: 'Odisha', lat: 21.4700, lon: 87.0200 },
   { name: 'Digha Coastal Beach', shortName: 'Digha', state: 'West Bengal', lat: 21.6200, lon: 87.5100 },
+  { name: 'Haldia Port', shortName: 'Haldia', state: 'West Bengal', lat: 22.0200, lon: 88.0600 },
   { name: 'Sagar Island / Sundarbans', shortName: 'Sagar Island', state: 'West Bengal', lat: 21.6500, lon: 88.0800 },
+  { name: 'Kolkata Port Approach / Haldia', shortName: 'Kolkata', state: 'West Bengal', lat: 21.6500, lon: 88.0800 },
 
   // Islands
   { name: 'Port Blair Harbor', shortName: 'Port Blair', state: 'Andaman & Nicobar', lat: 11.6600, lon: 92.7300 },
@@ -175,4 +187,66 @@ export async function resolvePlaceFromCoordinates(lat, lon) {
   }
 
   return fallback;
+}
+
+/**
+ * Forward geocoding: Resolves place name to GPS coordinates { lat, lon, name }.
+ * Checks local Indian coastal gazetteer first, then queries OpenStreetMap Nominatim.
+ */
+export async function resolveCoordinatesFromPlace(placeName) {
+  if (!placeName || typeof placeName !== 'string') return null;
+  const query = placeName.trim();
+  if (!query) return null;
+
+  const normalized = query.toLowerCase().replace(/[,\-_/]/g, ' ');
+  const words = normalized.split(/\s+/).filter((w) => w.length > 2);
+
+  // 1. Check local Indian coastal hubs for exact or partial matches
+  for (const hub of INDIAN_COASTAL_HUBS) {
+    const hubName = hub.name.toLowerCase();
+    const shortName = hub.shortName.toLowerCase();
+
+    if (normalized.includes(shortName) || normalized.includes(hubName)) {
+      return { lat: hub.lat, lon: hub.lon, name: `${hub.name}, ${hub.state}` };
+    }
+
+    if (words.some((w) => shortName.includes(w) || hubName.includes(w))) {
+      return { lat: hub.lat, lon: hub.lon, name: `${hub.name}, ${hub.state}` };
+    }
+  }
+
+  // 2. Query OpenStreetMap Nominatim for general Indian maritime/coastal places
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+    const searchUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ', India')}&format=json&limit=1`;
+    const res = await fetch(searchUrl, {
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const item = data[0];
+        const lat = parseFloat(item.lat);
+        const lon = parseFloat(item.lon);
+        if (!isNaN(lat) && !isNaN(lon)) {
+          return {
+            lat: Number(lat.toFixed(4)),
+            lon: Number(lon.toFixed(4)),
+            name: item.display_name.split(',').slice(0, 3).join(',').trim(),
+          };
+        }
+      }
+    }
+  } catch {
+    // Timeout or network offline
+  }
+
+  return null;
 }
