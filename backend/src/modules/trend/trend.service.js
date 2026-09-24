@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Trend Analysis Service
+ * Handles historical and trend analysis requests, validating periods and parameters.
+ * Maps requests to the core analysis pipeline.
+ *
+ * @module trend.service
+ */
+
 // src/modules/trend/trend.service.js
 // ---------------------------------------------------------------------------
 // Section 103: POST /api/v1/trend - historical/trend analysis.

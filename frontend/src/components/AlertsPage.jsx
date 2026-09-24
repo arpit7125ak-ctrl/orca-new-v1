@@ -1,3 +1,19 @@
+/**
+ * ============================================================================
+ * ORCA Maritime Alerts & INCOIS Notification Hub (src/components/AlertsPage.jsx)
+ * ============================================================================
+ * Real-time coastal hazard alert subscription manager (Page 8).
+ * 
+ * Capabilities (Architecture Spec §12, §70):
+ * 1. Multi-Hazard Subscriptions: Create targeted alerts for cyclones, high waves,
+ *    swell surges, squalls, lightning, or official IMD/INCOIS bulletins.
+ * 2. Geo-Fenced Monitoring: Subscriptions tether to custom coastal GPS anchors
+ *    with a configurable radial buffer (e.g. 25-50 km).
+ * 3. Notification Channels: Configurable delivery via browser Web Push notifications
+ *    and background telemetry polling.
+ * 4. Event History: Real-time inspection of triggered alerts and delivered events.
+ */
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -19,6 +35,9 @@ import {
 } from 'lucide-react';
 import { orcaApi } from '../api/client';
 
+/**
+ * Standardized marine alert categories supported by the alert dispatcher.
+ */
 const ALERT_TYPE_OPTIONS = [
   { key: 'cyclone', labelKey: 'alerts.typeCyclone', icon: '🌀' },
   { key: 'strong_wind', labelKey: 'alerts.typeStrongWind', icon: '💨' },
@@ -31,6 +50,9 @@ const ALERT_TYPE_OPTIONS = [
   { key: 'other_hazard', labelKey: 'alerts.typeOtherHazard', icon: '⚠️' },
 ];
 
+/**
+ * Alerts & Notification Management Page Component.
+ */
 export default function AlertsPage() {
   const { t } = useTranslation('ui');
 
@@ -44,7 +66,7 @@ export default function AlertsPage() {
     }
     return outputArray;
   }
-
+  //get or create a unique subscriber ID for this browser session
   function getSubscriberId() {
     if (typeof window === 'undefined') return 'sub-anonymous';
     let id = localStorage.getItem('ORCA_SUBSCRIBER_ID');

@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Chat Service
+ * Manages conversation threads. Processes incoming messages, extracts context,
+ * and delegates to the analysis service for processing.
+ *
+ * @module chat.service
+ */
+
 // src/modules/chat/chat.service.js
 // ---------------------------------------------------------------------------
 // Conversational entry point. Section 102: Frontend -> Backend -> AI Service.

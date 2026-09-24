@@ -1,3 +1,28 @@
+/**
+ * ============================================================================
+ * ORCA Root Application Component (src/App.jsx)
+ * ============================================================================
+ * Central application orchestrator, routing manager, and global state coordinator.
+ * 
+ * Architectural Compliance (Architecture Spec §2, §3, §4, §11, §77):
+ * 1. Single Page Application (SPA) state-based routing across 12 distinct maritime views:
+ *    - 'landing'  : Page 1 Home / Ask ORCA quick search & voice querying (§5)
+ *    - 'input'    : Page 2 Mission setup, coordinates, and interactive map interface (§6)
+ *    - 'loading'  : Page 2 Progress live agent swarm telemetry and progress tracking (§6)
+ *    - 'results'  : Page 3 Advisory & Decision results hub with DecisionHero (§7 & §8)
+ *    - 'route'    : Page 9 Nautical passage planner and waypoint risk engine (§13, §71)
+ *    - 'trend'    : Page 11 Decadal oceanographic trend analyzer (§72)
+ *    - 'geofence' : Page 10 At-sea geofence monitor and border alert radar (§14)
+ *    - 'alerts'   : Page 8 INCOIS / IMD warning subscriptions and notifications (§12, §70)
+ *    - 'history'  : Page 7 Local mission and advisory history (§11)
+ *    - 'gis'      : Page 6 Interactive GIS maritime layer explorer (§10)
+ *    - 'profile'  : Page 14 Vessel profile, vessel length, and sunlight mode settings (§18)
+ *    - 'chat'     : Page 5 Dedicated multi-turn maritime copilot (§9)
+ * 2. Sunlight Mode high-contrast theme toggle for sunlight-readable at-sea visibility.
+ * 3. Dynamic multilingual synchronizer matching UI chrome to the language answered by AI-Service.
+ * 4. Resilient polling engine with automatic recovery and honest error reporting.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Navbar from './components/Navbar';
@@ -18,10 +43,16 @@ import { orcaApi } from './api/client';
 import * as history from './utils/history';
 import { AlertCircle, Compass, Radio } from 'lucide-react';
 
+/**
+ * Root Application Component.
+ * 
+ * Manages global view switching, theme state, language synchronization,
+ * analysis execution polling lifecycle, and history hydration.
+ */
 export default function App() {
   const { t, i18n } = useTranslation('ui');
-  // Navigation tabs matching frontend_plan.md §3 & §4:
-  // 'landing' | 'input' | 'loading' | 'results' | 'route' | 'trend' | 'geofence' | 'alerts' | 'history' | 'gis' | 'profile' | 'chat'
+
+  // Active navigation tab state initialized from query parameter (?tab=) or hash (#tab)
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -30,9 +61,14 @@ export default function App() {
     }
     return 'landing';
   });
+
+  // High-contrast sunlight readability toggle for offshore glaring conditions
   const [sunlightMode, setSunlightMode] = useState(false);
+
+  // Selected language code ('auto' or ISO 639-1 like 'hi', 'ta', 'en')
   const [selectedLang, setSelectedLang] = useState('auto');
 
+  // Active analysis data model, polling status, and error states
   const [analysis, setAnalysis] = useState(null);
   const [activeAnalysisId, setActiveAnalysisId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +76,7 @@ export default function App() {
   const [statusInfo, setStatusInfo] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
 
+  // Default coordinate and vessel parameters populated when navigating from Home to Input
   const [inputDefaults, setInputDefaults] = useState({
     place_name: '',
     lat: '',

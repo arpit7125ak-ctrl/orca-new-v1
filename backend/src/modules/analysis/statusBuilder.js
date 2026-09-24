@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Status Builder
+ * Constructs lightweight status payloads for polling clients. Extracts current
+ * state and agent execution summaries without loading full results.
+ *
+ * @module analysis.statusBuilder
+ */
+
 // src/modules/analysis/statusBuilder.js
 // ---------------------------------------------------------------------------
 // Body for GET /api/v1/analysis/:analysis_id/status.

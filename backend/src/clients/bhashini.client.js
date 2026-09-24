@@ -1,20 +1,19 @@
-// src/clients/bhashini.client.js
-// ---------------------------------------------------------------------------
-// Bhashini proxy for the voice pipeline (Section 103: POST /api/v1/voice/query).
-//
-// Section 102 is explicit: the Frontend must NEVER call Bhashini directly.
-// Everything goes Frontend -> Backend -> Bhashini, so the API key stays on the
-// server. This client is the only holder of that key.
-//
-// Pipeline: audio in -> ASR (speech to text) -> analysis -> TTS (text to
-// speech) -> audio out. Translation is available if the pipeline needs to
-// bridge languages.
-//
-// NEVER-FABRICATE NOTE: when BHASHINI_API_KEY is not configured, every method
-// returns { available: false } rather than a mocked transcript. A fabricated
-// transcript would be silently wrong input to a SAFETY decision - far worse
-// than an honest "voice is not configured".
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Bhashini National Language Translation & Speech Proxy Client
+ * @module clients/bhashini.client
+ * @description
+ * Section 102 & 103 (Voice Pipeline):
+ * Acts as the authoritative, secure gateway between the ORCA backend and the
+ * Government of India's Bhashini AI language services (ASR, TTS, Machine Translation).
+ *
+ * Architectural & Safety Constraints:
+ * - Direct Client Isolation: Frontend MUST NEVER communicate with Bhashini directly.
+ *   API keys remain securely stored in the backend environment.
+ * - Never-Fabricate Mandate: If `BHASHINI_API_KEY` is omitted, methods report
+ *   `{ available: false }` rather than hallucinating/mocking speech transcripts.
+ *   Fabricated transcripts in maritime navigation can lead to severe safety risks.
+ */
+
 
 const axios = require('axios');
 const env = require('../config/env');

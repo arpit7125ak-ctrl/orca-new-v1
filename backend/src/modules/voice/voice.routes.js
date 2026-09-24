@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Voice Routes
+ * Defines endpoints for voice interactions (querying via audio and speaking results).
+ * Includes contract validation and rate limiting.
+ *
+ * @module voice.routes
+ */
+
 // src/modules/voice/voice.routes.js
 // ---------------------------------------------------------------------------
 // Section 103: POST /api/v1/voice/query - audio in, audio + text out.

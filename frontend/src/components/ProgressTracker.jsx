@@ -1,10 +1,31 @@
+/**
+ * ============================================================================
+ * ORCA Compact Pipeline Progress Tracker (src/components/ProgressTracker.jsx)
+ * ============================================================================
+ * Compact horizontal stepper visualizing the 5 core stages of pipeline execution.
+ * 
+ * Execution Stages:
+ * 1. Parse (Input validation, location extraction, temporal bounding)
+ * 2. Plan (Intent detection and specialist agent selection policy)
+ * 3. Agents (Concurrent fan-out to 7 data fetchers: weather, ocean, tide, etc.)
+ * 4. Rules (Deterministic maritime safety threshold evaluation)
+ * 5. Synthesis (LLM explainable narrative generation and multilingual translation)
+ */
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, CheckCircle2, AlertCircle, Clock, ShieldCheck } from 'lucide-react';
 
+/**
+ * Compact Progress Tracker Component.
+ * 
+ * @param {Object} props
+ * @param {Object|null} props.statusInfo - Analysis status descriptor containing status and analysis_id.
+ */
 export default function ProgressTracker({ statusInfo }) {
   const { t } = useTranslation('ui');
 
+  // 5 discrete steps in the ORCA execution pipeline
   const steps = [
     { key: 'parse',     labelKey: 'progress.step1Label', descKey: 'progress.step1Desc' },
     { key: 'plan',      labelKey: 'progress.step2Label', descKey: 'progress.step2Desc' },

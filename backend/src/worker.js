@@ -1,17 +1,22 @@
-// src/worker.js
-// ---------------------------------------------------------------------------
-// ENTRY POINT for the background alert worker.
-//
-//   npm run worker
-//
-// WHY A SEPARATE PROCESS (this is important):
-// If the cron scheduler ran inside the API server and the API were scaled to
-// three instances, all three would fire the same cron and every subscriber
-// would get THREE notifications. Isolating it guarantees exactly one scheduler.
-//
-// It also means the API can be restarted for a deploy without interrupting an
-// in-flight alert evaluation pass, and vice versa.
-// ---------------------------------------------------------------------------
+/**
+ * ============================================================================
+ * ORCA Dedicated Background Alert & PFZ Worker (src/worker.js)
+ * ============================================================================
+ * Dedicated background process executing proactive alert evaluation passes
+ * and external data synchronization crons.
+ * 
+ * Process Decoupling Architecture (Architecture Spec §12, §70):
+ * 1. Deduplication Protection: If alert schedulers ran inside clustered API processes,
+ *    subscribers would receive duplicate notifications for each instance. Isolating
+ *    the scheduler into this dedicated worker guarantees single-execution semantics.
+ * 2. Zero-Interruption Deployments: Public API gateways can be restarted or redeployed
+ *    without aborting in-flight alert checks or PFZ polygon downloads.
+ * 3. Scheduled Tasks:
+ *    - Alert Evaluation Scheduler: Recurring polling against live sensor streams.
+ *    - INCOIS PFZ Daily Sync: Pulls Potential Fishing Zone advisories daily at 20:00 IST.
+ * 4. Resilient Error Handling: Catches unhandled promise rejections and continues execution
+ *    so one failed notification never terminates background protection for other vessels.
+ */
 
 const cron = require('node-cron');
 const { connect, disconnect } = require('./db/connection');

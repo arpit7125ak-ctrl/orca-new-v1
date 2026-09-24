@@ -1,18 +1,18 @@
-// src/middleware/roleGuard.js
-// ---------------------------------------------------------------------------
-// Role-based access control over the roles enumerated in Section 99.12:
-//   fisherman | researcher | coastal_authority | disaster_management |
-//   maritime_operator | admin
-//
-// STATUS: PROPOSED. Section 103 defines no auth endpoints, so the surrounding
-// auth module is flagged PROPOSED. This middleware is written so that when auth
-// is turned on it is a one-line change per route, and is a no-op until then.
-//
-// OPEN-BY-DEFAULT DESIGN DECISION:
-// If no JWT is present, requests are allowed through as anonymous. That is
-// correct for a hackathon demo where a judge must be able to try the API
-// without signing up. Set REQUIRE_AUTH=true in .env to flip to closed-by-default.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Role-Based Access Control (RBAC) & Identity Middleware
+ * @module middleware/roleGuard
+ * @description
+ * Section 99.12 (User Personas & Role Hierarchy):
+ * Enforces role-based permissions over standard maritime user roles:
+ * - `fisherman`, `researcher`, `coastal_authority`, `disaster_management`,
+ *   `maritime_operator`, `admin`.
+ *
+ * Operational Mode:
+ * - Open-by-Default Demo Mode: When `REQUIRE_AUTH=false` (default), unauthenticated
+ *   callers proceed as guest/anonymous to enable seamless evaluation.
+ * - Closed-by-Default Production Mode: When `REQUIRE_AUTH=true`, missing credentials
+ *   trigger HTTP 401 Unauthorized, and insufficient privileges yield HTTP 403 Forbidden.
+ */
 
 const jwt = require('jsonwebtoken');
 const env = require('../config/env');

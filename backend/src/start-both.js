@@ -1,9 +1,17 @@
-// src/start-both.js
-// ---------------------------------------------------------------------------
-// Production process supervisor for ORCA Backend.
-// Runs both Public Gateway (Port 4000) and Internal Gateway (Port 4100)
-// in a single container or PM2 process with unified signal handling.
-// ---------------------------------------------------------------------------
+/**
+ * ============================================================================
+ * ORCA Dual-Gateway Process Supervisor (src/start-both.js)
+ * ============================================================================
+ * Production process supervisor spawning and managing both backend gateways:
+ * - Public Gateway (Port 4000 via server.js)
+ * - Internal Callback Gateway (Port 4100 via internal-server.js)
+ * 
+ * Process Management Architecture:
+ * - Uses Node.js child_process.fork() with inherited stdio for unified log aggregation.
+ * - Centralized signal handling forwards SIGTERM / SIGINT down to child workers.
+ * - Fail-fast monitoring: If either gateway crashes unexpectedly, supervisor exits
+ *   with that status code so container orchestrators (Docker, Kubernetes) can restart the pod.
+ */
 
 const { fork } = require('child_process');
 const path = require('path');

@@ -1,18 +1,18 @@
-// src/middleware/internalAuth.js
-// ---------------------------------------------------------------------------
-// Section 98 + Section 103: the internal channel between Backend and AI Service
-// is protected by a SIGNED, SHORT-LIVED token.
-//
-// Section 102 explains why this matters: the Frontend must never reach the AI
-// Service directly, and internal endpoints must never be callable from the
-// public internet. This middleware guards /internal/v1/* on the Backend side.
-//
-// WHY HMAC-SIGNED JWT AND NOT A STATIC SHARED SECRET:
-// A static bearer token, once leaked from a log or a proxy, is valid forever.
-// A short-lived signed token (INTERNAL_TOKEN_TTL_SECONDS, default 120s) limits
-// the blast radius to about two minutes. Both services sign with
-// INTERNAL_SECRET, which never leaves the server environment.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Internal Service-to-Service HMAC JWT Authentication Guard
+ * @module middleware/internalAuth
+ * @description
+ * Sections 98, 102 & 103 (Internal Security Perimeter):
+ * Protects communication channels between the Node.js backend and the Python AI service
+ * using short-lived (120s TTL) HMAC-SHA256 signed JWT tokens.
+ *
+ * Security Principles:
+ * - Isolation: Internal endpoints (`/internal/v1/*`) are never accessible from the public internet.
+ * - Anti-Replay: Uses short-lived tokens rather than static API keys to strictly limit
+ *   the blast radius of any transient token interception.
+ * - Bidirectional Verification: Verifies expected `issuer` and `audience` claims between
+ *   `orca-backend` and `orca-ai-service`.
+ */
 
 const jwt = require('jsonwebtoken');
 const env = require('../config/env');

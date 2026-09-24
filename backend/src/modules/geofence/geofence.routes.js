@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Geofence Routes
+ * Defines API endpoints for high-frequency geofence polling, applying
+ * appropriate rate limits and validation.
+ *
+ * @module geofence.routes
+ */
+
 // src/modules/geofence/geofence.routes.js
 // ---------------------------------------------------------------------------
 // Section 103: POST /api/v1/geofence/check

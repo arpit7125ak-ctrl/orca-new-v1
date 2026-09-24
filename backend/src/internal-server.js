@@ -1,21 +1,21 @@
-// src/internal-server.js
-// ---------------------------------------------------------------------------
-// ENTRY POINT for the INTERNAL server - the endpoints the AI Service calls back
-// on (Section 103):
-//   POST /internal/v1/progress
-//   POST /internal/v1/result
-//
-//   npm run internal
-//
-// WHY A SEPARATE PROCESS AND PORT:
-// Section 102 requires the internal channel to be protected. Running it on its
-// own port means it can be bound to localhost or a private network and never
-// exposed publicly, independently of the public API. Even if it WERE reachable,
-// internalAuth still requires a signed short-lived token - defence in depth.
-//
-// It also isolates load: a burst of progress callbacks cannot starve the
-// Frontend-facing API.
-// ---------------------------------------------------------------------------
+/**
+ * ============================================================================
+ * ORCA Dedicated Internal Gateway Server (src/internal-server.js)
+ * ============================================================================
+ * Dedicated micro-server handling inter-service webhook callbacks from Python AI-Service.
+ * 
+ * Endpoints Hosted (Port 4100):
+ * - POST /internal/v1/progress : Real-time pipeline progress updates per agent
+ * - POST /internal/v1/result   : Final comprehensive analysis result delivery
+ * - GET  /health               : Dedicated liveness check for inter-service health monitors
+ * 
+ * Security & Isolation Architecture (Architecture Spec §102, §103):
+ * 1. Port Segregation: Bound separately to Port 4100 to prevent public reverse-proxy exposure.
+ * 2. Zero Browser CORS: CORS is omitted entirely so browsers automatically block cross-origin requests.
+ * 3. HMCA/Internal Token Auth: Requires signed short-lived Authorization tokens (INTERNAL_API_KEY).
+ * 4. High-Capacity Body Parser: Configured with 25MB JSON buffer to accommodate full multi-agent
+ *    vector and raster outputs without truncation.
+ */
 
 const express = require('express');
 const helmet = require('helmet');

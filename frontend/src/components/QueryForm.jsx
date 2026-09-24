@@ -1,3 +1,17 @@
+/**
+ * ============================================================================
+ * ORCA Modular Query Form Component (src/components/QueryForm.jsx)
+ * ============================================================================
+ * Reusable conversational query input form with integrated speech input and
+ * structured refinement parameters.
+ * 
+ * Features:
+ * 1. Textarea with auto-submit on Enter (Shift+Enter for newline).
+ * 2. Speech recognition toggle for voice querying.
+ * 3. Collapsible advanced drawer for manual GPS coordinates, activity, and vessel selection.
+ * 4. Coastal mission preset chips for instant 1-click execution.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -14,8 +28,17 @@ import {
 } from 'lucide-react';
 import { createSpeechRecognizer } from '../utils/speech';
 
+/**
+ * Modular Query Form Component.
+ * 
+ * @param {Object} props
+ * @param {Function} props.onSubmit - Submission handler invoked with form payload.
+ * @param {boolean} props.isLoading - Whether a submission is pending.
+ * @param {string} props.selectedLang - Active language code for voice dictation.
+ */
 export default function QueryForm({ onSubmit, isLoading, selectedLang }) {
   const { t } = useTranslation('ui');
+  // Natural language query input state
   const [query, setQuery] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);

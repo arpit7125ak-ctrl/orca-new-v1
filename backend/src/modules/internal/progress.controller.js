@@ -1,20 +1,26 @@
-// src/modules/internal/progress.controller.js
-// ---------------------------------------------------------------------------
-// Section 103: POST /internal/v1/progress - AI Service progress update.
-//
-// Called repeatedly by the AI Service as each agent/stage starts and finishes.
-// Powers the Frontend progress bar and the Section 79 "visible reasoning" panel.
-//
-// This endpoint is HOT - it may be hit many times per analysis - so it must be
-// fast and tolerant. It returns 200 even for an unknown stage rather than
-// making the AI Service handle our errors mid-pipeline.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Mid-Execution Progress Webhook Controller
+ * @module modules/internal/progress.controller
+ * @description
+ * Section 103 (`POST /internal/v1/progress`):
+ * Receives granular stage execution notifications (`contracts/ProgressMessage.json`)
+ * broadcasted by the AI microservice during multi-agent analysis runs.
+ *
+ * Operational Responsibilities:
+ * - Telemetry Ingestion: Appends stage entries to `execution_trace` in MongoDB.
+ * - Client Polling Feed: Calculates real-time completion percentages feeding frontend
+ *   progress bars (`ProgressTracker.jsx`) and Section 79 reasoning panels.
+ */
 
 const analysisService = require('../analysis/analysis.service');
 const asyncHandler = require('../../utils/asyncHandler');
 const { HTTP } = require('../../errors/httpStatus');
 const { forAnalysis } = require('../../observability/logger');
 
+/**
+ * Handles incoming stage progress updates from AI service.
+ * @type {import('express').RequestHandler}
+ */
 const postProgress = asyncHandler(async (req, res) => {
   const { analysis_id: analysisId } = req.body;
 

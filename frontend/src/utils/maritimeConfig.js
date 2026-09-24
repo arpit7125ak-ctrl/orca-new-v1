@@ -1,6 +1,22 @@
-// orca/frontend/src/utils/maritimeConfig.js
-// Synchronized with shared-config/activities.json and shared-config/vessel-types.json
+/**
+ * ============================================================================
+ * ORCA Maritime Classification & Vocabulary (src/utils/maritimeConfig.js)
+ * ============================================================================
+ * Standardized ontology of coastal maritime activities and vessel classes.
+ * 
+ * Synchronization:
+ * Maintained in 1:1 synchronization with:
+ * - shared-config/activities.json
+ * - shared-config/vessel-types.json
+ * 
+ * Safety Impact:
+ * The risk engine evaluates wave threshold limits based on vessel size and hull construction
+ * (e.g. traditional canoes have a 1.2m limit, motorized FRP craft have 2.0m, mechanized trawlers have 3.5m).
+ */
 
+/**
+ * Standardized list of supported maritime operations with friendly UI iconography.
+ */
 export const ACTIVITIES = [
   { id: 'fishing', label: '🎣 Coastal / Offshore Fishing' },
   { id: 'boating', label: '⛵ Boating & Coastal Navigation' },
@@ -11,6 +27,9 @@ export const ACTIVITIES = [
   { id: 'shipping', label: '📦 Commercial Shipping & Cargo' },
 ];
 
+/**
+ * Standardized vessel classifications used by the deterministic safety rules engine.
+ */
 export const VESSEL_TYPES = [
   { id: 'motorized_country_craft', label: '🚤 Motorized Country Craft (FRP <10m)' },
   { id: 'mechanized_fishing_vessel', label: '🚢 Mechanized Fishing Vessel (Trawler >15m)' },

@@ -1,15 +1,24 @@
-// src/modules/map/map.controller.js
-// ---------------------------------------------------------------------------
-// Section 103: GET /api/v1/map/layers - reference map layers.
-// Section 67.1: "The Frontend receives SIMPLIFIED layer geometry for map
-// display" - full-resolution coastline polygons are far too heavy to ship to a
-// phone on a boat with patchy connectivity.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Map GIS Layers HTTP Controller
+ * @module modules/map/map.controller
+ * @description
+ * Sections 67.1 & 103 (`GET /api/v1/map/layers`):
+ * Serves geospatial reference boundaries (MPAs, naval zones, state fishing boundaries).
+ *
+ * Bandwidth & Performance Optimization:
+ * - Default Low-Bandwidth Geometry: Serves `geometry_simplified` by default to minimize
+ *   payload size for maritime 2G/3G mobile connections.
+ * - Desktop Full Geometry Opt-In: Allows callers to request full-fidelity boundaries via `?full=true`.
+ */
 
 const GisLayer = require('../../db/models/gisLayer.model');
 const asyncHandler = require('../../utils/asyncHandler');
 const { HTTP } = require('../../errors/httpStatus');
 
+/**
+ * Retrieves active GIS layers with optional filtering by type and constraint.
+ * @type {import('express').RequestHandler}
+ */
 const getLayers = asyncHandler(async (req, res) => {
   const { layer_type: layerType, constraint_type: constraintType, full } = req.query;
 

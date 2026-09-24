@@ -1,28 +1,20 @@
-// src/db/models/agentResult.model.js
-// ---------------------------------------------------------------------------
-// SHAPE FROM contracts/AgentResult.json:
-//   required: analysis_id, agent_name, status
-//   optional: started_at, completed_at, duration_ms, retry_count, error,
-//             normalized, raw
-//
-// Note the field names are `normalized` and `raw` - NOT normalized_output /
-// raw_output - and `error` is an ErrorInfo object, not a string plus a
-// separate category column.
-//
-// WHY BOTH normalized AND raw ARE STORED:
-// Section 24.1/24.2 make the adapter the isolation layer, with canonical units
-// enforced there. Keeping the raw payload alongside the normalized one means a
-// unit-conversion bug found later can be fixed by re-normalising historical
-// data instead of re-fetching it - often impossible for a forecast whose valid
-// time has already passed.
-//
-// `normalized` is a MAP keyed by point_id, each value holding a map of
-// canonical parameter name -> Measurement (contracts/Measurement.json). It is
-// Mixed rather than a typed sub-schema precisely because those keys are
-// dynamic.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Agent Execution Result Mongoose Schema
+ * @module db/models/agentResult.model
+ * @description
+ * Implements the database document mapping for `contracts/AgentResult.json`.
+ * Persists the execution outcome, raw upstream payloads, and normalized measurements
+ * returned by individual specialized domain agents (weather, ocean, tide, etc.).
+ *
+ * Design Architecture:
+ * - Dual Payload Persistence: Stores both `raw` and `normalized` outputs so telemetry
+ *   can be audited or re-normalized retrospectively without re-fetching past forecast models.
+ * - Dynamic Point Maps: `normalized` maps dynamic point IDs (e.g. `P0`, `P1`) to
+ *   canonical parameter measurements (`Measurement.json`).
+ */
 
 const mongoose = require('mongoose');
+
 
 const AgentResultSchema = new mongoose.Schema(
   {

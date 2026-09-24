@@ -1,5 +1,10 @@
-// src/modules/trend/trend.routes.js
-// Section 103: POST /api/v1/trend
+/**
+ * @fileoverview Trend Routes
+ * Defines the Express router for trend analysis endpoints.
+ * Includes rate limiting, contract validation, and controller mapping.
+ * 
+ * @module trend.routes
+ */
 
 const express = require('express');
 const validateContract = require('../../middleware/validateContract');

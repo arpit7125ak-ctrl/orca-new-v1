@@ -1,9 +1,17 @@
-// src/errors/httpStatus.js
-// ---------------------------------------------------------------------------
-// Section 40: Status Code Design. This maps our internal error_category enum
-// onto the HTTP status codes the spec prescribes, so no controller ever
-// hard-codes a status number.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview HTTP Status Constants & Error Category Mappings
+ * @module errors/httpStatus
+ * @description
+ * Section 40 (Status Code Design):
+ * Maps internal `error_category` values and analysis lifecycle states onto standard
+ * HTTP status codes per the system architectural specification.
+ *
+ * Semantic HTTP Principles:
+ * - 400 Bad Request: Malformed request structure, invalid types, or out-of-bounds inputs.
+ * - 422 Unprocessable Entity: Structurally valid syntax but semantically impossible
+ *   (e.g. coordinates outside Indian EEZ, unresolvable place name, time beyond forecast range).
+ * - 502 Bad Gateway / 504 Gateway Timeout: Upstream AI microservice or third-party data failure.
+ */
 
 const { ERROR_CATEGORIES } = require('./errorCategories');
 

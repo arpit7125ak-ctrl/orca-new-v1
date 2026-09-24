@@ -1,3 +1,22 @@
+/**
+ * ============================================================================
+ * ORCA Decadal Oceanographic Trend Analyzer (src/components/TrendPage.jsx)
+ * ============================================================================
+ * Historical multi-year climate analysis and trend exploration page (Page 11).
+ * 
+ * Capabilities (Architecture Spec §72):
+ * 1. Multi-Year Environmental Parameters: Analyzes historical shifts in:
+ *    - Sea Surface Temperature (SST warming rates °C/yr)
+ *    - Significant Wave Height (Hs changes in meters)
+ *    - Swell dynamics & wave period shifts
+ *    - Ocean current speeds
+ *    - Chlorophyll-a / phytoplankton productivity
+ * 2. Baseline vs. Analysis Comparison: Statistical comparison between baseline periods
+ *    (e.g. 2021-2023) and recent target periods (e.g. 2024-2025).
+ * 3. Statistical Confidence & Theil-Sen Slopes: Displays statistical significance,
+ *    p-values, and rate of change per year.
+ */
+
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -16,6 +35,9 @@ import { orcaApi } from '../api/client';
 import { addEntry } from '../utils/history';
 import TrendView from './TrendView';
 
+/**
+ * Standard oceanographic trend parameters.
+ */
 const PARAMETERS = [
   { id: 'sea_surface_temperature', labelKey: 'trend.paramSst', unit: '°C' },
   { id: 'wave_height', labelKey: 'trend.paramWaveHeight', unit: 'm' },
@@ -25,6 +47,13 @@ const PARAMETERS = [
   { id: 'chlorophyll', labelKey: 'trend.paramChlorophyll', unit: 'mg/m³' },
 ];
 
+/**
+ * Historical Trend Analysis Page Component.
+ * 
+ * @param {Object} props
+ * @param {string} [props.selectedLang='auto'] - Active language code.
+ * @param {Function} props.onNavigateToTab - Global navigation router handler.
+ */
 export default function TrendPage({ selectedLang = 'auto', onNavigateToTab }) {
   const { t } = useTranslation('ui');
 

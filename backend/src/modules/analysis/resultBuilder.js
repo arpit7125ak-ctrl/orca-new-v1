@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Result Builder
+ * Constructs the final, contract-compliant AnalysisResultResponse by joining
+ * data from multiple collections (AgentResult, RiskResult, Decision).
+ *
+ * @module analysis.resultBuilder
+ */
+
 // src/modules/analysis/resultBuilder.js
 // ---------------------------------------------------------------------------
 // Body for GET /api/v1/analysis/:analysis_id.

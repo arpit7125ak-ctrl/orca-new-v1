@@ -1,12 +1,21 @@
-// src/modules/trend/trend.controller.js
-// Section 103: POST /api/v1/trend
-// Request shape: contracts/api/TrendRequest.json (validated in the service).
+/**
+ * @fileoverview Multi-Day Environmental Trend Analysis Controller
+ * @module modules/trend/trend.controller
+ * @description
+ * Section 103 (`POST /api/v1/trend`):
+ * Accepts multi-day parameter trend evaluation requests (`contracts/api/TrendRequest.json`).
+ * Dispatches temporal timeseries analysis across wave height, wind velocity, and SST gradients.
+ */
 
 const asyncHandler = require('../../utils/asyncHandler');
 const trendService = require('./trend.service');
 const { ERROR_CATEGORIES } = require('../../errors/errorCategories');
 const { HTTP } = require('../../errors/httpStatus');
 
+/**
+ * Handles incoming trend analysis requests and initiates background AI execution.
+ * @type {import('express').RequestHandler}
+ */
 const createTrend = asyncHandler(async (req, res) => {
   // All validation lives in the service so the alert worker and chat can reuse
   // it without going through HTTP.

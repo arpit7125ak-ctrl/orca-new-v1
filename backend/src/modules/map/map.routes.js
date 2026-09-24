@@ -1,5 +1,10 @@
-// src/modules/map/map.routes.js
-// Section 103: GET /api/v1/map/layers
+/**
+ * @fileoverview Map GIS Layers Express Router
+ * @module modules/map/map.routes
+ * @description
+ * Section 103:
+ * Mounts public endpoints for maritime GIS boundary layers (`GET /api/v1/map/layers`).
+ */
 
 const express = require('express');
 const { getLayers } = require('./map.controller');

@@ -1,9 +1,20 @@
 /**
- * Browser-native Speech Utilities for Fisherman Accessibility
- * Meets Section 77 specifications (Audio playback and voice transcription)
- * 10 Canonical Indian Maritime Regional Languages per shared-config/languages.json
+ * ============================================================================
+ * ORCA Speech Accessibility Utilities (src/utils/speech.js)
+ * ============================================================================
+ * Browser-native Web Speech API wrapper providing voice input (SpeechRecognition)
+ * and advisory read-aloud (SpeechSynthesis) for Indian coastal fishermen.
+ * 
+ * Architectural Compliance (Architecture Spec §77):
+ * - Bridges low-literacy barriers by allowing hands-free voice querying on rocking vessels.
+ * - Supports 10 Canonical Indian Regional Languages (en-IN, hi-IN, bn-IN, ta-IN, te-IN,
+ *   or-IN, mr-IN, ml-IN, kn-IN, gu-IN).
+ * - Calibrated with a 0.95 playback rate for high intelligibility over marine ambient noise.
  */
 
+/**
+ * Mapping of ISO 639-1 language codes to canonical BCP 47 Indian speech locales.
+ */
 export const SPEECH_LOCALES = {
   en: 'en-IN',
   hi: 'hi-IN',
@@ -18,10 +29,12 @@ export const SPEECH_LOCALES = {
 };
 
 /**
- * Resolves canonical BCP 47 speech locale for a given language code.
- * For 'auto': detects from navigator.language if mapped, else defaults to 'en-IN'.
- * @param {string} lang
- * @returns {string}
+ * Resolves the canonical BCP 47 speech locale for a given language code.
+ * If 'auto' is supplied, inspects navigator.language and maps to the best Indian locale.
+ * Defaults to 'en-IN' if unmapped.
+ * 
+ * @param {string} lang - Language code (e.g. 'ta', 'hi', or 'auto').
+ * @returns {string} Standard BCP 47 locale string (e.g. 'ta-IN').
  */
 export function localeFor(lang) {
   if (!lang || lang === 'auto') {

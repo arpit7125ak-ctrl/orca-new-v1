@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Analysis Service
+ * Core orchestrator for the marine safety pipeline. Handles creation, network
+ * dispatch to the AI Service, progress tracking, and result consolidation.
+ *
+ * @module analysis.service
+ */
+
 // src/modules/analysis/analysis.service.js
 // ---------------------------------------------------------------------------
 // Core pipeline logic. Controllers stay thin so chat and the alert worker can

@@ -1,3 +1,24 @@
+/**
+ * ============================================================================
+ * ORCA Comprehensive Point Telemetry Inspection Sheet (src/components/PointDetailSheet.jsx)
+ * ============================================================================
+ * Slide-out deep inspection drawer rendering all ~26 possible environmental measurements
+ * for any selected sampling point (P0, R0001-R0008).
+ * 
+ * Measurement Categories (7 Specialized Domains):
+ * 1. Weather: Wind speed, gusts, direction (16-point compass), air temp, visibility, precipitation.
+ * 2. Ocean: Significant wave height (Hs), swell height, swell period, currents, sea surface temp (SST), salinity.
+ * 3. Tide: Current tide height, tidal phase, flood/ebb direction, bar-mouth hazard.
+ * 4. Cyclone & Warnings: IMD warning category, distance to active storm center, squall alert.
+ * 5. GIS & Navigation: Water depth/bathymetry, distance to port, inside prohibited zone, shipping lane proximity.
+ * 6. PFZ (Potential Fishing Zone): INCOIS PFZ line distance, aggregation suitability score, SST gradient.
+ * 7. Marine Ecosystem: Chlorophyll-a concentration, dissolved oxygen (DO), ecological sensitivity.
+ * 
+ * Data Quality Badging:
+ * Every measurement displays its source authority (IMD, INCOIS, Copernicus), freshness status
+ * ('fresh', 'stale', 'old'), and hazard highlight.
+ */
+
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -19,10 +40,16 @@ import {
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helpers
+// Formatters & Telemetry Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Convert degrees to a 16-point compass label */
+/**
+ * Converts meteorological/oceanographic azimuth degrees (0-360) into a 16-point compass label.
+ * Boundaries: N (348.75-11.25), NNE (11.25-33.75), NE (33.75-56.25), ..., WNW (281.25-303.75), NW (303.75-326.25).
+ * 
+ * @param {number|string|null} deg - Direction in decimal degrees.
+ * @returns {string} 16-point cardinal string (e.g. 'WNW', 'SW') or empty string.
+ */
 function degToCompass(deg) {
   if (deg === null || deg === undefined || isNaN(Number(deg))) return '';
   const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];

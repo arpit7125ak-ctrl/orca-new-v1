@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Alerts Event Logger
+ * Records every alert evaluation (both sent and suppressed) for audit and
+ * accountability purposes.
+ *
+ * @module alerts.eventLogger
+ */
+
 // src/modules/alerts/eventLogger.js
 // ---------------------------------------------------------------------------
 // Section 99.7: every alert decision is recorded in alert_events - including

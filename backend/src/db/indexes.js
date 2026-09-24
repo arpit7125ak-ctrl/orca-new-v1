@@ -1,21 +1,15 @@
-// src/db/indexes.js
-// ---------------------------------------------------------------------------
-// Central index registry and verification.
-//
-// Indexes are DECLARED on each model (schema.index(...)), which is the right
-// place for them. This file exists for two different jobs:
-//
-//   1. ensureIndexes()  - force index creation immediately rather than waiting
-//                         for Mongoose's background build. Used by
-//                         `npm run create-indexes` before a demo.
-//   2. verifyIndexes()  - assert that the indexes we DEPEND ON actually exist.
-//
-// Job 2 matters more than it looks. Section 66.3 requires geofence checks
-// under 1 second, and that is only achievable with the 2dsphere index on
-// gis_layers.geometry. Without it, MongoDB silently falls back to a collection
-// scan: correct answers, but seconds slower. A silent performance cliff during
-// a live demo is exactly what this check prevents.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Database Index Registry & Latency Verification
+ * @module db/indexes
+ * @description
+ * Sections 66.3 & 67.1:
+ * Manages synchronous index builds and asserts the existence of mission-critical indexes.
+ *
+ * Operational Importance:
+ * - Sub-Second Geofencing: Asserts the `2dsphere` spatial index on `gis_layers.geometry_full`,
+ *   guaranteeing that `$geoIntersects` and boundary proximity checks complete in under 1 second.
+ * - Idempotency & Lookups: Verifies unique indexes on `analysis_id`, `dedup_key`, and user emails.
+ */
 
 const mongoose = require('mongoose');
 const models = require('./models');

@@ -1,3 +1,20 @@
+/**
+ * ============================================================================
+ * ORCA Dedicated Maritime Chat & Copilot (src/components/MaritimeChat.jsx)
+ * ============================================================================
+ * Dedicated multi-turn conversational AI interface (Page 5).
+ * 
+ * Capabilities (Architecture Spec §9, §77):
+ * 1. Multi-turn Conversational Memory: Maintains session state backed by server-side
+ *    conversation threads (/api/v1/chat/:id) and localStorage fallback.
+ * 2. Bi-directional Voice Interaction: Web Speech API speech-to-text voice dictation
+ *    and audio text-to-speech advisory playback in all 10 Indic languages.
+ * 3. Specialized Maritime Queries: Handles route questions, historical decadal SST trends,
+ *    and localized port wave conditions.
+ * 4. Inline Rich Artifact Rendering: Renders embedded TrendView and Route result previews
+ *    directly inside conversational bubbles.
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -20,9 +37,16 @@ import { orcaApi } from '../api/client';
 import { speakText, stopSpeaking, createSpeechRecognizer, localeFor } from '../utils/speech';
 import TrendView from './TrendView';
 
+/**
+ * Dedicated Maritime Chat Component.
+ * 
+ * @param {Object} props
+ * @param {string} [props.selectedLang='auto'] - Active language code for voice dictation and TTS playback.
+ */
 export default function MaritimeChat({ selectedLang = 'auto' }) {
   const { t } = useTranslation('ui');
 
+  // Message history array [{ role, text, timestamp, analysis_id }]
   const [messages, setMessages] = useState([
     {
       role: 'assistant',

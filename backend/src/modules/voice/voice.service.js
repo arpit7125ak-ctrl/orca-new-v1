@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Voice Service
+ * Integrates with Bhashini for speech-to-text (ASR) and text-to-speech (TTS).
+ * Routes transcripts through the standard chat/analysis pipeline.
+ *
+ * @module voice.service
+ */
+
 // src/modules/voice/voice.service.js
 // ---------------------------------------------------------------------------
 // Section 103: POST /api/v1/voice/query - audio in, audio + text out

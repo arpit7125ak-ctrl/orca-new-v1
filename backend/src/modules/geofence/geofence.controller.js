@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Geofence Controller
+ * Handles live GPS geofence checks. Validates coordinates and structures
+ * boundary alerts according to the response contract.
+ *
+ * @module geofence.controller
+ */
+
 // src/modules/geofence/geofence.controller.js
 // ---------------------------------------------------------------------------
 // Section 103: POST /api/v1/geofence/check - live GPS geofence check.

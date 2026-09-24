@@ -1,9 +1,34 @@
+/**
+ * ============================================================================
+ * ORCA Marine Interactive Leaflet Map (src/components/MarineMap.jsx)
+ * ============================================================================
+ * Core geospatial visualization component for maritime safety analysis.
+ * 
+ * Capabilities (Architecture Spec §2, §6, §10):
+ * 1. Multi-Point Grid Rendering: Renders color-coded markers for each evaluation point
+ *    (green for SAFE, amber for CAUTION, orange for UNSAFE, red for DANGEROUS).
+ * 2. Land-to-Sea Snapping Visualizer: When a user query specifies a land coordinate or beach,
+ *    renders the original point, a dashed connector line, and the snapped sea coordinate.
+ * 3. GIS Boundary Overlays: Dynamically pulls and renders official Indian maritime zones
+ *    (12 NM Territorial Waters, 200 NM Exclusive Economic Zone, Marine Protected Areas).
+ * 4. Safe Haven Port Locations: Overlay of nearby designated fishing harbors and ports of refuge.
+ * 5. Free & Watermark-Free Cartography: OpenStreetMap standard tiles (zero API key dependency).
+ */
+
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import L from 'leaflet';
 import { Compass, ShieldAlert, Layers, MapPin, Anchor } from 'lucide-react';
 import { orcaApi } from '../api/client';
 
+/**
+ * Marine Map Component.
+ * 
+ * @param {Object} props
+ * @param {Object|null} props.analysis - Completed analysis result object containing points and plan.
+ * @param {Object|null} props.selectedPoint - Currently selected point for highlight styling.
+ * @param {Function} props.onSelectPoint - Callback triggered when user clicks a map marker.
+ */
 export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
   const { t } = useTranslation('ui');
   const plan = analysis?.plan || {};

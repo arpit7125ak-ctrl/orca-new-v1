@@ -1,14 +1,21 @@
 /**
- * frontend/src/utils/formatters.js
- *
- * Deterministic formatters for Route and Trend outputs.
- * Strict adherence to contract shapes in RouteResult.json and TrendResult.json.
+ * ============================================================================
+ * ORCA Deterministic Output Formatters (src/utils/formatters.js)
+ * ============================================================================
+ * Provides strictly typed, null-safe string & visual badge formatters for
+ * maritime telemetry, Route results, and Trend statistics.
+ * 
+ * Contract Alignment:
+ * - RouteResult.json: route_id, total_distance_km, estimated_duration_hours, waypoint risks.
+ * - TrendResult.json: trend_direction, slope_per_year, statistical confidence.
+ * - Never throws on null/undefined/NaN; produces truthful fallback strings ('N/A', 'None').
  */
 
 /**
- * Format route duration in hours to human-readable string.
- * @param {number|null} hours
- * @returns {string}
+ * Converts decimal hours into human-readable duration strings (e.g. '45m', '2h 15m').
+ * 
+ * @param {number|null|undefined} hours - Duration in fractional hours.
+ * @returns {string} Formatted duration or 'N/A' if null/invalid.
  */
 export function formatDuration(hours) {
   if (hours === null || hours === undefined || isNaN(hours)) {
@@ -24,9 +31,10 @@ export function formatDuration(hours) {
 }
 
 /**
- * Format distance in km.
- * @param {number|null} km
- * @returns {string}
+ * Formats nautical or terrestrial distance in kilometers to 1 decimal place.
+ * 
+ * @param {number|null|undefined} km - Distance in kilometers.
+ * @returns {string} Formatted string with 'km' suffix or 'N/A' if null/invalid.
  */
 export function formatDistance(km) {
   if (km === null || km === undefined || isNaN(km)) {
@@ -36,9 +44,11 @@ export function formatDistance(km) {
 }
 
 /**
- * Format risk level into badge styling and display label.
- * @param {string|null} level
- * @returns {{ label: string, color: string, level: string }}
+ * Maps a maritime safety risk level (SAFE, CAUTION, UNSAFE, DANGEROUS)
+ * into a Tailwind color palette and user-facing display label.
+ * 
+ * @param {string|null|undefined} level - Risk level enum string.
+ * @returns {{ label: string, color: string, level: string }} Badge rendering descriptor.
  */
 export function formatRiskBadge(level) {
   const norm = String(level || '').toUpperCase();

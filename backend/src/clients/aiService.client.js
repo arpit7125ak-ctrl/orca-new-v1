@@ -1,23 +1,21 @@
-// src/clients/aiService.client.js
-// ---------------------------------------------------------------------------
-// The ONLY place the Backend talks to the AI Service (Section 102).
-//
-// Section 103 defines the handoff precisely:
-//   POST {AI_SERVICE_URL}/v1/analysis/execute
-//   (contracts/api/AnalysisExecutionRequest.json - resolved over architecture
-//   doc §103's /internal/v1/execute, which the contract's own description
-//   notes was never actually specified there. Contracts win.)
-//   body: contracts/api/AnalysisExecutionRequest.json
-//   response: 202 Accepted IMMEDIATELY - the AI Service does not block
-//   auth: the same internal signed short-lived token (Section 98)
-//   idempotency: retrying with an analysis_id already running/completed
-//                returns 200 and does NOT start a second execution
-//
-// The Backend therefore does NOT wait for the analysis. It hands off, marks
-// the analysis `running`, and waits for the AI Service to call back on
-// /internal/v1/progress and /internal/v1/result.
+/**
+ * @fileoverview Outbound HTTP Client for Python AI Microservice
+ * @module clients/aiService.client
+ * @description
+ * Implements the asynchronous handoff bridge defined in Section 102 & 103.
+ * Transmits accepted analysis requests (`contracts/api/AnalysisExecutionRequest.json`)
+ * to the Python FastAPI AI service via `POST /v1/analysis/execute`.
+ *
+ * Operational Model:
+ * - Fire-and-Callback: Node.js does NOT wait for analysis completion. It initiates
+ *   execution, expects an immediate HTTP 202 Accepted, and transitions the job to
+ *   `running`. The AI Service reports updates via `/internal/v1/progress` and
+ *   `/internal/v1/result`.
+ * - Security: Authenticates calls with an HMAC-signed short-lived JWT token (Section 98).
+ * - Resiliency: Implements exponential backoff retry logic for network blips while
+ *   failing fast on HTTP 4xx client errors.
+ */
 
-// ---------------------------------------------------------------------------
 
 const axios = require('axios');
 const env = require('../config/env');

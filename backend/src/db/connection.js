@@ -1,12 +1,24 @@
-// src/db/connection.js
-// Connects to MongoDB when the app starts. Nothing else in the app should
-// call mongoose.connect() directly — this is the one place it happens.
+/**
+ * @fileoverview MongoDB Connection Manager & Lifecycle Handler
+ * @module db/connection
+ * @description
+ * Establishes and manages the global Mongoose database connection for the backend.
+ *
+ * Operational Features:
+ * - Singleton Connection: Guarantees that `mongoose.connect()` is executed once across the process.
+ * - Credential Masking: Sanitizes sensitive authentication credentials from URI connection logs.
+ * - Graceful Shutdown: Hooks into `SIGINT` and `SIGTERM` process signals to terminate connections cleanly.
+ */
 
 const mongoose = require('mongoose');
 const env = require('../config/env');
 
 let isConnected = false;
 
+/**
+ * Connects to MongoDB using credentials configured in `config/env.js`.
+ * @returns {Promise<import('mongoose').Connection>}
+ */
 async function connectDB() {
   if (isConnected) {
     return mongoose.connection;

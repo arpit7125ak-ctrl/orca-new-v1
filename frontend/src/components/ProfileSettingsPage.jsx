@@ -1,3 +1,19 @@
+/**
+ * ============================================================================
+ * ORCA Profile & Operating Settings Component (src/components/ProfileSettingsPage.jsx)
+ * ============================================================================
+ * User operating profile and environment configuration page (Page 14).
+ * 
+ * Capabilities (Architecture Spec §18, §99.12):
+ * 1. Operator Profile: Custom operator name, primary maritime role (fisherman, ferry operator,
+ *    researcher), and home port harbor.
+ * 2. Operating Defaults: Persistent default vessel type and activity to streamline rapid
+ *    daily advisory queries.
+ * 3. Offline Maritime Boundary Cache: One-click local storage download of critical
+ *    territorial waters (12 NM), Indian EEZ (200 NM), and Marine Protected Areas (MPAs).
+ * 4. High-Contrast Sunlight Mode & UI Language: Accessibility toggles.
+ */
+
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -15,6 +31,15 @@ import {
 
 import { ACTIVITIES, VESSEL_TYPES } from '../utils/maritimeConfig';
 
+/**
+ * Profile & Settings Component.
+ * 
+ * @param {Object} props
+ * @param {boolean} props.sunlightMode - Active status of high-contrast sunlight mode.
+ * @param {Function} props.setSunlightMode - Setter for sunlight mode.
+ * @param {string} props.selectedLang - Active language code.
+ * @param {Function} props.setSelectedLang - Setter for active language code.
+ */
 export default function ProfileSettingsPage({
   sunlightMode,
   setSunlightMode,

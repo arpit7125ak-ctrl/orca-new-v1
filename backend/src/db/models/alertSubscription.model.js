@@ -1,32 +1,19 @@
-// src/db/models/alertSubscription.model.js
-// ---------------------------------------------------------------------------
-// SHAPE FROM contracts/api/AlertSubscriptionRequest.json:
-//   required: subscriber_id, location, alert_types, minimum_level, channel
-//   optional: activity, vessel_type, language_override, quiet_hours
-//
-// THREE THINGS THIS GOT WRONG BEFORE, caught by live testing against the real
-// contract (my earlier checker only validated top-level required/
-// additionalProperties, not nested objects or enums - it missed all of this):
-//
-//   1. `location` is a place_or_coordinate object ({ place_name,
-//      coordinate: {lat,lon} }), NOT a flat { lat, lon, place_name }.
-//   2. `alert_types` enum is: cyclone, strong_wind, high_wave, swell_surge,
-//      lightning, thunderstorm, poor_visibility, other_hazard,
-//      official_warning - not the invented adverse_weather/high_waves/
-//      geofence_proximity set.
-//   3. Risk levels are UPPERCASE everywhere in this system: SAFE, CAUTION,
-//      UNSAFE, DANGEROUS. minimum_level's enum is CAUTION/UNSAFE/DANGEROUS
-//      (SAFE is not a sensible alert threshold - you don't get alerted when
-//      everything is fine).
-//
-// `quiet_hours` is much simpler than assumed: just { start, end } (two plain
-// strings). The contract's own description states the safety rule directly -
-// "Official DANGEROUS alerts always deliver regardless of quiet hours" - so
-// that override is NOT a configurable field. It is enforced in code
-// (dedup.js), not stored per-subscription.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview User Proactive Alert Subscription Mongoose Schema
+ * @module db/models/alertSubscription.model
+ * @description
+ * Implements data storage conforming to `contracts/api/AlertSubscriptionRequest.json`.
+ * Configures automated push/SMS/webhook alerts for maritime hazards at designated coordinates.
+ *
+ * Operational Rules:
+ * - Nested Location Shape: Models location as `{ place_name, coordinate: { lat, lon } }` per schema contract.
+ * - Uppercase Risk Scales: Enforces uppercase risk thresholds (`CAUTION`, `UNSAFE`, `DANGEROUS`).
+ * - Quiet Hours Override: DANGEROUS level alerts intentionally bypass user quiet hours
+ *   for life-safety preservation.
+ */
 
 const mongoose = require('mongoose');
+
 
 const ALERT_TYPES = [
   'cyclone', 'strong_wind', 'high_wave', 'swell_surge', 'lightning',

@@ -1,19 +1,19 @@
-// src/modules/internal/internal.routes.js
-// ---------------------------------------------------------------------------
-// Section 103 - Internal endpoints HOSTED BY THE BACKEND, called by the AI
-// Service:
-//   POST /internal/v1/progress
-//   POST /internal/v1/result
-//
-// SECURITY (Sections 98 + 102):
-// Every route here requires a signed short-lived internal token. These are
-// mounted on a SEPARATE server (src/internal-server.js) listening on a
-// different port, so they are not exposed on the public API surface at all.
-// Defence in depth: even if the internal port were reachable, the token check
-// still applies.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Internal Service-to-Service Router (AI Service Callbacks)
+ * @module modules/internal/internal.routes
+ * @description
+ * Sections 98, 102 & 103:
+ * Mounts dedicated internal webhook endpoints invoked asynchronously by the Python AI service:
+ * - `POST /internal/v1/progress`: Mid-flight stage updates and percent completions.
+ * - `POST /internal/v1/result`: Final completed multi-agent analysis and decision payloads.
+ *
+ * Security & Network Isolation:
+ * - Dual Protection: Bound exclusively to `src/internal-server.js` (port 4100),
+ *   completely isolated from the public internet, and guarded by `internalAuth` HMAC JWT verification.
+ */
 
 const express = require('express');
+
 const internalAuth = require('../../middleware/internalAuth');
 const validateContract = require('../../middleware/validateContract');
 const { postProgress } = require('./progress.controller');

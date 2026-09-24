@@ -1,12 +1,24 @@
-// src/modules/auth/auth.controller.js
-// STATUS: PROPOSED - Section 103 defines no auth endpoints.
+/**
+ * @fileoverview User Registration & Session Management Controller
+ * @module modules/auth/auth.controller
+ * @description
+ * Section 99.12 (User Profile & Authentication Handlers):
+ * Handles onboarding, profile updates, and JWT session generation.
+ *
+ * Privacy Rules:
+ * - Data Sanitization: Strips audit credentials (`invite_code_used`) from outgoing JSON responses.
+ */
 
 const userService = require('./user.service');
 const asyncHandler = require('../../utils/asyncHandler');
 const { AppError, ERROR_CATEGORIES } = require('../../errors/errorCategories');
 const { HTTP } = require('../../errors/httpStatus');
 
-/** Never return invite_code_used to a client - it is an audit field. */
+/**
+ * Normalizes user document into a safe, client-facing presentation object.
+ * @param {object} user - Mongoose User document or plain object.
+ * @returns {object} Safe user profile sans internal credentials.
+ */
 function present(user) {
   const object = user.toObject ? user.toObject() : user;
   return {

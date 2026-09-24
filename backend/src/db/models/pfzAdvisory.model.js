@@ -1,11 +1,19 @@
-// src/db/models/pfzAdvisory.model.js
-// ---------------------------------------------------------------------------
-// Model for dedicated `pfz_advisories` collection in MongoDB.
-// Stores daily INCOIS Potential Fishing Zone (PFZ) advisory vector contours.
-// Indexed with 2dsphere on `geometry` for sub-5ms distance calculations.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview INCOIS Potential Fishing Zone (PFZ) Advisory Contours Schema
+ * @module db/models/pfzAdvisory.model
+ * @description
+ * Models the `pfz_advisories` collection storing daily satellite-derived chlorophyll
+ * and Sea Surface Temperature (SST) oceanic convergence front contours from INCOIS.
+ *
+ * Performance Features:
+ * - 2dsphere Spatial Indexing: Equips `geometry` with a geospatial index enabling
+ *   sub-5ms proximity and intersection queries between fishing boats and PFZ lines.
+ * - Temporal Validity Windows: Tracks `valid_from` and `valid_to` timestamps to ensure
+ *   stale satellite advisories are automatically filtered out.
+ */
 
 const mongoose = require('mongoose');
+
 
 const PfzAdvisorySchema = new mongoose.Schema(
   {

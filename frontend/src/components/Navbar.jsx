@@ -1,3 +1,20 @@
+/**
+ * ============================================================================
+ * ORCA Navigation Bar Component (src/components/Navbar.jsx)
+ * ============================================================================
+ * Universal navigation shell for the ORCA maritime application.
+ * 
+ * Responsibilities:
+ * 1. Global Navigation: Tab switcher across all primary pages (Home, Setup, Advisory,
+ *    Route, Trends, At-Sea Guard, Alerts, History, GIS, Profile).
+ * 2. Backend Gateway Health Radar: 10-second polling heartbeat monitoring connection
+ *    status to the Node.js API Gateway (/api/v1/health).
+ * 3. Multilingual Language Selector: Dropdown for switching among 10 Indic languages
+ *    and 'auto' detection mode, directly driving i18next runtime re-rendering.
+ * 4. Sunlight Mode Toggle: High-contrast display switch for outdoor daylight visibility.
+ * 5. Custom API Override Modal: Debug utility allowing developers to switch backend targets.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18next from 'i18next';
@@ -20,6 +37,17 @@ import {
 } from 'lucide-react';
 import { orcaApi } from '../api/client';
 
+/**
+ * Universal Navigation Bar Component.
+ * 
+ * @param {Object} props
+ * @param {string} props.activeTab - Currently active tab identifier.
+ * @param {Function} props.setActiveTab - State updater for active tab.
+ * @param {boolean} props.sunlightMode - Active status of high-contrast sunlight mode.
+ * @param {Function} props.setSunlightMode - State updater for sunlight mode.
+ * @param {string} props.selectedLang - Currently selected language code.
+ * @param {Function} props.setSelectedLang - State updater for selected language.
+ */
 export default function Navbar({ 
   activeTab, 
   setActiveTab, 
@@ -29,7 +57,9 @@ export default function Navbar({
   setSelectedLang 
 }) {
   const { t } = useTranslation('ui');
+  // Backend gateway connection state: 'checking' | 'connected' | 'offline'
   const [backendStatus, setBackendStatus] = useState('checking');
+  // Custom API configuration modal state
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [customApiUrl, setCustomApiUrl] = useState('');
 

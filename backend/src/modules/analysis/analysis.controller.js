@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Analysis Controller
+ * HTTP layer for creating, fetching, and polling analyses. Delegates complex
+ * logic to the service and projects responses onto defined contracts.
+ *
+ * @module analysis.controller
+ */
+
 // src/modules/analysis/analysis.controller.js
 // ---------------------------------------------------------------------------
 // HTTP layer for analysis. Thin by design: parse, call the service, pick a

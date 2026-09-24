@@ -1,22 +1,22 @@
-// src/utils/ids.js
-// ---------------------------------------------------------------------------
-// Section 8.1: analysis_id format is LOCKED as:
-//
-//     req_{YYYYMMDD}_{HHMM}_{hash6}
-//     example: req_20260912_0915_f4e9d1
-//
-// CRITICAL DETAIL (Section 8.1): the embedded date/time is the REQUEST-RECEIPT
-// time - the moment the Backend accepts the request - NOT the target analysis
-// window. This is deliberate. For a natural-language request like "tomorrow
-// morning", the target window is unresolved at the moment we must assign an
-// ID; only the Planner resolves it later. Using receipt time removes that
-// dependency.
-//
-// Times are UTC. Never local time - two servers in different zones must never
-// generate colliding or misleading IDs.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Domain Entity ID Generators & Regex Validators
+ * @module utils/ids
+ * @description
+ * Section 8.1 (Analysis Identifiers & Deduplication):
+ * Generates and validates unique, traceable entity IDs across the ORCA ecosystem.
+ *
+ * Locked ID Standards:
+ * - `analysis_id`: Formatted as `req_{YYYYMMDD}_{HHMM}_{hash6}` (e.g. `req_20260912_0915_f4e9d1`).
+ *   Constructed from the UTC timestamp of request receipt to avoid dependency on
+ *   unresolved future target time windows.
+ * - Prefixed Entity IDs: Generates collision-resistant identifiers for conversations
+ *   (`conv_*`), routes (`route_*`), reports (`rep_*`), and alerts (`sub_*`).
+ * - Deterministic Dedup Keys: Creates SHA-256 hashes of semantic parameters to prevent
+ *   duplicate alert dispatching and geofence spam (Section 66.3 & 99.7).
+ */
 
 const crypto = require('crypto');
+
 
 /** Zero-pad a number to 2 digits (e.g. 9 -> "09"). */
 function pad2(n) {

@@ -1,3 +1,17 @@
+/**
+ * ============================================================================
+ * ORCA Statistical Trend Visualizer & SVG Timeseries (src/components/TrendView.jsx)
+ * ============================================================================
+ * Visualizes historical ocean climate trends and anomaly charts.
+ * 
+ * Capabilities (Architecture Spec §72):
+ * 1. Trend Badging: Direction indicator (increasing, decreasing, stable, insufficient_data).
+ * 2. Pure SVG Timeseries Line Chart: Zero-dependency responsive SVG graph of monthly means.
+ * 3. Anomaly Analysis: Flags historical marine heatwaves or extreme anomaly months.
+ * 4. Transparent Proxy Reporting: Alerts if chlorophyll was proxied by sea surface temperature.
+ * 5. Data Quality Provenance: Displays temporal completeness and baseline sample size.
+ */
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -14,6 +28,12 @@ import {
   Layers
 } from 'lucide-react';
 
+/**
+ * Historical Trend Results View Component.
+ * 
+ * @param {Object} props
+ * @param {Object|null} props.trendResult - Complete trend result contract object from /api/v1/trend.
+ */
 export default function TrendView({ trendResult }) {
   const { t } = useTranslation('ui');
 

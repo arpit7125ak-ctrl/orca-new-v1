@@ -1,24 +1,20 @@
-// src/db/models/gisLayer.model.js
-// ---------------------------------------------------------------------------
-// SHAPE FROM contracts/db/GisLayerDocument.json:
-//   required: layer_name, constraint_type, version, source, last_updated,
-//             geometry_simplified
-//   optional: geometry_full
-//
-// Note geometry_FULL and geometry_SIMPLIFIED (not geometry / simplified_
-// geometry), and that the SIMPLIFIED one is the required field - because
-// Section 67.1 says the Frontend receives simplified geometry, and a
-// full-resolution coastline is far too heavy to ship to a phone on a boat.
-//
-// `source` is required, not optional: Section 67 says the source of every layer
-// is shown in the evidence panel, and an unsourced boundary cannot be presented
-// as evidence.
-//
-// Section 67.1: layers are downloaded ONCE, validated, stored as GeoJSON and
-// served from here - never re-downloaded per request.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Maritime GIS Spatial Layers & Constraint Zones Schema
+ * @module db/models/gisLayer.model
+ * @description
+ * Sections 65.1, 67.1 & `contracts/db/GisLayerDocument.json`:
+ * Stores maritime boundaries, marine protected areas (MPAs), international maritime
+ * boundary lines (IMBL), and naval exercise zones.
+ *
+ * Performance & Dual-Geometry Strategy:
+ * - Dual Geometry Storage: Stores `geometry_full` (full resolution with `2dsphere` index)
+ *   for sub-second backend spatial operations, and `geometry_simplified` (Douglas-Peucker
+ *   reduced vertices) for low-bandwidth mobile rendering.
+ * - Constraint Enforcements: Tags layers as `prohibited`, `conditional`, or `warning_only`.
+ */
 
 const mongoose = require('mongoose');
+
 
 // Section 65.1 constraint types:
 //   prohibited   - a point/route can NEVER be recommended here

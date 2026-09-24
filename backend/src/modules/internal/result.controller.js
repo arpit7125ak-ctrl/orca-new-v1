@@ -1,20 +1,27 @@
-// src/modules/internal/result.controller.js
-// ---------------------------------------------------------------------------
-// Section 103: POST /internal/v1/result - AI Service final result.
-// Section 101: the Backend persists the final response plus ALL supporting
-// evidence (agent results, risk results, sampled points, GIS/PFZ/Ecosystem
-// info, official warnings applied, errors, data quality, execution trace).
-//
-// IDEMPOTENT BY DESIGN: analysis.service.applyResult() ignores a second result
-// for an already-terminal analysis, so an AI Service retry cannot corrupt a
-// stored result.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Terminal Analysis Result Webhook Controller
+ * @module modules/internal/result.controller
+ * @description
+ * Sections 101 & 103 (`POST /internal/v1/result`):
+ * Ingests completed analysis packages (`contracts/api/InternalResultPayload.json`)
+ * transmitted by the Python AI service upon pipeline completion.
+ *
+ * Operational Responsibilities:
+ * - Evidence Chain Storage: Atomically saves decision documents, agent raw/normalized
+ *   results, point measurements, and risk assessments into MongoDB.
+ * - State Transition: Moves job state from `running` to `completed`, `partial`, or `failed`.
+ * - Idempotency: Duplicate result deliveries are safely absorbed without state corruption.
+ */
 
 const analysisService = require('../analysis/analysis.service');
 const asyncHandler = require('../../utils/asyncHandler');
 const { HTTP } = require('../../errors/httpStatus');
 const { forAnalysis } = require('../../observability/logger');
 
+/**
+ * Ingests terminal analysis outcomes from AI microservice.
+ * @type {import('express').RequestHandler}
+ */
 const postResult = asyncHandler(async (req, res) => {
   const { analysis_id: analysisId } = req.body;
 

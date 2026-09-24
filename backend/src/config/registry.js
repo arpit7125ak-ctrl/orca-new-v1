@@ -1,17 +1,20 @@
-// src/config/registry.js
-// ---------------------------------------------------------------------------
-// WHY THIS FILE EXISTS:
-// Sections 7.6, 7.7 and 7.8 all say the same thing: activities, vessel types
-// and languages are CONFIGURATION-DRIVEN, not hard-coded. This module loads
-// those lists once at startup from /shared-config and exposes fast lookups.
-//
-// "shared-config" is shared with the AI Service on purpose - both services
-// must agree on what "fishing" or "ta" means. Neither service owns the list.
-//
-// Loading happens ONCE at require-time. If a config file is malformed the
-// process dies immediately rather than serving requests with a half-loaded
-// registry.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Shared Domain Registry and Configuration Catalog
+ * @module config/registry
+ * @description
+ * Sections 7.6, 7.7, and 7.8:
+ * Loads static canonical lists of allowed marine activities, vessel types,
+ * spoken languages, and physical measurement units from the shared repository
+ * `/shared-config` catalog at startup.
+ *
+ * Design Guarantees:
+ * - Synchronization: Keeps Node.js backend and Python AI service aligned on
+ *   valid IDs and semantics without code duplication.
+ * - Constant-Time O(1) Validation: Pre-populates JavaScript Set and Map data
+ *   structures during require-time initialization for instant request validation.
+ * - Fail-Fast Loading: If any configuration JSON is unreadable or malformed,
+ *   initialization throws synchronously to prevent running with partial state.
+ */
 
 const fs = require('fs');
 const path = require('path');
@@ -19,6 +22,13 @@ const path = require('path');
 // shared-config sits at the repo root, two levels above backend/src/config
 const SHARED_CONFIG_DIR = path.resolve(__dirname, '../../../shared-config');
 
+/**
+ * Reads and parses a JSON file from the shared-config directory synchronously.
+ *
+ * @param {string} filename - Base name of the JSON file (e.g. 'activities.json').
+ * @returns {object} Parsed JSON content.
+ * @throws {Error} If the file does not exist or contains invalid JSON syntax.
+ */
 function loadJson(filename) {
   const filePath = path.join(SHARED_CONFIG_DIR, filename);
   try {

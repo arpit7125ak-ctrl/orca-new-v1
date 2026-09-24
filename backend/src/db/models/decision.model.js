@@ -1,22 +1,21 @@
-// src/db/models/decision.model.js
-// ---------------------------------------------------------------------------
-// SHAPE FROM contracts/Decision.json:
-//   required: analysis_id, response_language, detailed_recommendation,
-//             one_line_recommendation, recommendation_type, point_scores
-//   optional: generated_at, key_findings, preferred_point,
-//             preferred_point_reason, worst_point, worst_point_causes,
-//             excluded_points, best_time_windows
-//
-// Section 68: the Decision Agent is where SAFETY and FISHING OPPORTUNITY are
-// combined - they are answered separately upstream and only merged here.
-//
-// `excluded_points` is the field that carries Section 105's "no allowed point"
-// scenario honestly: a point inside a `prohibited` zone can NEVER be
-// recommended regardless of how low its risk score is, and it appears here with
-// its exclusion cause rather than silently vanishing from point_scores.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Final Operational Decision & Recommendation Mongoose Schema
+ * @module db/models/decision.model
+ * @description
+ * Sections 68, 105 & `contracts/Decision.json`:
+ * Persists the combined operational verdict synthesized by the Decision Agent.
+ * Merges physical ocean/weather safety assessments with economic potential fishing zone (PFZ) insights.
+ *
+ * Domain Principles:
+ * - Separation of Concerns: Safety risk calculations and fishing yield opportunities
+ *   are computed independently upstream and only synthesized here.
+ * - Point Exclusion Integrity: Coordinates falling inside prohibited geofence zones
+ *   are logged under `excluded_points` with explicit violation reasons, preventing
+ *   unsafe recommendation even if sea conditions are perfectly calm.
+ */
 
 const mongoose = require('mongoose');
+
 
 const DecisionSchema = new mongoose.Schema(
   {

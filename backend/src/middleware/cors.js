@@ -1,11 +1,16 @@
-// src/middleware/cors.js
-// ---------------------------------------------------------------------------
-// Section 102: the ONLY caller of the public API is the Frontend.
-// Frontend -> Backend -> AI Service. Never Frontend -> AI Service directly.
-//
-// So CORS is an allowlist, not a wildcard. ALLOWED_ORIGINS comes from .env
-// (comma-separated) and is parsed in config/env.js.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Cross-Origin Resource Sharing (CORS) Security Middleware
+ * @module middleware/cors
+ * @description
+ * Section 102 (Perimeter & Communication Topology):
+ * Regulates browser origin access to the public API server.
+ *
+ * Operational Policy:
+ * - Restrictive Whitelist: Origins must match `ALLOWED_ORIGINS` configured in `.env`.
+ * - Non-Browser Clients: Requests without an `Origin` header (CLI tools, server-to-server,
+ *   automated smoke tests) are permitted, with authentication enforced downstream by JWT guards.
+ * - Header Exposition: Exposes `X-Request-Id` to allow frontend telemetry and support correlation.
+ */
 
 const cors = require('cors');
 const env = require('../config/env');

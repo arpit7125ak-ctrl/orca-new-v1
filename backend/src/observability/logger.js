@@ -1,18 +1,19 @@
-// src/observability/logger.js
-// ---------------------------------------------------------------------------
-// Section 107: Observability.
-//
-// Logs MUST include: analysis_id, agent/stage, status, status code, start/end
-// time, duration, selected agents, skipped agents with reasons, failed agents
-// with error_category, retry counts, constraint floors applied.
-//
-// Logs MUST NEVER include: API keys, passwords, private credentials, or full
-// GPS trails beyond what geofence auditing needs.
-//
-// The redaction list below is the enforcement of that second rule. It is
-// applied by pino at serialisation time, so a secret cannot leak even if some
-// future code accidentally logs an entire request object.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Central Structured Logger with Automated PII Redaction
+ * @module observability/logger
+ * @description
+ * Section 107 (Observability & Auditability):
+ * Provides high-performance, structured JSON logging via `pino`.
+ *
+ * Compliance & Privacy Rules:
+ * - Mandatory Fields: Captures `analysis_id`, `stage`, execution status, HTTP status codes,
+ *   durations, skipped agent rationales, and structured error categories.
+ * - Strict Redaction: Automatically masks sensitive credentials (JWTs, API keys,
+ *   database passwords, internal secrets) at serialization time using `pino` redact paths.
+ * - GPS Trail Capping: Truncates user positional histories to prevent privacy violations
+ *   while preserving essential audit points for geofence compliance.
+ */
+
 
 const pino = require('pino');
 const env = require('../config/env');

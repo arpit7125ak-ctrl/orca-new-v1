@@ -1,23 +1,26 @@
-// src/app.js
-// ---------------------------------------------------------------------------
-// Builds the PUBLIC Express app (the one the Frontend talks to).
-//
-// Internal AI-Service callbacks are NOT mounted here - they live on a separate
-// server in src/internal-server.js listening on a different port, so the
-// internal channel is not exposed on the public surface at all (Section 102).
-//
-// MIDDLEWARE ORDER MATTERS and is deliberate:
-//   1. requestId    - so every later log line and error carries the same ID
-//   2. helmet       - security headers before anything renders
-//   3. cors         - reject disallowed origins before doing any work
-//   4. body parsers - populate req.body
-//   5. sanitize     - clean req.body BEFORE any route or DB query sees it
-//   6. attachUser   - identity available to routes
-//   7. rate limit   - after identity so limits could later be per-user
-//   8. routes
-//   9. notFound     - only reached if no route matched
-//  10. errorHandler - LAST, always
-// ---------------------------------------------------------------------------
+/**
+ * ============================================================================
+ * ORCA Public Express Application Factory (src/app.js)
+ * ============================================================================
+ * Constructs and configures the public-facing Express HTTP application.
+ * 
+ * Architectural Isolation (Architecture Spec §2.1.4, §102):
+ * - Serves frontend requests on Port 4000.
+ * - Internal AI-Service callbacks (/api/v1/internal/*) are NOT mounted here;
+ *   they are isolated on Port 4100 in src/internal-server.js.
+ * 
+ * Strict Middleware Pipeline Order:
+ * 1. requestId: Generates X-Request-ID for distributed tracing across logs.
+ * 2. helmet: Hardens HTTP security headers (HSTS, frameguard, XSS filter).
+ * 3. cors: Enforces strict origin whitelist.
+ * 4. compression: Gzip/Deflate compression for low-bandwidth marine mobile connections.
+ * 5. body-parsers: express.json() with strict 10MB upload ceiling.
+ * 6. sanitize: Recursively strips NoSQL injection keys ($gt, $ne, etc.) from req.body.
+ * 7. attachUser: Decodes session tokens / role credentials.
+ * 8. generalLimiter: IP-based sliding window rate limiter.
+ * 9. Route Modules: Mounts all 10 domain controllers under /api/v1/*.
+ * 10. notFound & errorHandler: Standardized JSON error response formatting.
+ */
 
 const express = require('express');
 const helmet = require('helmet');

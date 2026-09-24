@@ -1,3 +1,22 @@
+/**
+ * ============================================================================
+ * ORCA At-Sea Geofence & Maritime Boundary Guard (src/components/GeofenceMonitor.jsx)
+ * ============================================================================
+ * Real-time GPS border monitor and audio proximity alert system (Page 10).
+ * 
+ * Capabilities (Architecture Spec §14, §65):
+ * 1. Live Browser Geolocation: Continuous navigator.geolocation.watchPosition() tracking
+ *    with nautical speed and heading calculations.
+ * 2. Boundary Proximity Engine: Evaluates proximity to:
+ *    - International Maritime Boundary Line (IMBL - Sri Lanka/Pakistan)
+ *    - Marine Protected Areas (MPAs - Gahirmatha, Gulf of Mannar)
+ *    - Indian Exclusive Economic Zone (EEZ - 200 NM outer limit)
+ *    - Restricted naval/military exercise corridors
+ * 3. Multi-tier Visual & Audio Alarm: Web Audio API synthesized frequency chimes
+ *    (steady pulses for CAUTION, urgent warning sirens for PROHIBITED/BREACH).
+ * 4. Interactive Radar Map: Real-time vessel marker, trajectory vector, and zone overlays.
+ */
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   ShieldAlert, 
@@ -22,6 +41,10 @@ import { useTranslation } from 'react-i18next';
 import L from 'leaflet';
 import { orcaApi } from '../api/client';
 
+/**
+ * Resolves or initializes a persistent unique device identifier for telemetry.
+ * @returns {string} Unique client device UUID.
+ */
 function getDeviceId() {
   if (typeof window === 'undefined') return 'dev-standalone';
   try {
@@ -38,6 +61,9 @@ function getDeviceId() {
   }
 }
 
+/**
+ * Pre-calibrated maritime boundary test scenarios for simulation and drills.
+ */
 const PRESET_SCENARIOS = [
   { id: 'kochi', labelKey: 'geofence.presetKochi', defaultLabel: '🟢 Authorized Coastal Waters (Kochi Coast)', lat: '9.93', lon: '76.26' },
   { id: 'gahirmatha', labelKey: 'geofence.presetGahirmatha', defaultLabel: '🟡 Near Gahirmatha Marine Sanctuary (~2 km)', lat: '20.73', lon: '87.08' },

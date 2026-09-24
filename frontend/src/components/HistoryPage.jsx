@@ -1,3 +1,18 @@
+/**
+ * ============================================================================
+ * ORCA Missions & Advisory History Interface (src/components/HistoryPage.jsx)
+ * ============================================================================
+ * Visual browser and manager for past safety advisories and missions (Page 7).
+ * 
+ * Capabilities (Architecture Spec §11, §103):
+ * 1. Multi-Modal Categorization: Filter history by kind ('point', 'route', 'trend', 'chat').
+ * 2. Instant Hydration: Clicking any past mission fetches the full analysis payload
+ *    from /api/v1/analysis/:id and immediately restores the results hub.
+ * 3. Graceful Server Eviction Handling: Flags past entries that have expired on the server
+ *    without throwing errors or deleting user history unexpectedly.
+ * 4. Local Pruning & Clear All: Delete individual items or wipe the 50-entry local cache.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -17,6 +32,9 @@ import {
 import { orcaApi } from '../api/client';
 import { list, remove, clear } from '../utils/history';
 
+/**
+ * Filter categories for history items.
+ */
 const FILTER_OPTIONS = [
   { id: 'ALL', labelKey: 'history.filterAll', defaultLabel: 'All' },
   { id: 'point', labelKey: 'history.filterPoint', defaultLabel: 'Point' },
@@ -25,6 +43,12 @@ const FILTER_OPTIONS = [
   { id: 'chat', labelKey: 'history.filterChat', defaultLabel: 'Chat' },
 ];
 
+/**
+ * Advisory History Page Component.
+ * 
+ * @param {Object} props
+ * @param {Function} props.onSelectAnalysis - Callback to restore and view a selected analysis.
+ */
 export default function HistoryPage({ onSelectAnalysis }) {
   const { t } = useTranslation('ui');
   const [historyItems, setHistoryItems] = useState([]);

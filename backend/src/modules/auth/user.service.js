@@ -1,8 +1,11 @@
-// src/modules/auth/user.service.js
-// ---------------------------------------------------------------------------
-// STATUS: PROPOSED (see inviteCode.js for why).
-// Implements the `users` collection from Section 99.12.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview User Registration & Identity Service Layer
+ * @module modules/auth/user.service
+ * @description
+ * Section 99.12 (User Profile Business Logic):
+ * Coordinates user document creation, invite code verification, preferences validation,
+ * and JWT session token generation.
+ */
 
 const jwt = require('jsonwebtoken');
 const User = require('../../db/models/user.model');

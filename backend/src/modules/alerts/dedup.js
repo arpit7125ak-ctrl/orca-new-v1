@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Alerts Deduplication
+ * Prevents alert flooding by deduplicating notifications based on hazard level
+ * and time window. Manages quiet hours evaluation.
+ *
+ * @module alerts.dedup
+ */
+
 // src/modules/alerts/dedup.js
 // ---------------------------------------------------------------------------
 // Section 99.7: alert_events carry a deduplication key.

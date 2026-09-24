@@ -1,26 +1,23 @@
-// src/utils/time.js
-// ---------------------------------------------------------------------------
-// Section 7.4 / 7.5 - the Backend's time responsibilities are STRUCTURAL only.
-// Section 7.10: interpreting "tomorrow morning" belongs to the Planner
-// (Section 14), so there is deliberately NO natural-language parsing here.
-//
-// CONTRACT SHAPE (contracts/shared/TimeWindow.json) - IMPORTANT:
-// TimeWindow.local and .utc are ISO 8601 INTERVAL STRINGS "start/end", NOT
-// nested {date, start_time, end_time} objects:
-//
-//   local: "2026-09-12T05:00:00+05:30/2026-09-12T11:00:00+05:30"
-//   utc:   "2026-09-12T00:30:00Z/2026-09-12T05:30:00Z"
-//
-// It also carries `original_expression` and `matched_bucket` - both
-// Planner-owned, both null when the Backend builds it.
-//
-// The RAW inbound range (contracts/AnalysisRequest.json `time_range`) is a
-// DIFFERENT shape: { start, end }. Raw range = pre-interpretation user input.
-// TimeWindow = the Planner's interpreted output. Do not confuse them.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview ISO 8601 Temporal Parsers, Formatters & TimeWindow Generators
+ * @module utils/time
+ * @description
+ * Sections 7.4, 7.5, & 7.10 (Structural Time Validation):
+ * Provides strict, non-heuristic temporal manipulation and validation routines.
+ *
+ * Operational Rules:
+ * - Structural Integrity: Handles bare calendar dates (YYYY-MM-DD), 24-hr clock times (HH:MM),
+ *   and full ISO 8601 timestamps. Natural-language expressions (e.g. "tomorrow morning")
+ *   are strictly delegated to the Planner agent in the AI service (Section 14).
+ * - Contract Compliance: Converts intervals to ISO 8601 "start/end" format adhering to
+ *   `contracts/shared/TimeWindow.json`.
+ * - Never-Fabricate Mandate: Returns `null` when date or UTC offset is missing rather than
+ *   assuming default local timezones, preventing time-shifted weather forecast lookups.
+ */
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;         // 2026-09-12
 const ISO_TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/; // 07:30, 23:59
+
 
 /**
  * Validate a bare ISO 8601 calendar date (YYYY-MM-DD).

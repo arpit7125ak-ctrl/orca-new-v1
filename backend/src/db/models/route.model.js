@@ -1,18 +1,20 @@
-// src/db/models/route.model.js
-// ---------------------------------------------------------------------------
-// Section 99.9: `routes`
-//   Route request, corridor grid reference, path waypoints, blocking reasons,
-//   generated advisory.
-//
-// Answers the problem statement's "What is the safest route for a fishing
-// vessel considering weather and sea-state conditions?"
-//
-// Section 104: route planning requires Planner + environmental/GIS data +
-// risk-cost grid + Route Tool. The Backend stores the outcome; the pathfinding
-// itself lives in the AI Service (route/pathfinder.py).
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Maritime Route Planning & Navigational Corridor Schema
+ * @module db/models/route.model
+ * @description
+ * Sections 99.9, 104 & `contracts/api/RouteRequest.json`:
+ * Persists evaluated marine navigational routes, waypoints, temporal risk horizons,
+ * and geofence obstruction reasons.
+ *
+ * Operational Mechanics:
+ * - Dynamic Temporal Waypoint Risk: Tracks `risk_level` and ETA at each discrete
+ *   waypoint so safety is evaluated for the exact expected transit hour.
+ * - Pathfinding Separation: Backend stores the navigational plan and waypoints;
+ *   A* graph search pathfinding algorithm executes in the Python AI service (`pathfinder.py`).
+ */
 
 const mongoose = require('mongoose');
+
 
 const WaypointSchema = new mongoose.Schema(
   {

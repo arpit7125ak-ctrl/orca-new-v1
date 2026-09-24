@@ -1,3 +1,21 @@
+/**
+ * ============================================================================
+ * ORCA Home & "Ask ORCA" Portal (src/components/HomeAskOrca.jsx)
+ * ============================================================================
+ * Primary conversational entry point for coastal fishermen and vessel operators.
+ * 
+ * Architectural Compliance (Architecture Spec §5, §77):
+ * 1. Conversational Prompt Interface: Accepts natural language marine queries in English
+ *    and Indian regional languages (e.g. "Can I fish off Kochi tomorrow morning?").
+ * 2. Voice Querying: Real-time speech-to-text powered by createSpeechRecognizer()
+ *    calibrated for low-literacy fisherman access.
+ * 3. Quick Asks: Instant pre-baked maritime safety, PFZ, and cyclone check buttons.
+ * 4. Refinement Drawer (Collapsible): Optional explicit overrides for coordinates (lat/lon),
+ *    port/place name, vessel category, operation activity, and date/time window.
+ * 5. Interactive Leaflet Map Picker: Embedded modal map enabling direct tap-to-pinpoint
+ *    at sea with automatic coastal gazetteer reverse geocoding.
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -29,6 +47,16 @@ import { createSpeechRecognizer } from '../utils/speech';
 import { getNearestCoastalPlace, resolvePlaceFromCoordinates, resolveCoordinatesFromPlace } from '../utils/geo';
 import { ACTIVITIES, VESSEL_TYPES, normalizeActivity, normalizeVesselType } from '../utils/maritimeConfig';
 
+/**
+ * Home "Ask ORCA" Component.
+ * 
+ * @param {Object} props
+ * @param {Function} props.onStartAnalysis - Handler to submit analysis payload to backend.
+ * @param {Object|null} props.cachedAnalysis - Most recent cached analysis result, if any.
+ * @param {Function} props.onViewCached - Handler to jump directly to cached analysis results.
+ * @param {string} props.selectedLang - Active language code.
+ * @param {Function} props.onSelectLang - Language switch handler.
+ */
 export default function HomeAskOrca({
   onStartAnalysis,
   cachedAnalysis,
@@ -37,8 +65,11 @@ export default function HomeAskOrca({
   onSelectLang
 }) {
   const { t } = useTranslation('ui');
+  // Natural language query input state
   const [query, setQuery] = useState('');
+  // Refinement drawer expansion toggle
   const [isRefineOpen, setIsRefineOpen] = useState(false);
+  // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
   const [speechRecognizer, setSpeechRecognizer] = useState(null);
 

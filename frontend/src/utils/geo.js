@@ -1,6 +1,23 @@
-// src/utils/geo.js
-// Coastal gazetteer and reverse geocoding utilities for Indian maritime waters
+/**
+ * ============================================================================
+ * ORCA Indian Coastal Gazetteer & Geolocation Utilities (src/utils/geo.js)
+ * ============================================================================
+ * High-performance, offline-first geospatial toolkit tailored for Indian coastal waters.
+ * 
+ * Capabilities:
+ * 1. Curated gazetteer of major Indian fishing harbors, major ports, and landing centers.
+ * 2. Mathematical Haversine great-circle distance computation (kilometers).
+ * 3. 8-point compass bearing determination (N, NE, E, SE, S, SW, W, NW).
+ * 4. Fast, deterministic reverse geocoding from raw GPS (lat/lon) to maritime sectors.
+ * 5. Online fallback resolution with OpenStreetMap Nominatim for arbitrary coastal search queries.
+ */
 
+/**
+ * Curated directory of 40+ major Indian coastal hubs covering:
+ * - West Coast (Kerala, Karnataka, Goa, Maharashtra, Gujarat)
+ * - East Coast (Tamil Nadu, Puducherry, Andhra Pradesh, Odisha, West Bengal)
+ * - Island Territories (Andaman & Nicobar, Lakshadweep)
+ */
 export const INDIAN_COASTAL_HUBS = [
   // West Coast - Kerala
   { name: 'Kochi Fisheries Harbor', shortName: 'Kochi', state: 'Kerala', lat: 9.9312, lon: 76.2673 },
@@ -72,10 +89,16 @@ export const INDIAN_COASTAL_HUBS = [
 ];
 
 /**
- * Great-circle distance between two GPS coordinates in kilometers (Haversine formula).
+ * Calculates great-circle distance between two GPS coordinates using the Haversine formula.
+ * 
+ * @param {number} lat1 - Latitude of origin point in decimal degrees.
+ * @param {number} lon1 - Longitude of origin point in decimal degrees.
+ * @param {number} lat2 - Latitude of destination point in decimal degrees.
+ * @param {number} lon2 - Longitude of destination point in decimal degrees.
+ * @returns {number} Distance in kilometers.
  */
 export function haversineDistanceKm(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Earth radius in km
+  const R = 6371; // Mean Earth radius in kilometers
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -89,7 +112,14 @@ export function haversineDistanceKm(lat1, lon1, lat2, lon2) {
 }
 
 /**
- * Returns compass direction (N, NE, E, SE, S, SW, W, NW) from origin point to target point.
+ * Computes forward azimuth bearing from origin coordinate to target coordinate,
+ * mapped to the nearest 8-point compass sector (N, NE, E, SE, S, SW, W, NW).
+ * 
+ * @param {number} originLat - Latitude of origin.
+ * @param {number} originLon - Longitude of origin.
+ * @param {number} targetLat - Latitude of target.
+ * @param {number} targetLon - Longitude of target.
+ * @returns {string} Compass cardinal/intercardinal direction code.
  */
 export function getCompassBearing(originLat, originLon, targetLat, targetLon) {
   const y = Math.sin(((targetLon - originLon) * Math.PI) / 180) * Math.cos((targetLat * Math.PI) / 180);
@@ -107,8 +137,16 @@ export function getCompassBearing(originLat, originLon, targetLat, targetLon) {
 }
 
 /**
- * Fast, deterministic local lookup for the nearest Indian coastal place.
- * Returns human-readable maritime designation (e.g. "12 km W of Kochi, Kerala" or "Offshore Rameswaram, Tamil Nadu").
+ * Instantaneous, offline-first reverse lookup identifying the closest Indian coastal hub.
+ * 
+ * Distance formatting tiers:
+ * - < 3 km: "Offshore {Hub}, {State}"
+ * - <= 40 km: "{X} km {Bearing} of {Hub}, {State}"
+ * - > 40 km: "Deep Sea ({X} km {Bearing} of {Hub})"
+ * 
+ * @param {number|string} lat - Latitude.
+ * @param {number|string} lon - Longitude.
+ * @returns {string} Plain language maritime sector designation.
  */
 export function getNearestCoastalPlace(lat, lon) {
   if (lat === undefined || lat === null || lon === undefined || lon === null) {

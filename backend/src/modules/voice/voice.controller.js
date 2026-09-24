@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Voice Controller
+ * Handles voice-based queries, processing audio payloads and managing
+ * text-to-speech synthesis of analysis results.
+ *
+ * @module voice.controller
+ */
+
 // src/modules/voice/voice.controller.js
 // Section 103: POST /api/v1/voice/query
 

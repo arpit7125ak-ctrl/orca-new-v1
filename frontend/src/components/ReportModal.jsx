@@ -1,3 +1,18 @@
+/**
+ * ============================================================================
+ * ORCA Official Advisory Report Modal (src/components/ReportModal.jsx)
+ * ============================================================================
+ * Modal dialog for inspecting, copying, and printing official maritime safety bulletins.
+ * 
+ * Capabilities (Architecture Spec §103):
+ * 1. Multi-Format Retrieval: Fetches formatted advisory reports via /api/v1/report/:id
+ *    in Markdown, JSON, and printable plain text.
+ * 2. Markdown Parser & Table Formatter: Lightweight markdown parser that renders
+ *    bulleted warnings, section headings, and structured data tables without external libraries.
+ * 3. Clipboard & Print Integration: 1-click clipboard export and browser window.print()
+ *    formatted with clean CSS print media styles.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 

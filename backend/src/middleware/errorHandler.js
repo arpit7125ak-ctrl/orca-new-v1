@@ -1,15 +1,18 @@
-// src/middleware/errorHandler.js
-// ---------------------------------------------------------------------------
-// The single place an error becomes an HTTP response.
-//
-// Express identifies error middleware by ARITY - it must take exactly four
-// arguments (err, req, res, next). Removing the unused `next` parameter would
-// silently turn this into ordinary middleware and every error would hang.
-// That is why `next` is present but unused.
-//
-// Every error response uses one envelope so the Frontend parses one shape:
-//   { success: false, error: { message, error_category, details?, request_id } }
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Central Express Error Handling & Envelope Normalization Middleware
+ * @module middleware/errorHandler
+ * @description
+ * Captures all operational exceptions (`AppError`), Mongoose schema validation failures,
+ * MongoDB duplicate key errors, and unexpected runtime crashes.
+ *
+ * Operational Guarantees:
+ * - Arity Preservation: Maintains 4 formal parameters `(err, req, res, next)` as required
+ *   by Express runtime error dispatching.
+ * - Standard Error Envelope: Guarantees every failed response matches the contract:
+ *   `{ success: false, error: { message, error_category, details, request_id } }`.
+ * - Production Safety: Never leaks raw stack traces or internal driver connection details
+ *   to end-users in production mode.
+ */
 
 const { AppError, ERROR_CATEGORIES } = require('../errors/errorCategories');
 const { HTTP, statusForCategory } = require('../errors/httpStatus');

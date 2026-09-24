@@ -1,16 +1,20 @@
-// src/modules/pfz/pfzSync.service.js
-// ---------------------------------------------------------------------------
-// INCOIS Potential Fishing Zone (PFZ) Live Synchronization Service.
-//
-// Fetches daily satellite lines from the INCOIS GeoServer OGC WFS endpoint,
-// segregates the features into individual sector documents, and performs
-// idempotent upserts into the MongoDB `pfz_advisories` collection.
-//
-// If INCOIS is unreachable on any given day, gracefully falls back to extending
-// the validity window of existing documents by 48 hours for zero downtime.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview INCOIS Potential Fishing Zone (PFZ) Synchronization Service
+ * @module modules/pfz/pfzSync.service
+ * @description
+ * Synchronizes daily satellite-derived PFZ vector line contours from the official
+ * INCOIS GeoServer WFS endpoint into MongoDB.
+ *
+ * Operational Capabilities:
+ * - OGC WFS Integration: Queries `PFZ_Automation:pfzlines` GeoJSON feature sets.
+ * - Maritime Knowledge Mapping: Augments geographic sectors with regional commercial
+ *   pelagic target species (e.g. Yellowfin Tuna, Oil Sardine, Silver Pomfret).
+ * - Resilient Offline Fallback: If INCOIS government servers experience an outage,
+ *   automatically extends current active advisories by 48 hours to ensure continuous service.
+ */
 
 const https = require('https');
+
 const axios = require('axios');
 const env = require('../../config/env');
 const PfzAdvisory = require('../../db/models/pfzAdvisory.model');

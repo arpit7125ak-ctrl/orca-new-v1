@@ -1,10 +1,27 @@
-// src/config/env.js
-// Loads .env, fails fast if anything required is missing, and hands the rest
-// of the app a single frozen config object instead of scattering
-// `process.env.X` reads everywhere.
+/**
+ * @fileoverview Central Environment Configuration Loader
+ * @module config/env
+ * @description
+ * Loads environment variables from the `.env` file via `dotenv`, validates
+ * all strictly mandatory configurations at server startup, applies sensible
+ * production defaults for optional items, and exports a deeply immutable
+ * (frozen) configuration object for consumption across the entire backend.
+ *
+ * Design Guarantees:
+ * - Fail-Fast Startup: Any missing critical credential or URI immediately aborts
+ *   process execution with a descriptive error message before any network listener binds.
+ * - Single Source of Truth: Prohibits scattered, ad-hoc `process.env.*` reads across
+ *   controllers, services, or database layers.
+ */
 
+// Load local environment overrides from .env into process.env
 require('dotenv').config();
 
+/**
+ * Array of mandatory environment variable keys.
+ * If any of these are unset or empty strings, the backend will fail fast at startup.
+ * @constant {string[]}
+ */
 const REQUIRED_VARS = [
   'MONGO_URI',
   'AI_SERVICE_URL',
@@ -12,6 +29,13 @@ const REQUIRED_VARS = [
   'JWT_SECRET',
 ];
 
+/**
+ * Retrieves a mandatory environment variable or throws a fatal startup exception.
+ *
+ * @param {string} name - Name of the environment variable to look up.
+ * @returns {string} The non-empty string value of the environment variable.
+ * @throws {Error} If the variable is undefined or an empty string.
+ */
 function requireEnv(name) {
   const value = process.env[name];
   if (value === undefined || value === '') {
@@ -23,6 +47,13 @@ function requireEnv(name) {
   return value;
 }
 
+/**
+ * Retrieves an optional environment variable with a fallback default.
+ *
+ * @param {string} name - Name of the environment variable to look up.
+ * @param {string} fallback - Default fallback value if variable is missing or blank.
+ * @returns {string} The resolved string value or the provided fallback.
+ */
 function optionalEnv(name, fallback) {
   const value = process.env[name];
   return value === undefined || value === '' ? fallback : value;

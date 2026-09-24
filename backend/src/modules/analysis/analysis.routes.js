@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Analysis Routes
+ * Defines API endpoints for orchestrating marine hazard analyses, applying
+ * rate limits and contract validations.
+ *
+ * @module analysis.routes
+ */
+
 // src/modules/analysis/analysis.routes.js
 // ---------------------------------------------------------------------------
 // Section 103 - Analysis endpoints:

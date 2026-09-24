@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Chat Controller
+ * Handles conversation endpoints. Receives chat messages, initiates analysis
+ * tasks, and retrieves conversation histories.
+ *
+ * @module chat.controller
+ */
+
 // src/modules/chat/chat.controller.js
 // ---------------------------------------------------------------------------
 // Section 103 - Chat endpoints.

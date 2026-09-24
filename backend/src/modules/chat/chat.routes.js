@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Chat Routes
+ * Defines API endpoints for conversational interfaces, including message
+ * submission and history retrieval.
+ *
+ * @module chat.routes
+ */
+
 // src/modules/chat/chat.routes.js
 // ---------------------------------------------------------------------------
 // Section 103 - Chat:

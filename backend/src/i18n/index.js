@@ -1,17 +1,18 @@
-// src/i18n/index.js
-// ---------------------------------------------------------------------------
-// Template resolution for pre-translated strings (Section 66.2).
-//
-// Section 66.3 forbids using an LLM for geofence decisions, and by extension we
-// do not use one for geofence/alert TEXT either: a safety warning must render
-// identically every single time, offline-cacheable and instant.
-//
-// HONESTY ABOUT FALLBACK:
-// When a translation is missing we fall back to English, but we RETURN that
-// fact (`fellBack: true`, `languageUsed: 'en'`) rather than hiding it. The
-// caller can then show a "shown in English" note instead of silently implying
-// the user's language was supported.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Pre-translated Safety Advisory & Geofence String Resolver
+ * @module i18n/index
+ * @description
+ * Section 66.2 & 66.3 (Deterministic Multilingual Rendering):
+ * Resolves static, pre-translated text templates for geofence breaches and severe weather
+ * alerts across supported Indian coastal languages without invoking an LLM.
+ *
+ * Safety & Fallback Principles:
+ * - Determinism: Safety warnings must be offline-cacheable, instant (<1s), and identical
+ *   in phrasing every single time.
+ * - Honest Fallback Transparency: When a specific regional translation is missing,
+ *   falls back to English while explicitly returning `fellBack: true` so the UI
+ *   can disclose the fallback language to the user honestly.
+ */
 
 const geofenceWarnings = require('./templates/geofenceWarnings.json');
 const alertMessages = require('./templates/alertMessages.json');

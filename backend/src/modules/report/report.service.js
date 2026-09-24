@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Report Service
+ * Responsible for generating, caching, and retrieving shareable reports
+ * based on completed marine analyses. Ensures reports are immutable evidence.
+ *
+ * @module report.service
+ */
+
 // src/modules/report/report.service.js
 // ---------------------------------------------------------------------------
 // Section 103: GET /api/v1/report/:analysis_id - generate/fetch a shareable

@@ -1,3 +1,20 @@
+/**
+ * ============================================================================
+ * ORCA Decision Hero Component (src/components/DecisionHero.jsx)
+ * ============================================================================
+ * Top-level executive safety card presenting unambiguous operational advice.
+ * 
+ * Architectural Compliance (Architecture Spec §7, §77):
+ * 1. Prominent Safety Level: High-contrast badge for SAFE (emerald), CAUTION (amber),
+ *    UNSAFE (orange), or DANGEROUS (rose).
+ * 2. Primary One-Line Operational Advisory: Plain, actionable guidance a fisherman
+ *    can act on immediately without deciphering numbers.
+ * 3. Audio Read-Aloud: One-click Web Speech TTS in the detected local language.
+ * 4. Quick Metrics: Live wind speed, significant wave height, and visibility metrics
+ *    specifically targeting decision.preferred_point (the recommended sea location).
+ * 5. Official Warning Alerts: Enforced banners when IMD/INCOIS bulletins are active.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -18,8 +35,17 @@ import { speakText, stopSpeaking } from '../utils/speech';
 import { orcaApi } from '../api/client';
 import { haversineDistanceKm } from '../utils/geo';
 
+/**
+ * Decision Hero Card Component.
+ * 
+ * @param {Object} props
+ * @param {Object|null} props.analysis - Completed analysis result object.
+ * @param {Function} props.onOpenReport - Callback to open the full advisory report modal.
+ * @param {string} [props.language='en'] - Target language for text-to-speech audio synthesis.
+ */
 export default function DecisionHero({ analysis, onOpenReport, language = 'en' }) {
   const { t } = useTranslation('ui');
+  // State for voice read-aloud active status
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
   if (!analysis) return null;

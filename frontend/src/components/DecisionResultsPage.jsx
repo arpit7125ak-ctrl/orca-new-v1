@@ -1,3 +1,19 @@
+/**
+ * ============================================================================
+ * ORCA Advisory & Decision Results Hub (src/components/DecisionResultsPage.jsx)
+ * ============================================================================
+ * Comprehensive results visualization dashboard (Page 3 & Page 4).
+ * 
+ * Integrated Sub-Components:
+ * 1. DecisionHero: Prominent safety badge, 1-line action, and preferred point quick metrics.
+ * 2. MarineMap: Interactive leaflet map rendering multi-point grid or nautical route.
+ * 3. PointGrid: Matrix of evaluated points (P0, R0001-R0008) with safety ranks and wave metrics.
+ * 4. PointDetailSheet: Comprehensive 26-measurement telemetry inspection drawer.
+ * 5. ExplainableAi: Section 78 risk score decomposition (Baseline -> LLM -> Final).
+ * 6. AgenticReasoning: Section 79 visible multi-agent execution trace and latency.
+ * 7. ReportModal: Downloadable official advisory report (PDF/Markdown/JSON).
+ */
+
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -27,6 +43,16 @@ import ReportModal from './ReportModal';
 import PointDetailSheet from './PointDetailSheet';
 import TrendView from './TrendView';
 
+/**
+ * Decision Results Page Component.
+ * 
+ * @param {Object} props
+ * @param {Object|null} props.analysis - Completed analysis result object.
+ * @param {string} [props.selectedLang='auto'] - User's selected language.
+ * @param {Function} props.onBackToInput - Handler to return to setup page.
+ * @param {Function} props.onNewAnalysis - Handler to clear and launch fresh analysis.
+ * @param {Function} props.onNavigateToTab - Global navigation router handler.
+ */
 export default function DecisionResultsPage({
   analysis,
   selectedLang = 'auto',

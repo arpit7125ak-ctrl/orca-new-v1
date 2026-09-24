@@ -1,3 +1,10 @@
+/**
+ * @fileoverview Report Controller
+ * Handles requests for generated reports. Supports multiple formats and languages.
+ *
+ * @module report.controller
+ */
+
 // src/modules/report/report.controller.js
 // Section 103: GET /api/v1/report/:analysis_id
 

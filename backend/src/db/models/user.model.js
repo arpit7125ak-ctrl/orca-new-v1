@@ -1,22 +1,19 @@
-// src/db/models/user.model.js
-// ---------------------------------------------------------------------------
-// Section 99.12: `users` - the other spec gap that was closed. Exact fields:
-//   user_id, role, invite_code_used, display_name, preferred_language,
-//   default_vessel_type, default_activity, home_location, subscriber_id,
-//   created_at, last_active_at
-//
-// NOTE: Section 103 defines NO auth endpoints. The modules/auth/* routes built
-// on top of this model are therefore marked PROPOSED - they are a reasonable
-// implementation of a collection the doc specifies, but the endpoints
-// themselves are not in the spec.
-//
-// SECURITY NOTE: there is no password field here. The architecture uses invite
-// codes, and Section 107 forbids logging credentials. If password auth is added
-// later, the hash must live in a separate collection or at minimum be `select:
-// false` so it is never returned by a default query.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview User Profile, Role Assignment & Maritime Preferences Schema
+ * @module db/models/user.model
+ * @description
+ * Section 99.12 (`users` collection):
+ * Persists user identities, operational personas, preferred regional languages,
+ * vessel characteristics, and home port coordinates.
+ *
+ * Security Architecture:
+ * - Passwordless Invite Architecture: Uses verifiable role-based invite codes (`invite_code_used`)
+ *   rather than storing plaintext or salted password hashes in the primary user document.
+ * - Credential Privacy: Adheres to Section 107 credential isolation standards.
+ */
 
 const mongoose = require('mongoose');
+
 
 const ROLES = [
   'fisherman',

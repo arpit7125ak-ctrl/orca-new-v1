@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Web Push Delivery
+ * Handles delivery of browser push notifications using VAPID credentials.
+ * Manages delivery state and expired subscription detection.
+ *
+ * @module alerts.delivery.webPush
+ */
+
 // src/modules/alerts/delivery/webPush.js
 // ---------------------------------------------------------------------------
 // Web Push delivery using VAPID keys from .env.

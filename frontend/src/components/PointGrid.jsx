@@ -1,7 +1,31 @@
+/**
+ * ============================================================================
+ * ORCA Multi-Point Safety Matrix (src/components/PointGrid.jsx)
+ * ============================================================================
+ * Visual matrix of all geographical sampling points evaluated by the pipeline.
+ * 
+ * Capabilities (Architecture Spec §7, §8):
+ * 1. 9-Point Local Grid & 25-Point Regional Grid: Displays center anchor (P0) and
+ *    surrounding cardinal/intercardinal perimeter stations (P1-P8 / R0001-R0008).
+ * 2. Visual Badging: Highlights the algorithmically preferred point (green ring)
+ *    and highest risk/worst point (red ring).
+ * 3. Quick Telemetry Snippets: Significant wave height (Hs), wind velocity, and dominant hazards.
+ * 4. Interactive Selection: Clicking any point card opens the comprehensive 26-parameter
+ *    PointDetailSheet inspection drawer.
+ */
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Compass, Waves, Wind, AlertTriangle, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
+/**
+ * Multi-Point Grid Matrix Component.
+ * 
+ * @param {Object} props
+ * @param {Object|null} props.analysis - Completed analysis result object.
+ * @param {Object|null} props.selectedPoint - Currently selected point for deep inspection.
+ * @param {Function} props.onSelectPoint - Callback triggered when user clicks a point card.
+ */
 export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
   const { t } = useTranslation('ui');
   const plan = analysis?.plan || {};

@@ -1,3 +1,19 @@
+/**
+ * ============================================================================
+ * ORCA Visible Multi-Agent Reasoning Component (src/components/AgenticReasoning.jsx)
+ * ============================================================================
+ * Visualizes the complete autonomous agent pipeline execution trace (Section 79).
+ * 
+ * Architectural Compliance (Architecture Spec §79):
+ * 1. Intent & Language Diagnostics: Displays detected intent, language, and confidence score.
+ * 2. Specialist Selection Policy: Shows why specific agents (weather, ocean, tide, etc.) were
+ *    activated by policy or mandatory rules.
+ * 3. Execution Trace & Timing: Lists every completed pipeline stage with its exact
+ *    wall-clock latency (duration_ms).
+ * 4. Concurrent Pipeline Latency: Calculates wall-clock elapsed duration across concurrent
+ *    fan-out agents (Math.max(ends) - Math.min(starts)) rather than a misleading sequential sum.
+ */
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -6,6 +22,12 @@ import {
   Workflow
 } from 'lucide-react';
 
+/**
+ * Agentic Reasoning & Execution Trace Component.
+ * 
+ * @param {Object} props
+ * @param {Object|null} props.analysis - Completed analysis payload containing plan and execution_trace.
+ */
 export default function AgenticReasoning({ analysis }) {
   const { t } = useTranslation('ui');
   if (!analysis) return null;

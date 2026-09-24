@@ -1,3 +1,21 @@
+/**
+ * ============================================================================
+ * ORCA Mission Setup & Interactive Map Interface (src/components/AnalysisInputPage.jsx)
+ * ============================================================================
+ * Comprehensive mission planning and coordinate selection page (Page 2).
+ * 
+ * Features:
+ * 1. Dual Input Modes: Structured maritime parameters (place, lat/lon, activity, vessel,
+ *    temporal window) or freeform natural language query.
+ * 2. Embedded Leaflet Marine Map: Interactive map with satellite/nautical tiles,
+ *    click-to-pinpoint coordinate selection, and live GPS geolocation.
+ * 3. Bidirectional Geocoding: Synchronizes typed place names with map markers,
+ *    and reverse geocodes map clicks into Indian coastal sector descriptions.
+ * 4. Regional Coastal Presets: Rapid-setup buttons for Kochi, Mumbai, Veraval,
+ *    Rameswaram, Puri, and Goa.
+ * 5. Section 77 Accessibility: Integrated voice dictation for query input.
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -23,10 +41,18 @@ import { createSpeechRecognizer } from '../utils/speech';
 import { getNearestCoastalPlace, resolvePlaceFromCoordinates, resolveCoordinatesFromPlace } from '../utils/geo';
 import { ACTIVITIES, VESSEL_TYPES, normalizeActivity, normalizeVesselType } from '../utils/maritimeConfig';
 
+/**
+ * Mission Setup & Input Component.
+ * 
+ * @param {Object} props
+ * @param {Function} props.onStartAnalyze - Callback triggering execution pipeline with configured payload.
+ * @param {boolean} props.isLoading - Whether an analysis is currently running in the background.
+ * @param {Object} [props.defaultValues={}] - Seed values for form inputs.
+ */
 export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultValues = {} }) {
   const { t } = useTranslation('ui');
 
-  // Input fields matching Image 2 & Image 3
+  // Input fields for structured parameters and natural language prompt
   const [locationName, setLocationName] = useState(defaultValues.place_name || '');
   const [lat, setLat] = useState(defaultValues.lat ? String(defaultValues.lat) : '');
   const [lon, setLon] = useState(defaultValues.lon ? String(defaultValues.lon) : '');

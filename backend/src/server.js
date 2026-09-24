@@ -1,16 +1,21 @@
-// src/server.js
-// ---------------------------------------------------------------------------
-// ENTRY POINT for the public API server.
-//
-//   npm start      -> node src/server.js
-//   npm run dev    -> nodemon src/server.js
-//
-// STARTUP ORDER IS DELIBERATE:
-//   1. Connect to MongoDB FIRST. Accepting traffic before the database is up
-//      would return 500s that look like application bugs.
-//   2. Register all models, so every index is built before the first request.
-//   3. Only then bind the port.
-// ---------------------------------------------------------------------------
+/**
+ * ============================================================================
+ * ORCA Backend Public API Server Bootstrap (src/server.js)
+ * ============================================================================
+ * Central entry point for the public-facing Node.js Express API Gateway (Port 4000).
+ * 
+ * Startup Sequencing (Architecture Spec §2, §20):
+ * 1. Database Connection: Connects to MongoDB first before accepting any network traffic.
+ * 2. Mongoose Index Initialization: Registers all 12 schema models to ensure TTL, 2dsphere,
+ *    and unique indices are built.
+ * 3. Express App Instantiation: Initializes middleware, rate limiters, and public /api/v1 routes.
+ * 4. Dual-Port Internal Gateway: If INTERNAL_PORT (4100) is specified, boots the internal listener
+ *    for AI-Service webhook progress/results.
+ * 5. Background Cron Schedulers: Initiates INCOIS PFZ advisory sync (every 6 hours) and
+ *    active alert polling.
+ * 6. Graceful Shutdown Engine: Listens to SIGTERM/SIGINT signals to cleanly close HTTP listeners,
+ *    active database connections, and cron jobs.
+ */
 
 const cron = require('node-cron');
 const env = require('./config/env');

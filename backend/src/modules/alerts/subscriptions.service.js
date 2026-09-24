@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Subscriptions Service
+ * Manages the lifecycle of alert subscriptions, validating complex geometries,
+ * quiet hours, and alerting thresholds.
+ *
+ * @module alerts.subscriptions.service
+ */
+
 // src/modules/alerts/subscriptions.service.js
 // ---------------------------------------------------------------------------
 // Section 103 alert subscription CRUD. Section 40: 201 on create, 409 on

@@ -1,11 +1,31 @@
 /**
- * ORCA API Client
- * Connects Frontend strictly to the Backend Public Gateway (Port 4000)
- * Architecture Spec §2.1.4: Frontend NEVER communicates directly with AI-Service or external providers.
+ * ============================================================================
+ * ORCA API Client (src/api/client.js)
+ * ============================================================================
+ * Central HTTP client connecting the React frontend strictly to the Node.js
+ * Backend Gateway (Default Port 4000).
+ * 
+ * Architectural Compliance (Architecture Spec §2.1.4):
+ * - Frontend NEVER communicates directly with Python AI-Service (Port 8000) or
+ *   external data sources (INCOIS, IMD, Copernicus).
+ * - All requests flow through this client to `/api/v1/*` on the backend gateway.
+ * - Handles base URL resolution, runtime URL overrides (via localStorage),
+ *   unified JSON headers, detailed violation parsing, and standardized error logging.
  */
 
 import { normalizeActivity, normalizeVesselType } from '../utils/maritimeConfig';
 
+/**
+ * Resolves the active base URL for API requests.
+ * 
+ * Resolution Priority:
+ * 1. window.localStorage 'ORCA_API_BASE' (for local testing/staging override).
+ * 2. Vite environment variable: VITE_API_BASE or VITE_API_BASE_URL.
+ * 3. Render deployment auto-detection (*.onrender.com).
+ * 4. Fallback default relative path '/api/v1'.
+ * 
+ * @returns {string} Clean base URL without trailing slashes.
+ */
 export function getApiBase() {
   if (typeof window !== 'undefined' && window.localStorage) {
     const saved = window.localStorage.getItem('ORCA_API_BASE');
@@ -22,6 +42,11 @@ export function getApiBase() {
   return '/api/v1';
 }
 
+/**
+ * Manually updates or clears the localStorage API base URL override.
+ * 
+ * @param {string|null} newUrl - New base URL to persist, or empty/null to remove override.
+ */
 export function setApiBase(newUrl) {
   if (typeof window !== 'undefined' && window.localStorage) {
     if (newUrl && newUrl.trim()) {
@@ -32,6 +57,20 @@ export function setApiBase(newUrl) {
   }
 }
 
+/**
+ * Core generic fetch wrapper for all HTTP communications with the backend gateway.
+ * 
+ * Features:
+ * - Automatically prepends current `getApiBase()` to relative endpoints.
+ * - Enforces application/json Content-Type header.
+ * - Extracts and formats detailed validation error violations from backend JSON schema responses.
+ * - Standardized console error reporting with HTTP method and target URL.
+ * 
+ * @param {string} endpoint - API route (e.g. '/analysis' or '/health').
+ * @param {RequestInit} [options={}] - Standard fetch configuration options.
+ * @returns {Promise<any>} Parsed response data JSON.
+ * @throws {Error} When response.ok is false or a network communication error occurs.
+ */
 async function request(endpoint, options = {}) {
   const base = getApiBase();
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;

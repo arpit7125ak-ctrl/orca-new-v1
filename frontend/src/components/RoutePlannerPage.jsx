@@ -1,3 +1,20 @@
+/**
+ * ============================================================================
+ * ORCA Nautical Route Planner & Passage Analyzer (src/components/RoutePlannerPage.jsx)
+ * ============================================================================
+ * Nautical passage planning and waypoint risk evaluation interface (Page 9).
+ * 
+ * Capabilities (Architecture Spec §13, §71):
+ * 1. Interactive Passage Definition: Click map to place Departure Harbor (Origin)
+ *    and Destination Fishing Grounds (Destination).
+ * 2. Great-Circle / Coastal Waypoint Generation: Submits trajectory to /api/v1/route
+ *    which splits passage into equidistant offshore waypoints.
+ * 3. Waypoint Risk Telemetry: Evaluates environmental risks (wind, swell, restricted zones)
+ *    along each intermediate nautical leg.
+ * 4. Overall Passage Score: Renders color-coded passage trajectory polyline
+ *    (green for SAFE, amber for CAUTION, red for DANGEROUS).
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -24,6 +41,12 @@ import { getNearestCoastalPlace } from '../utils/geo';
 import { addEntry } from '../utils/history';
 import { VESSEL_TYPES } from '../utils/maritimeConfig';
 
+/**
+ * Route Planner Component.
+ * 
+ * @param {Object} props
+ * @param {string} [props.selectedLang='auto'] - Active language code for localized advisory output.
+ */
 export default function RoutePlannerPage({ selectedLang = 'auto' }) {
   const { t } = useTranslation('ui');
   const [originName, setOriginName] = useState('');

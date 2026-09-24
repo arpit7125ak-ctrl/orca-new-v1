@@ -1,10 +1,18 @@
-// src/errors/errorCategories.js
-// ---------------------------------------------------------------------------
-// Section 9: every `failed` analysis stores an `error_category`. This file is
-// the authoritative JS mirror of that enum. It MUST stay in sync with
-// contracts/shared/ErrorInfo.json - the contract is the source of truth, this
-// is the convenience constant used by code.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Canonical Error Category Enumerations & AppError Class
+ * @module errors/errorCategories
+ * @description
+ * Section 9 & `contracts/shared/ErrorInfo.json`:
+ * Defines the standard error categories used by failed analyses, validation failures,
+ * and upstream pipeline errors.
+ *
+ * Architecture Role:
+ * - Contract Synchronization: Serves as the authoritative JavaScript representation
+ *   of the schema enum specified in `contracts/shared/ErrorInfo.json`.
+ * - Centralized Error Classification: `AppError` carries an `errorCategory` field,
+ *   allowing the central error handler (`errorHandler.js`) to automatically derive
+ *   appropriate HTTP status codes without controllers hard-coding status numbers.
+ */
 
 const ERROR_CATEGORIES = Object.freeze({
   INVALID_LOCATION:     'invalid_location',

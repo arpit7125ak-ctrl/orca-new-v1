@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Subscriptions Controller
+ * Handles CRUD endpoints for alert subscriptions. Maps responses to the precise
+ * schema defined in the contracts.
+ *
+ * @module alerts.subscriptions.controller
+ */
+
 // src/modules/alerts/subscriptions.controller.js
 // Section 103 alert subscription endpoints. Section 40: 201 on create.
 

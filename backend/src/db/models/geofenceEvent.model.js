@@ -1,20 +1,20 @@
-// src/db/models/geofenceEvent.model.js
-// ---------------------------------------------------------------------------
-// SHAPE FROM contracts/db/GeofenceEventDocument.json:
-//   required: lat, lon, state, created_at
-//   optional: device_id, layer_name, constraint_type, distance_km,
-//             bearing_deg, deduplicated
-//
-// Section 66.3: geofence events are stored for audit.
-// Section 107: full GPS trails must NOT be retained beyond audit needs - see
-// the TTL index at the bottom, which makes MongoDB enforce retention rather
-// than relying on someone remembering to run a cleanup job.
-//
-// layer_name and constraint_type are nullable by design: a `clear` event
-// genuinely has no layer, so writing one would be fabrication.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Geofence Proximity & Boundary Breach Event Audit Schema
+ * @module db/models/geofenceEvent.model
+ * @description
+ * Sections 66.3, 107 & `contracts/db/GeofenceEventDocument.json`:
+ * Captures historical audits of marine boundary interactions (clear, approaching, inside).
+ *
+ * Compliance & Privacy Constraints:
+ * - Deterministic States: Stores `clear`, `approaching`, or `inside` states alongside
+ *   distance and compass bearing to the nearest jurisdictional boundary.
+ * - Privacy Preservation & TTL Expiration: Automatically purges historical event records
+ *   after 30 days via a MongoDB TTL index, enforcing Section 107 privacy requirements
+ *   against retaining perpetual vessel GPS tracks.
+ */
 
 const mongoose = require('mongoose');
+
 
 const GEOFENCE_STATES = ['clear', 'approaching', 'inside'];
 

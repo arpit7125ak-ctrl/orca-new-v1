@@ -1,3 +1,18 @@
+/**
+ * ============================================================================
+ * ORCA Explainable AI (XAI) & Score Decomposition (src/components/ExplainableAi.jsx)
+ * ============================================================================
+ * Visualizes the audited mathematical risk score formulation (Section 78).
+ * 
+ * Architectural Compliance (Architecture Spec §78):
+ * 1. Score Decomposition: Displays the exact mathematical transition from
+ *    Deterministic Baseline Score -> LLM Calibration Adjustment (bounded [-15, +15]) -> Final Score.
+ * 2. Mandatory Constraint Floors: Explains when official IMD/INCOIS cyclone warnings
+ *    or maritime hazard bulletins legally override LLM adjustments to enforce a risk floor (e.g. >= 80).
+ * 3. 7-Dimension Factor Breakdown: Wind, waves, tides, visibility, restricted zones, etc.
+ * 4. Data Quality & Source Provenance: Shows latency, freshness, and authority per measurement.
+ */
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -10,6 +25,12 @@ import {
   Database 
 } from 'lucide-react';
 
+/**
+ * Explainable AI Component.
+ * 
+ * @param {Object} props
+ * @param {Object|null} props.analysis - Completed analysis result containing explainability and risk models.
+ */
 export default function ExplainableAi({ analysis }) {
   const { t } = useTranslation('ui');
   if (!analysis) return null;

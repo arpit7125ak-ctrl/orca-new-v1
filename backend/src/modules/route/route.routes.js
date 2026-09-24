@@ -1,3 +1,10 @@
+/**
+ * @fileoverview Route Routes
+ * Defines API endpoints for creating and fetching safe marine routes.
+ *
+ * @module route.routes
+ */
+
 // src/modules/route/route.routes.js
 // Section 103: POST /api/v1/route, GET /api/v1/route/:route_id
 

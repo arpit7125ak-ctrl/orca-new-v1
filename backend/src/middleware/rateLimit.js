@@ -1,17 +1,17 @@
-// src/middleware/rateLimit.js
-// ---------------------------------------------------------------------------
-// Section 40: 429 Too Many Requests when the rate limit is exceeded.
-//
-// Three DIFFERENT limiters, because the endpoints have very different cost and
-// very different safety implications:
-//
-//   generalLimiter  - ordinary reads. Generous.
-//   analysisLimiter - POST /analysis spawns a full multi-agent AI run. Tight.
-//   geofenceLimiter - live GPS polling is SUPPOSED to be frequent (Section
-//                     66.2 sends position at an interval), and it is a SAFETY
-//                     feature. Deliberately the loosest limit: throttling a
-//                     boundary warning could put someone in prohibited waters.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Express Rate Limiting Policies for Public Endpoints
+ * @module middleware/rateLimit
+ * @description
+ * Section 40 (HTTP 429 Rate Limiting):
+ * Distributes inbound traffic across 3 differentiated rate limiter policies
+ * aligned with resource cost and maritime safety criticality:
+ *
+ * Policies:
+ * - `generalLimiter`: Standard read endpoints (cached routes, static catalog).
+ * - `analysisLimiter`: High-compute analysis triggers (spawns multi-agent AI execution).
+ * - `geofenceLimiter`: GPS telemetry monitoring. Highly permissive because throttling
+ *   live boundary warnings would pose immediate navigational hazards to fishermen.
+ */
 
 const rateLimit = require('express-rate-limit');
 const limits = require('../config/limits');

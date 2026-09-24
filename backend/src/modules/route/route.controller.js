@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Route Controller
+ * Handles route planning requests. Parses parameters, delegates to the route
+ * service, and structures the response.
+ *
+ * @module route.controller
+ */
+
 // src/modules/route/route.controller.js
 // Section 103: POST /api/v1/route, GET /api/v1/route/:route_id
 

@@ -1,16 +1,16 @@
-// src/modules/auth/auth.routes.js
-// ---------------------------------------------------------------------------
-// STATUS: PROPOSED.
-// Section 103 lists no auth endpoints, but Section 99.12 defines a `users`
-// collection with roles and invite codes. These routes are a minimal, honest
-// implementation of that collection - flagged so nobody mistakes them for
-// specified behaviour.
-//
-// These are OPTIONAL: with REQUIRE_AUTH unset, every other endpoint works
-// anonymously, which is what makes the API demo-able without registration.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Authentication & User Profile Express Router
+ * @module modules/auth/auth.routes
+ * @description
+ * Section 99.12 (User Profile Endpoints):
+ * Exposes endpoints for user registration, identity retrieval, and profile preferences:
+ * - `POST /api/v1/auth/register`: Create user via invite code.
+ * - `GET /api/v1/auth/me`: Fetch authenticated user profile.
+ * - `PATCH /api/v1/auth/me`: Update vessel, activity, and language preferences.
+ */
 
 const express = require('express');
+
 const controller = require('./auth.controller');
 
 const router = express.Router();

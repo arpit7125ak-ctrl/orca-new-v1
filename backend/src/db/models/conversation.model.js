@@ -1,18 +1,21 @@
-// src/db/models/conversation.model.js
-// ---------------------------------------------------------------------------
-// Section 99.8: `conversations`
-//   conversation_id, messages, analysis references, language history.
-//
-// Supports the problem statement's "contextual, multi-turn conversations that
-// enable users to refine queries and explore related scenarios".
-//
-// "language history" is a real requirement, not decoration: a user may ask in
-// Tamil, follow up in English, then switch back. Section 11 detects language
-// per message, so we record it per message rather than once per conversation.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Multi-Turn Maritime Chat & Scenario Exploration Schema
+ * @module db/models/conversation.model
+ * @description
+ * Section 99.8 (`conversations` collection):
+ * Maintains persistent state, message history, analysis references, and language
+ * transitions for interactive multi-turn maritime conversational sessions.
+ *
+ * Operational Capabilities:
+ * - Dynamic Language Tracking: Records detected vs user-overridden languages per message
+ *   to support mid-session code-switching between regional Indian languages (Section 11).
+ * - Bounded Context Windows: Encapsulates helper logic to restrict LLM context injections
+ *   to `limits.CHAT_CONTEXT_MAX_TURNS`.
+ */
 
 const mongoose = require('mongoose');
 const limits = require('../../config/limits');
+
 
 const MessageSchema = new mongoose.Schema(
   {

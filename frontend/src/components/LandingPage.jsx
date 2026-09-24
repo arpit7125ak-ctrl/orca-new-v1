@@ -1,3 +1,18 @@
+/**
+ * ============================================================================
+ * ORCA Landing Page Component (src/components/LandingPage.jsx)
+ * ============================================================================
+ * Overview and welcome hero for the ORCA platform.
+ * 
+ * Key Elements:
+ * 1. Strategic Hero Headline: Direct value proposition for coastal safety.
+ * 2. 4 Core Pillars: Weather, Ocean, Ecosystem, and Risk Intelligence.
+ * 3. Quick-Start Mission Presets: Instant launch buttons for prominent hubs
+ *    (Offshore Kochi, Veraval Coast, Palk Strait).
+ * 4. Architecture Section Highlights: Sections 77 (Fisherman UI), 78 (Explainable AI),
+ *    and 79 (Visible Multi-Agent Reasoning).
+ */
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -15,9 +30,17 @@ import {
   Radio 
 } from 'lucide-react';
 
+/**
+ * Landing Page Component.
+ * 
+ * @param {Object} props
+ * @param {Function} props.onStartAnalysis - Callback to navigate to setup/input page.
+ * @param {Function} props.onQuickSelect - Callback to trigger analysis with preset hub.
+ */
 export default function LandingPage({ onStartAnalysis, onQuickSelect }) {
   const { t } = useTranslation('ui');
 
+  // Core intelligence pillars rendered in the hero footer
   const pillars = [
     { labelKey: 'landing.weather', icon: CloudSun, color: 'text-amber-400', descKey: 'landing.weatherDesc' },
     { labelKey: 'landing.ocean',   icon: Waves,    color: 'text-cyan-400',   descKey: 'landing.oceanDesc' },

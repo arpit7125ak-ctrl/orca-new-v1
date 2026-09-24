@@ -1,14 +1,23 @@
-// src/config/limits.js
-// ---------------------------------------------------------------------------
-// WHY THIS FILE EXISTS:
-// Every "magic number" in the backend lives here, not scattered through the
-// code. When a threshold needs tuning during the demo, you change it in ONE
-// place. Values that must be tunable WITHOUT a code change live in .env
-// instead (see env.js); values here are structural constants.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview System Thresholds, Numerical Limits, and Operational Constants
+ * @module config/limits
+ * @description
+ * Houses all domain-specific numerical limits, validation bounds, timeouts,
+ * deduplication windows, pagination caps, and retry budgets for the ORCA backend.
+ *
+ * Design Guarantees:
+ * - Eliminates scattered "magic numbers" across controllers, algorithms, and services.
+ * - Centralizes tunability: items requiring runtime adjustment without code changes
+ *   reference `process.env` defaults here, while immutable physical/mathematical
+ *   bounds (e.g. latitude/longitude range) are frozen constants.
+ */
 
 const env = require('./env');
 
+/**
+ * Immutable operational limits and constants dictionary.
+ * @type {Readonly<Record<string, number|string>>}
+ */
 module.exports = Object.freeze({
   // --- Input validation limits (Section 7) -------------------------------
   // Section 7.3: place name "must be within a configured maximum length".

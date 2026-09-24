@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Point Merge Utility
+ * Combines disparate observations from multiple environmental agents into a
+ * single, cohesive view per geographic point.
+ *
+ * @module analysis.pointMerge
+ */
+
 // src/modules/analysis/pointMerge.js
 // ---------------------------------------------------------------------------
 // Merges every agent's per-point output into ONE view per point_id.

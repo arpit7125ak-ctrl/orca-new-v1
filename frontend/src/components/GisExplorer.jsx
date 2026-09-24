@@ -1,8 +1,28 @@
+/**
+ * ============================================================================
+ * ORCA GIS & Marine Layer Explorer (src/components/GisExplorer.jsx)
+ * ============================================================================
+ * Geospatial data catalog and layer registry (Page 6).
+ * 
+ * Capabilities (Architecture Spec §10, §60):
+ * 1. Live Layer Directory: Queries /api/v1/map/layers to discover all available spatial rasters,
+ *    polygon vectors, and constraint boundaries.
+ * 2. 4 Domain Categories:
+ *    - Physical Oceanography (Wave models, SST, currents, salinity)
+ *    - Meteorology (IMD wind fields, gusts, atmospheric pressure, visibility)
+ *    - Marine Hazards (Storm surges, cyclone tracks, high-wave warnings)
+ *    - Boundaries & Navigation (EEZ, MPAs, 12 NM territorial limits, ports)
+ * 3. Search & Metadata Filters: Real-time keyword filter by layer name, source agency, and geometry.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Layers, Database, Search, CheckCircle, RefreshCw } from 'lucide-react';
 import { orcaApi } from '../api/client';
 
+/**
+ * Filter categories mapped to translation keys.
+ */
 const CATEGORIES = [
   { id: 'all', labelKey: 'gis.catAll', defaultLabel: 'All Cataloged Layers' },
   { id: 'oceanography', labelKey: 'gis.catOceanography', defaultLabel: 'Physical Oceanography' },
@@ -11,6 +31,9 @@ const CATEGORIES = [
   { id: 'boundaries', labelKey: 'gis.catBoundaries', defaultLabel: 'Boundaries & Navigation' },
 ];
 
+/**
+ * GIS Layer Explorer Component.
+ */
 export default function GisExplorer() {
   const { t } = useTranslation('ui');
   const [layers, setLayers] = useState([]);

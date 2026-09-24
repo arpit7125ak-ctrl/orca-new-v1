@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Geofence Service
+ * Implements the core geofencing logic. Checks GPS positions against active
+ * GIS layers, applies seasonal/vessel rules, and returns warnings.
+ *
+ * @module geofence.service
+ */
+
 // src/modules/geofence/geofence.service.js
 // ---------------------------------------------------------------------------
 // Section 66: Live GPS Geofencing.

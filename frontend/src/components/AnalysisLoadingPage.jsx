@@ -1,3 +1,22 @@
+/**
+ * ============================================================================
+ * ORCA Multi-Agent Execution Progress ("ORCA IS ANALYZING")
+ * (src/components/AnalysisLoadingPage.jsx)
+ * ============================================================================
+ * Real-time execution dashboard displayed while the pipeline processes a query (Page 2 Progress).
+ * 
+ * Architectural Compliance (Architecture Spec §6, §79):
+ * 1. Live Step Progression: Displays real-time state for each specialized agent:
+ *    - Location Agent (Gazetteer & coordinate validation)
+ *    - Weather Agent (IMD / ECMWF atmospheric winds, gusts, visibility)
+ *    - Ocean Agent (INCOIS / Copernicus SWH, swell, tides)
+ *    - Ecosystem Agent (PFZ, chlorophyll, water quality)
+ *    - Risk Agent (Deterministic rule evaluation & LLM safety reasoning)
+ *    - Decision Agent (Synthesizing one-line & detailed recommendations)
+ * 2. Execution Clock: Live elapsed timer counting seconds since submission.
+ * 3. Completion Transition: Unlocks the "View Safety Advisory" action button once done.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -16,6 +35,15 @@ import {
   Compass 
 } from 'lucide-react';
 
+/**
+ * Analysis Loading & Live Swarm Telemetry Component.
+ * 
+ * @param {Object} props
+ * @param {string} props.analysisId - Unique analysis identifier (e.g. req_20260924_...).
+ * @param {Object|null} props.statusInfo - Live polling status payload from /analysis/:id/status.
+ * @param {Function} props.onViewResults - Navigation callback to transition to Results Hub.
+ * @param {boolean} props.isCompleted - Whether the backend analysis has completed.
+ */
 export default function AnalysisLoadingPage({ 
   analysisId, 
   statusInfo, 

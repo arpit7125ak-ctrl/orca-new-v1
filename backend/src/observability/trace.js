@@ -1,26 +1,22 @@
-// src/observability/trace.js
-// ---------------------------------------------------------------------------
-// Section 100: Agent Trace.
-//
-// The Backend maintains an execution trace per analysis, holding per stage:
-//   agent/stage, selected (bool) + selection reason, status, status code,
-//   started time, completed time, duration, retry count, error +
-//   error_category, optional summary.
-//
-// This trace is what powers:
-//   - the Frontend "visible reasoning" panel (Section 79)
-//   - debugging
-//   - the SIH demo
-//   - auditability
-//   - accuracy validation against real events (Section 106)
-//
-// NEVER-FABRICATE NOTE:
-// A stage that has not finished has completed_at = null and duration_ms = null.
-// We never write a zero duration or an optimistic "completed" to make the
-// trace look tidy - an unfinished stage must be visibly unfinished.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Agent Execution Trace & Telemetry Tracking
+ * @module observability/trace
+ * @description
+ * Section 100 (Execution Trace):
+ * Builds, mutates, and summarizes the granular lifecycle events and telemetry
+ * for every agent and pipeline stage involved in an analysis request.
+ *
+ * Operational Responsibilities:
+ * - Powers Explainable AI UI: Populates the visible reasoning panel, latency waterfall,
+ *   and stage status indicators in the frontend (Section 79).
+ * - Audit Trail: Logs start/completion timestamps, execution durations, retry counters,
+ *   and structured error classifications (Section 106).
+ * - Never-Fabricate Integrity: Unfinished stages strictly report `null` for completion
+ *   and duration rather than mock zeros or artificial statuses.
+ */
 
 const { nowIso, durationMs } = require('../utils/time');
+
 
 // Per-stage lifecycle status. Distinct from the ANALYSIS status in Section 9 -
 // one analysis (status: running) contains many stages at different statuses.

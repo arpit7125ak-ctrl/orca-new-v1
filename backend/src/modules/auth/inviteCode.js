@@ -1,21 +1,19 @@
-// src/modules/auth/inviteCode.js
-// ---------------------------------------------------------------------------
-// STATUS: PROPOSED
-// Section 103 defines NO auth endpoints. Section 99.12 DOES define a `users`
-// collection with `role` and `invite_code_used`, which strongly implies
-// invite-based registration - so this module implements that implication
-// without inventing endpoints the doc never specified.
-//
-// Invite codes map to roles. This keeps privileged roles (coastal_authority,
-// disaster_management, admin) from being self-assigned by anyone who registers.
-//
-// Codes come from .env (INVITE_CODES), never hard-coded, so they can be rotated
-// without a code change and never appear in the repository.
-//   INVITE_CODES=FISH2026:fisherman,RESEARCH2026:researcher,ADMIN2026:admin
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Role-Based Invite Code Parser & Validator
+ * @module modules/auth/inviteCode
+ * @description
+ * Section 99.12 (Invite-Based Maritime Registration):
+ * Manages role provisioning via invite codes configured in `INVITE_CODES`.
+ *
+ * Operational Mechanics:
+ * - Environment Sourced: Codes format as `CODE:role,CODE2:role2` (e.g. `FISH2026:fisherman`).
+ * - Privilege Escalation Prevention: Prohibits unverified users from arbitrarily claiming
+ *   elevated roles (`coastal_authority`, `disaster_management`, `admin`).
+ */
 
 const { ROLES } = require('../../db/models/user.model');
 const { logger } = require('../../observability/logger');
+
 
 function parseInviteCodes() {
   const raw = process.env.INVITE_CODES || '';

@@ -1,29 +1,22 @@
-// src/db/models/analysis.model.js
-// ---------------------------------------------------------------------------
-// The `analyses` collection - the spine of the system. Every request becomes
-// one document here and every other collection points back via analysis_id.
-//
-// SHAPE COMES FROM contracts/db/AnalysesDocument.json:
-//   required: analysis_id, request, status, created_at
-//   optional: conversation_id, parent_analysis_id, alert_subscription_id,
-//             plan, error, points, agent_statuses, data_quality,
-//             execution_trace, updated_at, completed_at
-//
-// Note `plan` (the ExecutionPlan), not `planner_result`; and `error` is an
-// ErrorInfo OBJECT, not separate error_category/error_message columns.
-//
-// SCHEMA PHILOSOPHY (Section 99): MongoDB uses flexible/document structures for
-// agent-specific and future fields. Sub-documents the AI Service owns the shape
-// of (plan, data_quality, points) are Mixed - the Backend stores them
-// faithfully without imposing a shape it does not own.
-//
-// NEVER-FABRICATE: note the near-total absence of `default:`. A field we have
-// not been told about stays null/undefined. We never seed a default that would
-// later read as though it were real measured data.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Central Analysis Job Mongoose Schema (`analyses` collection)
+ * @module db/models/analysis.model
+ * @description
+ * Sections 8.1, 9, 99 & `contracts/db/AnalysesDocument.json`:
+ * Acts as the primary operational spine of the ORCA system. Every user query,
+ * automated subscription check, or route evaluation persists an authoritative record here.
+ *
+ * Architecture Principles:
+ * - Central Spine: All secondary collections (`agent_results`, `risk_results`, `decisions`)
+ *   reference this document via the indexed `analysis_id`.
+ * - Contract Conformity: Maps directly to `AnalysesDocument.json`, storing raw user request,
+ *   planner execution plan, point measurements, execution trace, and status transitions.
+ * - Anti-Fabrication: Omits arbitrary default values so unmeasured fields stay honestly null.
+ */
 
 const mongoose = require('mongoose');
 const { ALL_ERROR_CATEGORIES } = require('../../errors/errorCategories');
+
 
 // Section 9: the five analysis lifecycle states.
 const ANALYSIS_STATUSES = ['queued', 'running', 'completed', 'partial', 'failed'];

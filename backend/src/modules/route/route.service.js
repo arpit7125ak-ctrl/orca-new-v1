@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Route Service
+ * Orchestrates route planning. Integrates with the analysis pipeline to calculate
+ * routes considering GIS constraints, weather, and vessel specifications.
+ *
+ * @module route.service
+ */
+
 // src/modules/route/route.service.js
 // ---------------------------------------------------------------------------
 // Section 103: POST /api/v1/route, GET /api/v1/route/:route_id

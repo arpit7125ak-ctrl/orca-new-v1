@@ -1,13 +1,15 @@
-// src/db/models/index.js
-// ---------------------------------------------------------------------------
-// Single import point for every model.
-//
-// WHY THIS EXISTS: requiring a Mongoose model file is what REGISTERS it with
-// Mongoose. If a model is only required lazily inside a rarely-hit route, its
-// indexes are never built at startup. Importing everything here once, from
-// server.js, guarantees all 12 collections and their indexes are registered
-// before the first request arrives.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Central Mongoose Models Registry & Aggregator
+ * @module db/models/index
+ * @description
+ * Single point of registration and export for all 12 core Mongoose data models.
+ *
+ * Operational Mechanics:
+ * - Startup Index Registration: Requiring every model here during server bootstrap
+ *   guarantees that all Mongoose schemas, hooks, and 2dsphere indexes are properly
+ *   registered with the active MongoDB driver connection before incoming HTTP traffic arrives.
+ */
+
 
 module.exports = {
   Analysis:          require('./analysis.model'),

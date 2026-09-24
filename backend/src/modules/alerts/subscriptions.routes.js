@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Subscriptions Routes
+ * Defines API endpoints for creating, retrieving, updating, and deleting
+ * alert subscriptions and their events.
+ *
+ * @module alerts.subscriptions.routes
+ */
+
 // src/modules/alerts/subscriptions.routes.js
 // ---------------------------------------------------------------------------
 // Section 103 - Alerts:

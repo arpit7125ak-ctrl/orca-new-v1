@@ -1,3 +1,15 @@
+/**
+ * ============================================================================
+ * ORCA Standalone Frontend Production Server (frontend/serve.js)
+ * ============================================================================
+ * Node.js / Express static file server and reverse proxy for deployment environments.
+ * 
+ * Responsibilities:
+ * 1. Reverse Proxy: Streams `/api/*` and `/health` requests to Backend Gateway (Port 4000).
+ * 2. Static Asset Delivery: Serves compiled Vite assets from `/dist` with correct MIME types.
+ * 3. SPA Fallback: Directs unmatched route requests to `/dist/index.html` for client-side routing.
+ */
+
 import express from 'express';
 import http from 'http';
 import path from 'path';
@@ -11,7 +23,10 @@ const BACKEND_URL = 'http://localhost:4000';
 
 const app = express();
 
-// 1. Proxy API, Health, and SSE streams to Backend on Port 4000
+/**
+ * Streams incoming HTTP/SSE requests to the backend gateway on Port 4000.
+ * Preserves headers, query strings, and status codes.
+ */
 const proxyToBackend = (req, res) => {
   const targetUrl = new URL(req.originalUrl || req.url, BACKEND_URL);
   const options = {
@@ -42,6 +57,8 @@ const proxyToBackend = (req, res) => {
 // Route API and health endpoints to proxy
 app.use('/api', proxyToBackend);
 app.use('/health', proxyToBackend);
+
+
 
 // 2. Serve static files from dist/
 app.use(express.static(DIST));

@@ -1,23 +1,18 @@
-// src/middleware/validateContract.js
-// ---------------------------------------------------------------------------
-// THE contract gate. The 44-file `contracts/` set is the locked single source
-// of truth for this project - architecture doc and code conform to the
-// contracts, never the reverse. This middleware is what actually enforces
-// that at runtime.
-//
-// HOW IT WORKS:
-//   1. At startup, every contracts/**/*.json is loaded into one Ajv instance.
-//   2. Because they are all in ONE instance, cross-file $refs resolve
-//      naturally (e.g. a response schema referencing shared/Measurement.json).
-//   3. Routes call validateContract('api/AnalysisRequest.json') as middleware.
-//
-// GRACEFUL DEGRADATION - IMPORTANT FOR YOUR SETUP:
-// The contracts/ directory may not be present in every checkout yet. If it is
-// missing, we log a loud warning and let requests through rather than
-// hard-crashing the server, because module-level validators (analysis.validator
-// .js etc.) already cover the Section 7 structural rules independently. When
-// contracts ARE present, they take precedence and this becomes the strict gate.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview JSON Schema Contract Validation Middleware (Ajv Engine)
+ * @module middleware/validateContract
+ * @description
+ * Enforces runtime schema compliance against the canonical 44 JSON schemas in `/contracts`.
+ *
+ * Operational Mechanics:
+ * - Cross-Schema Resolution: Loads all schemas into a unified `Ajv` instance with
+ *   rooted `$id` paths to ensure `$ref` references resolve accurately across subdirectories.
+ * - Strict Anti-Fabrication Settings: Explicitly sets `useDefaults: false` and `coerceTypes: false`
+ *   to prohibit silent invention of values (e.g. absent wind speed turning into 0).
+ * - Two-Way Contract Verification: Validates inbound client requests (throwing HTTP 400
+ *   on violation) and verifies outbound responses in non-production environments to detect contract drift.
+ */
+
 
 const fs = require('fs');
 const path = require('path');

@@ -1,10 +1,30 @@
+/**
+ * ============================================================================
+ * ORCA Ubiquitous Floating Copilot Button (src/components/FloatingChatButton.jsx)
+ * ============================================================================
+ * Persistent floating action button and slide-out chat drawer.
+ * 
+ * Architectural Compliance (Architecture Spec §86):
+ * - Renders across all views so coastal operators can ask clarifying questions at any time.
+ * - Passes active analysis context (`currentAnalysisId`) to ground conversation
+ *   in the current point or route telemetry.
+ */
+
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MessageSquare, X, Bot, Sparkles } from 'lucide-react';
 import MaritimeChat from './MaritimeChat';
 
+/**
+ * Floating Chat Button & Drawer Component.
+ * 
+ * @param {Object} props
+ * @param {string} props.selectedLang - Active language code for voice dictation and TTS playback.
+ * @param {string|null} props.currentAnalysisId - ID of active analysis to contextualize chat.
+ */
 export default function FloatingChatButton({ selectedLang, currentAnalysisId }) {
   const { t } = useTranslation('ui');
+  // Slide-out drawer open/close visibility state
   const [isOpen, setIsOpen] = useState(false);
 
   return (

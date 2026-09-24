@@ -1,22 +1,50 @@
+/**
+ * ============================================================================
+ * ORCA Root Error Boundary (src/components/ErrorBoundary.jsx)
+ * ============================================================================
+ * Standard React Class Error Boundary for top-level runtime exception capture.
+ * 
+ * Safety Role:
+ * - Prevents entire app crashes/blank white screens when malformed network telemetry,
+ *   unexpected map rendering states, or Leaflet DOM issues arise.
+ * - Displays a localized, high-contrast crash screen with technical error diagnostics
+ *   and an instantaneous "Reload Application" action button.
+ */
+
 import React from 'react';
 import i18next from 'i18next';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
+/**
+ * Top-Level Error Boundary Component.
+ * Catches JavaScript errors anywhere in their child component tree,
+ * logs those errors, and displays a fallback UI.
+ */
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
+  /**
+   * Updates state so the next render will show the fallback UI.
+   * @param {Error} error - Caught runtime exception.
+   */
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
 
+  /**
+   * Lifecycle invoked after an error has been thrown by a descendant component.
+   * @param {Error} error - Thrown error.
+   * @param {React.ErrorInfo} errorInfo - Component stack trace information.
+   */
   componentDidCatch(error, errorInfo) {
     console.error('ORCA Frontend caught an unhandled error:', error, errorInfo);
     this.setState({ errorInfo });
   }
 
+  /** Reloads the browser window to recover clean state */
   handleReload = () => {
     window.location.reload();
   };

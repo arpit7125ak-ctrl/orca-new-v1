@@ -1,17 +1,26 @@
-// src/utils/geo.js
-// ---------------------------------------------------------------------------
-// Pure geometry helpers. No database, no LLM, no side effects.
-//
-// Section 66.3 is explicit: "No LLM is used for the geometry decision."
-// Everything the geofence module needs to decide clear/approaching/inside is
-// computed here deterministically.
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Pure Geospatial & Spherical Trigonometry Helpers
+ * @module utils/geo
+ * @description
+ * Section 66.3 (Deterministic Geometry):
+ * Implements deterministic spherical trigonometry functions for distance, bearing,
+ * and coordinate transformations without external database queries or LLM dependencies.
+ *
+ * Mathematical Foundations:
+ * - Spherical Haversine Formula: Great-circle distance calculations on Earth (mean radius 6371.0088 km).
+ * - Forward Azimuth / Initial Bearing: Formula for directional heading from origin to target.
+ * - GeoJSON Coordinate Inversion: Enforces `[longitude, latitude]` order strictly per GeoJSON standards.
+ */
 
 const limits = require('../config/limits');
 
-const EARTH_RADIUS_KM = 6371.0088; // mean Earth radius (IUGG)
+/** Mean volumetric Earth radius in kilometers (IUGG standard). */
+const EARTH_RADIUS_KM = 6371.0088;
 
+/** Degrees to radians conversion factor. */
 const toRadians = (deg) => (deg * Math.PI) / 180;
+
+/** Radians to degrees conversion factor. */
 const toDegrees = (rad) => (rad * 180) / Math.PI;
 
 /**

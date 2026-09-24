@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Alerts Scheduler
+ * Background worker cron loop that continuously polls subscriptions, dispatches
+ * analyses, and issues proactive hazard notifications.
+ *
+ * @module alerts.scheduler
+ */
+
 // src/modules/alerts/scheduler.js
 // ---------------------------------------------------------------------------
 // The proactive alerting loop. The problem statement requires "proactive alerts

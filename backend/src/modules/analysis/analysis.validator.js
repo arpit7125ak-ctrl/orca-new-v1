@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Analysis Validator
+ * Structural validation for inbound analysis requests. Ensures contracts are
+ * obeyed before requests enter the execution pipeline.
+ *
+ * @module analysis.validator
+ */
+
 // src/modules/analysis/analysis.validator.js
 // ---------------------------------------------------------------------------
 // Section 7: Stage 2 - Backend Validation. STRUCTURAL only.

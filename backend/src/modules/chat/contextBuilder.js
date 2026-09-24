@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Context Builder
+ * Utility functions for building and extracting conversation context,
+ * enabling multi-turn dialogues with inherited state.
+ *
+ * @module chat.contextBuilder
+ */
+
 // src/modules/chat/contextBuilder.js
 // ---------------------------------------------------------------------------
 // Builds the conversation context handed to the AI Service.
