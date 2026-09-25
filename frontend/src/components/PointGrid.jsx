@@ -88,7 +88,7 @@ function PointCard({ pt, id, info, labelText, hasScore, score, isSelected, badge
       )}
 
       <div className={`text-[10px] text-[var(--text-secondary)] mt-1 border-t border-[var(--border-base)] pt-2 ${expanded ? '' : 'line-clamp-2'}`}>
-        {pt.finding || t('map.noAlerts')}
+        {pt.finding || t('grid.noneReported', { defaultValue: 'None reported' })}
       </div>
     </div>
   );
@@ -105,15 +105,15 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
   const rawPoints = analysis?.points || [];
 
   const dirMap = {
-    'P1': { labelKey: 'map.sectors.nw', compass: '↖' },
-    'P2': { labelKey: 'map.sectors.n',  compass: '↑' },
-    'P3': { labelKey: 'map.sectors.ne', compass: '↗' },
-    'P4': { labelKey: 'map.sectors.w',  compass: '←' },
-    'P0': { labelKey: 'map.sectors.c',  compass: '⊙' },
-    'P5': { labelKey: 'map.sectors.e',  compass: '→' },
-    'P6': { labelKey: 'map.sectors.sw', compass: '↙' },
-    'P7': { labelKey: 'map.sectors.s',  compass: '↓' },
-    'P8': { labelKey: 'map.sectors.se', compass: '↘' }
+    'P0': { labelKey: 'grid.dirP0', compass: '⊙' },
+    'P1': { labelKey: 'grid.dirP1', compass: '↑' },
+    'P2': { labelKey: 'grid.dirP2', compass: '↗' },
+    'P3': { labelKey: 'grid.dirP3', compass: '→' },
+    'P4': { labelKey: 'grid.dirP4', compass: '↘' },
+    'P5': { labelKey: 'grid.dirP5', compass: '↓' },
+    'P6': { labelKey: 'grid.dirP6', compass: '↙' },
+    'P7': { labelKey: 'grid.dirP7', compass: '←' },
+    'P8': { labelKey: 'grid.dirP8', compass: '↖' }
   };
 
   const pointsData = rawPoints.map(p => {
