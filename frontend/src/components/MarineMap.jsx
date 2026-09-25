@@ -204,6 +204,9 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
 
   const validLat = plan.location?.validated?.lat != null ? Number(plan.location.validated.lat) : Number(plan.location?.original?.lat);
   const validLon = plan.location?.validated?.lon != null ? Number(plan.location.validated.lon) : Number(plan.location?.original?.lon);
+  const originalLat = Number(plan.location?.original?.lat ?? validLat);
+  const originalLon = Number(plan.location?.original?.lon ?? validLon);
+  const isSnapped = plan.location?.validated?.snapped;
   const hasValidCoords = Number.isFinite(validLat) && Number.isFinite(validLon);
   const pointsData = analysis?.points || [];
 
