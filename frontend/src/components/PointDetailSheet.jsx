@@ -378,6 +378,53 @@ export default function PointDetailSheet({ point, onClose }) {
             </div>
           )}
 
+          {/* WHY HIGH RISK? / WHY THIS SCORE? */}
+          {!isLand && score !== null && (() => {
+             // Frontend-only deterministic approximation of hazard contributions
+             const wave = meas.wave_height_m?.value || 0;
+             const wind = meas.wind_speed_ms?.value || 0;
+             const vis = meas.visibility_km?.value || 20;
+             const tide = meas.tide_surge_m?.value || 0;
+             
+             // Rough frontend weighting logic out of max possible sub-scores to map to the total risk
+             const wWave = Math.min((wave / 3.0) * 45, 45); // Max 45 pts from wave
+             const wWind = Math.min((wind / 15.0) * 35, 35); // Max 35 pts from wind
+             const wVis = Math.max(0, ((10 - vis) / 10) * 15); // Max 15 pts from low vis
+             const wTide = Math.min((Math.abs(tide) / 2.0) * 5, 5); // Max 5 pts from tide
+             const totalRaw = wWave + wWind + wVis + wTide;
+             
+             // Normalize to actual score
+             const multiplier = totalRaw > 0 ? (score / totalRaw) : 1;
+             
+             const metrics = [
+               { label: 'Wave Height', pts: Math.round(wWave * multiplier), val: wave.toFixed(1) + ' m' },
+               { label: 'Wind Speed', pts: Math.round(wWind * multiplier), val: (wind * 1.94).toFixed(0) + ' kt' },
+               { label: 'Visibility', pts: Math.round(wVis * multiplier), val: vis.toFixed(1) + ' km' },
+               { label: 'Tide', pts: Math.round(wTide * multiplier), val: tide.toFixed(1) + ' m' }
+             ].sort((a,b) => b.pts - a.pts);
+
+             return (
+               <div className="p-4 rounded-2xl bg-[var(--bg-surface-2)] border border-[var(--border-base)] mt-4">
+                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4">
+                   {score >= 50 ? 'WHY HIGH RISK?' : 'SCORE BREAKDOWN'}
+                 </h3>
+                 <div className="space-y-3">
+                   {metrics.map(m => (
+                     <div key={m.label} className="flex flex-col">
+                       <div className="flex justify-between items-end mb-1 text-xs">
+                         <span className="font-bold text-[var(--text-primary)]">{m.label} <span className="text-[10px] font-mono text-[var(--text-muted)] ml-1">({m.val})</span></span>
+                         <span className="font-mono font-bold text-[#E59A24]">+{m.pts}</span>
+                       </div>
+                       <div className="w-full bg-[var(--bg-base)] h-1.5 rounded-full overflow-hidden border border-[var(--border-base)]">
+                         <div className="h-full bg-[#E59A24]" style={{ width: `${Math.min((m.pts / score) * 100, 100)}%` }} />
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+             );
+          })()}
+
           {/* Score Breakdown */}
           {!isLand && (score !== null || baseline !== null) && (
             <div className="p-3.5 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-base)] space-y-2">

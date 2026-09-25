@@ -56,7 +56,9 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
     );
   }
 
-  const points = rawPoints.map((p, idx) => {
+  const [sortMode, setSortMode] = React.useState('default');
+  
+  const pointsData = rawPoints.map((p, idx) => {
     const pRisk = p.risk || {};
     const factors = Array.isArray(pRisk.risk_factors) ? pRisk.risk_factors : [];
     const formattedFactors = factors.map((f) => String(f).replace(/_/g, ' ')).join(', ');
@@ -65,6 +67,10 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
     const isWorst = analysis?.decision?.worst_point === (p.point_id || `P${idx}`);
 
     const meas = p.measurements || {};
+    const waveRaw = meas.wave_height_m?.value || 0;
+    const windRaw = meas.wind_speed_ms?.value || 0;
+    const visRaw = meas.visibility_km?.value || 0;
+
     const waveVal = meas.wave_height_m?.value != null ? `${meas.wave_height_m.value}m` : null;
     const windVal = meas.wind_speed_ms?.value != null ? `${meas.wind_speed_ms.value}m/s` : null;
 
@@ -82,8 +88,31 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
       point_status: p.point_status || null,
       waveVal,
       windVal,
+      waveRaw,
+      windRaw,
+      visRaw,
       rawPoint: p,
     };
+  });
+
+  const pointsSorted = [...pointsData].sort((a, b) => {
+    if (sortMode === 'risk') return (b.risk_score || 0) - (a.risk_score || 0);
+    if (sortMode === 'wave') return b.waveRaw - a.waveRaw;
+    if (sortMode === 'wind') return b.windRaw - a.windRaw;
+    if (sortMode === 'visibility') return a.visRaw - b.visRaw; // lower is worse for visibility
+    return 0; // default order
+  });
+
+  const [filterMode, setFilterMode] = React.useState('all');
+  
+  const points = pointsSorted.filter(p => {
+    if (filterMode === 'all') return true;
+    const r = p.risk_score || 0;
+    if (filterMode === 'safe') return r < 35;
+    if (filterMode === 'caution') return r >= 35 && r < 50;
+    if (filterMode === 'high') return r >= 70 && r < 85;
+    if (filterMode === 'danger') return r >= 85;
+    return true;
   });
 
   return (
@@ -98,9 +127,33 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
             {t('grid.subtitle')}
           </p>
         </div>
-        <span className="text-xs font-mono font-bold text-[var(--accent-primary)] bg-[var(--accent-dim)] px-2.5 py-1 rounded-lg border border-[var(--accent-primary)]">
-          {t('grid.evaluatedCount', { count: points.length })}
-        </span>
+        <div className="flex items-center space-x-2">
+          <select 
+            value={filterMode}
+            onChange={(e) => setFilterMode(e.target.value)}
+            className="bg-[var(--bg-base)] text-[var(--text-secondary)] border border-[var(--border-base)] rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider outline-none cursor-pointer hover:border-white/20 transition hidden sm:block"
+          >
+             <option value="all">All Risk</option>
+             <option value="safe">Safe</option>
+             <option value="caution">Caution</option>
+             <option value="high">High</option>
+             <option value="danger">Danger</option>
+          </select>
+          <select 
+            value={sortMode}
+            onChange={(e) => setSortMode(e.target.value)}
+            className="bg-[var(--bg-base)] text-[var(--text-secondary)] border border-[var(--border-base)] rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider outline-none cursor-pointer hover:border-white/20 transition"
+          >
+             <option value="default">Default Sort</option>
+             <option value="risk">Sort by Risk</option>
+             <option value="wave">Sort by Wave</option>
+             <option value="wind">Sort by Wind</option>
+             <option value="visibility">Sort by Vis</option>
+          </select>
+          <span className="text-[10px] font-mono font-bold text-[var(--accent-primary)] bg-[var(--accent-dim)] px-2.5 py-1 rounded-lg border border-[var(--accent-primary)] hidden md:block">
+            {points.length} pts
+          </span>
+        </div>
       </div>
 
       {/* 3x3 Responsive Grid Cards */}

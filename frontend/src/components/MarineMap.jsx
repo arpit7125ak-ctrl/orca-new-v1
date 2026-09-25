@@ -168,6 +168,14 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
       }
     }, [activeBase]);
 
+    // PAN TO SELECTED POINT
+    useEffect(() => {
+      if (selectedPoint?.lat && selectedPoint?.lon && mapInstanceRef.current) {
+         mapInstanceRef.current.flyTo([selectedPoint.lat, selectedPoint.lon], 12, { duration: 1.5 });
+         setClickedZoneId(selectedPoint.point_id);
+      }
+    }, [selectedPoint]);
+
   // RENDER GIS NAUTICAL ZONES (STATIC - NEVER MOVES)
   useEffect(() => {
     const map = mapInstanceRef.current;
