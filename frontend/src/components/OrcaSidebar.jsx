@@ -88,10 +88,10 @@ export default function OrcaSidebar({
       <button
         key={item.id}
         onClick={() => { setActiveTab(item.id); setIsMobileOpen(false); }}
-        className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors mb-1
+        className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 mb-1
           ${isActive 
-            ? 'bg-[var(--bg-surface-2)] text-[var(--accent-primary)] border-l-2 border-[var(--accent-primary)]' 
-            : 'border-l-2 border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'}`}
+            ? 'bg-[var(--bg-surface-2)] text-[var(--accent-primary)] border-l-2 border-[var(--accent-primary)] translate-x-1' 
+            : 'border-l-2 border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] hover:translate-x-0.5'}`}
       >
         <Icon className="w-4 h-4" />
         <span>{t(item.labelKey, { defaultValue: item.fallback })}</span>

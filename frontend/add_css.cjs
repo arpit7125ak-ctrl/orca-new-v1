@@ -1,97 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  :root {
-    --bg-base: #0a0d0a;
-    --bg-surface: #111814;
-    --bg-surface-2: #182018;
-    --border-base: #243024;
-    --border-hover: #2f4030;
-
-    --text-primary: #e8ede6;
-    --text-secondary: #8fa688;
-    --text-muted: #576857;
-
-    --accent-primary: #d4850a;
-    --accent-hover: #e8960c;
-    --accent-dim: #7a4b06;
-    --accent-glow: rgba(212, 133, 10, 0.15);
-
-    --safe: #2d7d46;
-    --caution: #8a6a1a;
-    --unsafe: #8a3a1a;
-    --dangerous: #7d2626;
-
-    --safe-bright: #4ade80;
-    --caution-bright: #fbbf24;
-    --unsafe-bright: #f97316;
-    --dangerous-bright: #ef4444;
-  }
-
-  body {
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: var(--bg-base);
-    color: var(--text-primary);
-  }
-}
-
-/* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--bg-base);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--bg-surface-2);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--border-hover);
-}
-
-/* Sunlight mode: high contrast */
-.sunlight-mode {
-  --bg-base: #ffffff;
-  --bg-surface: #f3f4f6;
-  --bg-surface-2: #e5e7eb;
-  --border-base: #d1d5db;
-  --border-hover: #9ca3af;
-
-  --text-primary: #000000;
-  --text-secondary: #1f2937;
-  --text-muted: #4b5563;
-
-  --accent-primary: #d4850a;
-  --accent-hover: #b45309;
-  --accent-dim: #fef3c7;
-  --accent-glow: rgba(212, 133, 10, 0.3);
-}
-
-/* Leaflet dark theme overrides */
-.leaflet-container {
-  width: 100%;
-  height: 100%;
-  background: var(--bg-base) !important;
-  font-family: inherit;
-  z-index: 1;
-}
-.leaflet-popup-content-wrapper {
-  background: var(--bg-surface) !important;
-  color: var(--text-primary) !important;
-  border: 1px solid var(--border-base);
-  border-radius: 8px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-}
-.leaflet-popup-tip {
-  background: var(--bg-surface) !important;
-}
-
+const fs = require('fs');
+const css = `
 @layer utilities {
   @media (prefers-reduced-motion: no-preference) {
     .ocean-bg {
@@ -202,3 +110,5 @@
     }
   }
 }
+`;
+fs.appendFileSync('src/index.css', css);

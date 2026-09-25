@@ -373,7 +373,7 @@ export default function HomeAskOrca({
 
       {/* Cached / Recent Advisory Banner */}
       {cachedAnalysis && (
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 flex items-center justify-between shadow-lg">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 flex items-center justify-between shadow-lg card-enter card-enter-1 interactive-card">
           <div className="flex items-center space-x-3 min-w-0">
             <span className={`w-3 h-3 rounded-full flex-shrink-0 ${cachedAnalysis.decision?.recommendation_type === 'go'
                 ? 'bg-[var(--safe-bright)]'
@@ -407,7 +407,7 @@ export default function HomeAskOrca({
       )}
 
       {/* Main "Ask ORCA" Box */}
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 sm:p-8 shadow-md space-y-6">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 sm:p-8 shadow-md space-y-6 card-enter card-enter-2 interactive-card">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Compass className="w-6 h-6 text-[var(--accent-primary)]" />
@@ -601,7 +601,7 @@ export default function HomeAskOrca({
                   {/* Interactive Embedded Leaflet Map */}
                   {showMapPicker && (
                     <div className="mt-3 rounded overflow-hidden border border-[var(--border-base)] relative shadow-inner">
-                      <div className="bg-[var(--bg-surface)] px-3 py-1.5 border-b border-[var(--border-base)] text-[11px] text-[var(--text-secondary)] flex items-center justify-between">
+                      <div className="bg-[var(--bg-surface)] px-3 py-1.5 border-b border-[var(--border-base)] text-[11px] text-[var(--text-secondary)] flex items-center justify-between card-enter card-enter-3 interactive-card">
                         <span className="font-bold text-[var(--accent-primary)] flex items-center space-x-1">
                           <Layers className="w-3.5 h-3.5" />
                           <span>{t('home.mapClickHint')}</span>

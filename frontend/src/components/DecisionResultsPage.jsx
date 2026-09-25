@@ -335,7 +335,7 @@ export default function DecisionResultsPage({
                  { label: 'Visibility', value: pts[0]?.risk?.weather?.visibility_km?.toFixed(1) ? pts[0].risk.weather.visibility_km.toFixed(1) + ' km' : 'N/A' },
                  { label: 'Tide', value: pts[0]?.risk?.metocean?.tide_surge_m?.toFixed(1) ? pts[0].risk.metocean.tide_surge_m.toFixed(1) + ' m' : 'N/A' },
                ].map((m, i) => (
-                  <div key={i} className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-lg p-3 flex flex-col justify-center shadow-sm">
+                  <div key={i} className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-lg p-3 flex flex-col justify-center shadow-sm card-enter card-enter-1 interactive-card">
                      <span className="text-[9px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-0.5">{m.label}</span>
                      <span className={`text-sm font-mono font-bold ${m.color || 'text-white'}`}>{m.value}</span>
                   </div>
@@ -374,7 +374,7 @@ export default function DecisionResultsPage({
                 </div>
 
                 {/* RISK DISTRIBUTION BAR */}
-                <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm">
+                <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm card-enter card-enter-2 interactive-card">
                   <h3 className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-3">GRID RISK DISTRIBUTION</h3>
                   <div className="flex w-full h-2 rounded-full overflow-hidden mb-2 border border-white/5">
                      {riskCounts.SAFE > 0 && <div style={{width: `${(riskCounts.SAFE/pts.length)*100}%`}} className="h-full bg-[#2FAE72]" />}
@@ -392,7 +392,7 @@ export default function DecisionResultsPage({
 
                 {/* SMART ALERT UI */}
                 {pts.some(p => p.risk?.official_warnings?.length > 0) && (
-                <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm">
+                <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm card-enter card-enter-3 interactive-card">
                   <h3 className="text-[9px] font-bold uppercase tracking-widest text-[#D63838] mb-3 flex items-center space-x-1.5">
                      <span className="w-1.5 h-1.5 rounded-full bg-[#D63838] animate-pulse" />
                      <span>ACTIVE ALERTS</span>
@@ -422,7 +422,7 @@ export default function DecisionResultsPage({
 
                 {/* ROUTE INTELLIGENCE */}
                 {waypoints.length > 0 && (
-                <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm">
+                <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm card-enter card-enter-4 interactive-card">
                   <h3 className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-3">ROUTE INTELLIGENCE</h3>
                   <div className="grid grid-cols-2 gap-3">
                      <div className="bg-[#0a0d0a] p-2.5 rounded border border-[var(--border-base)]">
@@ -441,7 +441,7 @@ export default function DecisionResultsPage({
                 )}
 
                 {/* DATA QUALITY & SOURCES */}
-                <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm">
+                <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm card-enter card-enter-4 interactive-card">
                    <h3 className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-3">ANALYSIS SOURCES</h3>
                    <div className="grid grid-cols-2 gap-2 text-[10px]">
                       <div className="flex justify-between items-center bg-[#0a0d0a] p-2 rounded border border-[var(--border-base)]">
@@ -464,7 +464,7 @@ export default function DecisionResultsPage({
                 </div>
 
                 {/* WHAT CHANGED / HISTORICAL */}
-                <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm">
+                <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm card-enter card-enter-4 interactive-card">
                    <h3 className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-3">WHAT CHANGED?</h3>
                    {analysis?.historical ? (
                      <div className="text-xs text-white">Historical comparison logic here</div>
@@ -476,7 +476,7 @@ export default function DecisionResultsPage({
                 </div>
 
                 {/* 3x3 POINT GRID */}
-                <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm">
+                <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm card-enter card-enter-4 interactive-card">
                   <div className="flex justify-between items-center mb-3">
                      <h3 className="text-[9px] font-bold uppercase tracking-widest text-white/40">SPATIAL GRID</h3>
                      <span className="text-[8px] text-white/30 lowercase">Frontend sort: Risk</span>
@@ -496,7 +496,7 @@ export default function DecisionResultsPage({
 
       {/* Tab 2: Metocean Charts */}
       {activeInternalTab === 'charts' && (
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 shadow-md space-y-6">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 shadow-md space-y-6 card-enter card-enter-4 interactive-card">
           <div className="border-b border-[var(--border-base)] pb-3 flex items-center justify-between">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)] flex items-center space-x-2">
               <BarChart3 className="w-4 h-4 text-[var(--accent-primary)]" />
@@ -531,7 +531,7 @@ export default function DecisionResultsPage({
 
       {/* Tab 3: Evidence & Sources */}
       {activeInternalTab === 'evidence' && (
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 shadow-md space-y-4">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 shadow-md space-y-4 card-enter card-enter-4 interactive-card">
           <div className="border-b border-[var(--border-base)] pb-3 flex items-center justify-between">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)] flex items-center space-x-2">
               <Database className="w-4 h-4 text-[var(--accent-primary)]" />
@@ -586,7 +586,7 @@ export default function DecisionResultsPage({
 
       {/* Tab 4: Data Quality & Freshness */}
       {activeInternalTab === 'quality' && (
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 shadow-md space-y-4">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 shadow-md space-y-4 card-enter card-enter-4 interactive-card">
           <div className="border-b border-[var(--border-base)] pb-3 flex items-center justify-between">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)] flex items-center space-x-2">
               <Layers className="w-4 h-4 text-[var(--accent-primary)]" />

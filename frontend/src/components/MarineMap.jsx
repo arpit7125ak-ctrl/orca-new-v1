@@ -329,7 +329,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
   const tierInfo = getTierColor(v);
 
   return (
-    <div className={`orca-map-container relative w-full overflow-hidden bg-[#0a0d0a] flex flex-col font-sans border border-[var(--border-base)] rounded-xl shadow-sm ${isMapFullscreen ? 'fixed inset-0 z-[9999] h-screen' : 'h-[700px]'}`}>
+    <div className={`orca-map-container relative w-full overflow-hidden bg-[#0a0d0a] flex flex-col font-sans border border-[var(--border-base)] rounded-xl shadow-sm transition-all duration-500 ease-in-out ${isMapFullscreen ? 'fixed inset-4 z-[9999] h-[calc(100vh-32px)]' : 'h-[700px]'}`}>
       
       {/* MAP CANVAS */}
       <div ref={mapContainerRef} className="flex-1 w-full bg-[#0a0d0a] z-[1]" />
@@ -340,7 +340,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
             <span className="font-bold text-xs uppercase tracking-widest text-white">MARITIME RISK MAP</span>
             <div className="h-3 w-[1px] bg-white/20" />
             <div className="flex items-center text-[9px] text-[#22d3ee] font-bold uppercase tracking-wider">
-               <span className="w-1.5 h-1.5 rounded-full bg-[#22d3ee] mr-1.5 animate-pulse" />
+               <span className="w-1.5 h-1.5 rounded-full bg-[#22d3ee] mr-1.5 pulse-live" />
                Live Data
             </div>
          </div>

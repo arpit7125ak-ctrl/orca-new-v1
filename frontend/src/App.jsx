@@ -212,6 +212,7 @@ export default function App() {
 
   return (
     <div className={`min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)] flex font-sans ${sunlightMode ? 'sunlight-mode' : ''}`}>
+      {!sunlightMode && <OceanBackground />}
       <OrcaSidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
@@ -221,7 +222,7 @@ export default function App() {
         setSelectedLang={setSelectedLang} 
       />
 
-      <main className="flex-1 w-full h-screen overflow-y-auto">
+      <main key={activeTab} className="flex-1 w-full h-screen overflow-y-auto page-transition">
         <div className="p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto md:pt-6 pt-16">
           {/* Error Notification Banner */}
           {errorMessage && (
