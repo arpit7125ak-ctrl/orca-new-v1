@@ -27,10 +27,13 @@ import { normalizeActivity, normalizeVesselType } from '../utils/maritimeConfig'
  * @returns {string} Clean base URL without trailing slashes.
  */
 export function getApiBase() {
+  // Check localStorage override first.
   if (typeof window !== 'undefined' && window.localStorage) {
     const saved = window.localStorage.getItem('ORCA_API_BASE');
     if (saved) return saved.replace(/\/+$/, '');
   }
+
+  // Check Vite environment variables for base URL.
   const envBase = import.meta.env.VITE_API_BASE || import.meta.env.VITE_API_BASE_URL;
   if (envBase) return envBase.replace(/\/+$/, '');
 
@@ -39,6 +42,7 @@ export function getApiBase() {
     return 'https://orca-backend-anp5.onrender.com/api/v1';
   }
 
+  //return default relative path for local development or unknown environments
   return '/api/v1';
 }
 
@@ -71,10 +75,18 @@ export function setApiBase(newUrl) {
  * @returns {Promise<any>} Parsed response data JSON.
  * @throws {Error} When response.ok is false or a network communication error occurs.
  */
+
+
+// Generic fetch wrapper for API requests. it handles the base URL, headers, and error parsing for all API calls.
 async function request(endpoint, options = {}) {
+
+  // Ensure endpoint starts with a leading slash
   const base = getApiBase();
+  // Clean endpoint to avoid double slashes
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  // Construct full request URL
   const url = `${base}${cleanEndpoint}`;
+  // Merge default headers with any provided options
   const config = {
     headers: {
       'Content-Type': 'application/json',
@@ -83,9 +95,10 @@ async function request(endpoint, options = {}) {
     ...options,
   };
 
+  // Perform the fetch request and handle response
   try {
     const response = await fetch(url, config);
-    const data = await response.json().catch(() => null);
+    const data = await response.json().catch(() => null);// Gracefully handle non-JSON responses
 
     if (!response.ok) {
       let errorMsg = (data && data.error && data.error.message) || (data && data.message) || `HTTP error ${response.status}`;
@@ -103,6 +116,7 @@ async function request(endpoint, options = {}) {
   }
 }
 
+// Exported ORCA API client with all supported endpoints and operations
 export const orcaApi = {
   getApiBase,
   setApiBase,
@@ -114,8 +128,17 @@ export const orcaApi = {
     try {
       const base = getApiBase();
       const healthUrl = `${base}/health`;
-      const res = await fetch(healthUrl);
-      return await res.json();
+      const resBackend = await fetch(healthUrl);
+      const backendData = await resBackend.json();
+      // i will also check the health of the AI service temperorarily, i want to make sure both backends and ai services are running.
+      const aiHealthUrl= "https://orca-ai-service-b0fx.onrender.com/health"
+      const resai = await fetch(aiHealthUrl);
+      const aiData = await resai.json();
+
+      console.log('Backend Health Data:', backendData);
+      console.log('AI Health Data:', aiData);
+
+      return backendData;
     } catch {
       return { status: 'offline' };
     }
