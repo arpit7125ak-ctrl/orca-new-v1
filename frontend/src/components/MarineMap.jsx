@@ -8,7 +8,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import L from 'leaflet';
-import { Compass, ShieldAlert, Layers, MapPin, Anchor, ChevronDown, Clock, Info, X, Check } from 'lucide-react';
+import { Compass, ShieldAlert, Layers, MapPin, Anchor, ChevronDown, Clock, Info, X, Check, Plus, Minus } from 'lucide-react';
 import { orcaApi } from '../api/client';
 import { RiskHeatmapLayer } from './RiskHeatmapLayer';
 
@@ -146,7 +146,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
   useEffect(() => {
     if (!mapContainerRef.current || !hasValidCoords) return;
     if (!mapInstanceRef.current) {
-      const map = L.map(mapContainerRef.current, { center: [validLat, validLon], zoom: 12, zoomControl: false });
+      const map = L.map(mapContainerRef.current, { center: [validLat, validLon], zoom: 13, zoomControl: false });
       L.control.zoom({ position: 'bottomright' }).addTo(map);
       
       // Setup Panes for explicit layer ordering
@@ -171,7 +171,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
       const validPts = pointsData.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon));
       if (validPts.length > 1) {
         const bounds = L.latLngBounds(validPts.map(p => [p.lat, p.lon]));
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
       }
       setTimeout(() => map.invalidateSize(), 200);
     }
@@ -184,9 +184,9 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
     const validPts = pointsData.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon));
     if (validPts.length > 1) {
       const bounds = L.latLngBounds(validPts.map(p => [p.lat, p.lon]));
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
     } else if (hasValidCoords) {
-      map.setView([validLat, validLon], 12);
+      map.setView([validLat, validLon], 13);
     }
   }, [pointsData, hasValidCoords, validLat, validLon]);
 
@@ -205,10 +205,18 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
     const validPts = pointsData.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon));
     if (validPts.length > 1) {
       const bounds = L.latLngBounds(validPts.map(p => [p.lat, p.lon]));
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
     } else if (hasValidCoords) {
-      map.setView([validLat, validLon], 12);
+      map.setView([validLat, validLon], 13);
     }
+  };
+
+  const handleZoomIn = () => {
+    if (mapInstanceRef.current) mapInstanceRef.current.zoomIn();
+  };
+
+  const handleZoomOut = () => {
+    if (mapInstanceRef.current) mapInstanceRef.current.zoomOut();
   };
 
     const hybridLabelRef = useRef(null);
@@ -422,7 +430,23 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
          </div>
 
          <div className="flex items-center space-x-2 pointer-events-auto">
-            <button onClick={handleRecenter} className="bg-[#111814]/95 backdrop-blur-md px-3 py-2 rounded-lg border border-[var(--border-base)] shadow-sm text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
+                         <div className="flex items-center bg-[#111814]/95 backdrop-blur-md rounded-lg border border-[var(--border-base)] shadow-sm overflow-hidden">
+                <button
+                   onClick={handleZoomIn}
+                   className="px-2.5 py-2 text-white/70 hover:text-white hover:bg-[#243024] transition cursor-pointer flex items-center justify-center border-r border-[var(--border-base)]"
+                   title="Zoom In (+)"
+                >
+                   <Plus className="w-3.5 h-3.5" />
+                </button>
+                <button
+                   onClick={handleZoomOut}
+                   className="px-2.5 py-2 text-white/70 hover:text-white hover:bg-[#243024] transition cursor-pointer flex items-center justify-center"
+                   title="Zoom Out (-)"
+                >
+                   <Minus className="w-3.5 h-3.5" />
+                </button>
+             </div>
+<button onClick={handleRecenter} className="bg-[#111814]/95 backdrop-blur-md px-3 py-2 rounded-lg border border-[var(--border-base)] shadow-sm text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
                Recenter
             </button>
             <button onClick={() => setIsMapFullscreen(!isMapFullscreen)} className="bg-[#111814]/95 backdrop-blur-md px-3 py-2 rounded-lg border border-[var(--border-base)] shadow-sm text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
