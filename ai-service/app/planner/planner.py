@@ -344,11 +344,12 @@ async def build_plan(
 
     # --- Sampling (Sections 15-17) ---------------------------------------
     sampling_mode = INTENT_TO_SAMPLING.get(intent, "local_grid")
+    grid_radius_km = float(request.get("radius_km") or 10.0)
     sampled = sampling_mod.build(
         mode=sampling_mode,
         lat=v_lat,
         lon=v_lon,
-        radius_km=5.0,
+        radius_km=grid_radius_km,
         origin=_as_point(request.get("origin")),
         destination=_as_point(request.get("destination")),
     )

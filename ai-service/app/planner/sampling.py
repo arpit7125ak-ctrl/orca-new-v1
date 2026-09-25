@@ -67,7 +67,7 @@ def single_point(lat: float, lon: float) -> List[Dict[str, Any]]:
     return [_point("P0", lat, lon)]
 
 
-def nine_point_grid(lat: float, lon: float, radius_km: float = 5.0) -> List[Dict[str, Any]]:
+def nine_point_grid(lat: float, lon: float, radius_km: float = 10.0) -> List[Dict[str, Any]]:
     """Section 15 - the 3x3 grid: centre plus 8 surrounding points.
 
     P0 is always the centre so downstream code can rely on that. The rest run
@@ -138,7 +138,7 @@ def build(
     mode: str,
     lat: float,
     lon: float,
-    radius_km: float = 5.0,
+    radius_km: float = 10.0,
     origin: Dict[str, float] = None,
     destination: Dict[str, float] = None,
 ) -> Dict[str, Any]:
