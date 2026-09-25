@@ -2,16 +2,7 @@
 import React, { useState } from 'react';
 import { Compass, Waves, Wind, MapPin, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
-function getRiskGlyph(status) {
-  switch (status) {
-    case 'SAFE': return '●'; // circle
-    case 'CAUTION': return '◆'; // diamond
-    case 'UNSAFE': return '▲'; // triangle
-    case 'DANGEROUS': return '⯃'; // octagon
-    default: return '○';
-  }
-}
+import RiskIndicator from './RiskIndicator';
 
 // --------------------------------------------------------------------------
 // PointCard - extracted for local expanded state
@@ -55,10 +46,11 @@ function PointCard({ pt, id, info, labelText, hasScore, score, isSelected, badge
               {t('grid.worst', { defaultValue: 'WORST' })}
             </span>
           )}
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center space-x-1 ${badgeColor}`}>
-            <span className="text-[9px] mr-1">{getRiskGlyph(pt.status)}</span>
-            <span>{hasScore ? `${score}/100` : t('grid.unrated', { defaultValue: 'Unrated' })}</span>
-          </span>
+          <RiskIndicator 
+            level={pt.status} 
+            score={pt.risk_score} 
+            label={hasScore ? `${score}/100` : t('grid.unrated', { defaultValue: 'Unrated' })} 
+          />
           <button 
             onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
             className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition p-0.5 rounded"

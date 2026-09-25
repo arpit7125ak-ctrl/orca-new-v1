@@ -4,11 +4,11 @@
 
 @layer base {
   :root {
-    --bg-base: #0a0d0a;
-    --bg-surface: #111814;
-    --bg-surface-2: #182018;
-    --border-base: #243024;
-    --border-hover: #2f4030;
+    --bg-base: #0b1614;
+    --bg-surface: #11221f;
+    --bg-surface-2: #162a26;
+    --border-base: #1f3a34;
+    --border-hover: #294e46;
 
     --text-primary: #e8ede6;
     --text-secondary: #8fa688;
@@ -55,17 +55,17 @@
   background: var(--border-hover);
 }
 
-/* Chart mode: clean light maritime theme */
+/* Chart mode: authentic warm nautical chart theme */
 [data-theme="chart"], .chart-mode {
-  --bg-base: #f0f4f8;
+  --bg-base: #f5efe3;
   --bg-surface: #ffffff;
-  --bg-surface-2: #e2e8f0;
-  --border-base: #cbd5e1;
-  --border-hover: #94a3b8;
+  --bg-surface-2: #ede5d5;
+  --border-base: #dcd3c1;
+  --border-hover: #b8ac96;
 
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
+  --text-primary: #1a2621;
+  --text-secondary: #3d5249;
+  --text-muted: #6b8277;
 
   --accent-primary: #0284c7;
   --accent-hover: #0369a1;
