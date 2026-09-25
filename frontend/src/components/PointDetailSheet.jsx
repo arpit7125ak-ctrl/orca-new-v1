@@ -69,20 +69,20 @@ function fmtValue(m) {
 /** Freshness badge colour + label from freshness.state */
 function freshnessProps(m) {
   const state = m?.freshness?.state;
-  if (state === 'fresh')  return { cls: 'text-emerald-400 bg-emerald-950/60 border-emerald-800', label: 'fresh' };
-  if (state === 'stale')  return { cls: 'text-amber-400  bg-amber-950/60  border-amber-800',  label: 'stale' };
-  if (state === 'old')    return { cls: 'text-rose-400   bg-rose-950/60   border-rose-800',   label: 'old'   };
-  return { cls: 'text-slate-500 bg-slate-900 border-slate-800', label: state || '—' };
+  if (state === 'fresh')  return { cls: 'text-[var(--safe-bright)] bg-emerald-950/60 border-[var(--safe)]', label: 'fresh' };
+  if (state === 'stale')  return { cls: 'text-[var(--caution-bright)]  bg-amber-950/60  border-[var(--caution)]',  label: 'stale' };
+  if (state === 'old')    return { cls: 'text-[var(--dangerous-bright)]   bg-rose-950/60   border-[var(--dangerous)]',   label: 'old'   };
+  return { cls: 'text-[var(--text-muted)] bg-[var(--bg-surface)] border-[var(--border-base)]', label: state || '—' };
 }
 
 /** Agent colour map */
 const AGENT_COLORS = {
   weather:   'bg-sky-950/70 text-sky-300 border-sky-800',
   ocean:     'bg-blue-950/70 text-blue-300 border-blue-800',
-  tide:      'bg-cyan-950/70 text-cyan-300 border-cyan-800',
-  cyclone:   'bg-rose-950/70 text-rose-300 border-rose-800',
+  tide:      'bg-cyan-950/70 text-[var(--accent-primary)] border-[var(--accent-primary)]',
+  cyclone:   'bg-rose-950/70 text-[var(--dangerous-bright)] border-[var(--dangerous)]',
   gis:       'bg-violet-950/70 text-violet-300 border-violet-800',
-  pfz:       'bg-emerald-950/70 text-emerald-300 border-emerald-800',
+  pfz:       'bg-emerald-950/70 text-[var(--safe-bright)] border-[var(--safe)]',
   ecosystem: 'bg-teal-950/70 text-teal-300 border-teal-800',
 };
 
@@ -97,7 +97,7 @@ function MeasTile({ label, mKey, m, isHazard, extra }) {
   const isWindDir   = mKey === 'wind_direction_deg';
   const isPfzScore  = mKey === 'pfz_suitability_score';
   const fp          = freshnessProps(m);
-  const agentCls    = AGENT_COLORS[m.reported_by] || 'bg-slate-900 text-slate-400 border-slate-800';
+  const agentCls    = AGENT_COLORS[m.reported_by] || 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-base)]';
 
   // Border highlight if this parameter is a risk factor
   const hazardBorder = isHazard ? 'border-amber-500/70 bg-amber-950/10' : 'border-slate-800/70';
@@ -106,11 +106,11 @@ function MeasTile({ label, mKey, m, isHazard, extra }) {
     <div className={`p-2.5 rounded-xl border ${hazardBorder} transition-colors`}>
       {/* Top row: label + hazard icon */}
       <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide truncate pr-1" title={label}>
+        <span className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wide truncate pr-1" title={label}>
           {label}
         </span>
         <div className="flex items-center space-x-1 flex-shrink-0">
-          {isHazard && <AlertTriangle className="w-3 h-3 text-amber-400" />}
+          {isHazard && <AlertTriangle className="w-3 h-3 text-[var(--caution-bright)]" />}
           {m.reported_by && (
             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${agentCls}`}>
               {m.reported_by}
@@ -123,41 +123,41 @@ function MeasTile({ label, mKey, m, isHazard, extra }) {
       {isBool ? (
         <div className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs font-bold border ${
           m.value
-            ? 'bg-rose-950 text-rose-300 border-rose-700'
-            : 'bg-emerald-950 text-emerald-300 border-emerald-800'
+            ? 'bg-[var(--dangerous)]/20 text-[var(--dangerous-bright)] border-rose-700'
+            : 'bg-[var(--safe)]/20 text-[var(--safe-bright)] border-[var(--safe)]'
         }`}>
           {m.value ? <XCircle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
           <span>{m.value ? 'ACTIVE' : 'CLEAR'}</span>
         </div>
       ) : isPfzScore ? (
         <div className="space-y-1">
-          <span className="font-mono text-sm font-bold text-white">
+          <span className="font-mono text-sm font-bold text-[var(--text-primary)]">
             {m.value !== null && m.value !== undefined ? Number(m.value).toFixed(2) : '—'}
-            <span className="text-xs text-slate-400 font-normal"> /1.0</span>
+            <span className="text-xs text-[var(--text-secondary)] font-normal"> /1.0</span>
           </span>
-          <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-[var(--bg-surface-2)] rounded-full overflow-hidden">
             <div
-              className="h-full bg-emerald-500 rounded-full"
+              className="h-full bg-[var(--safe)] rounded-full"
               style={{ width: `${Math.min(100, Number(m.value || 0) * 100)}%` }}
             />
           </div>
         </div>
       ) : isWindDir ? (
-        <span className="font-mono text-sm font-bold text-white">
+        <span className="font-mono text-sm font-bold text-[var(--text-primary)]">
           {m.value !== null && m.value !== undefined ? `${m.value}° (${degToCompass(m.value)})` : '—'}
         </span>
       ) : (
-        <span className={`font-mono text-sm font-bold ${isAvailable ? 'text-white' : 'text-slate-500'}`}>
+        <span className={`font-mono text-sm font-bold ${isAvailable ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>
           {fmtValue(m)}
         </span>
       )}
 
-      {extra && <p className="text-[10px] text-slate-400 mt-0.5 truncate">{extra}</p>}
+      {extra && <p className="text-[10px] text-[var(--text-secondary)] mt-0.5 truncate">{extra}</p>}
 
       {/* Footer: source + freshness */}
       <div className="flex items-center justify-between mt-1.5 gap-1">
         <span
-          className="text-[9px] text-slate-500 truncate"
+          className="text-[9px] text-[var(--text-muted)] truncate"
           title={m.source || ''}
         >
           {m.source ? m.source.split('(')[0].trim() : '—'}
@@ -181,17 +181,17 @@ function Section({ icon: Icon, title, color, children, defaultOpen = true }) {
   if (!hasContent) return null;
 
   return (
-    <div className="rounded-xl border border-slate-800/80 overflow-hidden">
+    <div className="rounded-xl border border-[var(--border-base)] overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-3 py-2 bg-slate-950/60 hover:bg-slate-900/80 transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2 bg-[var(--bg-base)] hover:bg-slate-900/80 transition-colors"
       >
         <div className="flex items-center space-x-2">
           <Icon className={`w-3.5 h-3.5 ${color}`} />
           <span className={`text-[11px] font-bold uppercase tracking-wider ${color}`}>{title}</span>
         </div>
-        {open ? <ChevronUp className="w-3.5 h-3.5 text-slate-500" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500" />}
+        {open ? <ChevronUp className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
       </button>
       {open && (
         <div className="p-2.5 grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-900/20">
@@ -210,20 +210,20 @@ function TextTile({ label, mKey, m, isHazard }) {
 
   const display = String(m.value).replace(/_/g, ' ');
   const isHidden = !['available', 'derived', 'partial'].includes(m.status);
-  const agentCls = AGENT_COLORS[m.reported_by] || 'bg-slate-900 text-slate-400 border-slate-800';
+  const agentCls = AGENT_COLORS[m.reported_by] || 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-base)]';
   const hazardBorder = isHazard ? 'border-amber-500/70 bg-amber-950/10' : 'border-slate-800/70';
 
   return (
     <div className={`p-2.5 rounded-xl border col-span-2 sm:col-span-3 ${hazardBorder}`}>
       <div className="flex items-center justify-between mb-0.5">
-        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{label}</span>
+        <span className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wide">{label}</span>
         {m.reported_by && (
           <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${agentCls}`}>
             {m.reported_by}
           </span>
         )}
       </div>
-      <span className={`text-xs font-semibold ${isHidden ? 'text-slate-500' : 'text-white'} capitalize`}>
+      <span className={`text-xs font-semibold ${isHidden ? 'text-[var(--text-muted)]' : 'text-[var(--text-primary)]'} capitalize`}>
         {display}
       </span>
     </div>
@@ -247,12 +247,12 @@ export default function PointDetailSheet({ point, onClose }) {
   const level    = risk.risk_level || point.status || (isLand ? 'LAND' : 'UNRATED');
 
   const levelColors = {
-    SAFE:      { bg: 'bg-emerald-950', text: 'text-emerald-400', border: 'border-emerald-800' },
-    CAUTION:   { bg: 'bg-amber-950',   text: 'text-amber-400',   border: 'border-amber-800'   },
-    UNSAFE:    { bg: 'bg-orange-950',  text: 'text-orange-400',  border: 'border-orange-800'  },
-    DANGEROUS: { bg: 'bg-rose-950',    text: 'text-rose-400',    border: 'border-rose-800'    },
-    LAND:      { bg: 'bg-slate-800',   text: 'text-slate-400',   border: 'border-slate-700'   },
-    UNRATED:   { bg: 'bg-slate-950',   text: 'text-slate-400',   border: 'border-slate-800'   },
+    SAFE:      { bg: 'bg-[var(--safe)]/20', text: 'text-[var(--safe-bright)]', border: 'border-[var(--safe)]' },
+    CAUTION:   { bg: 'bg-[var(--caution)]/20',   text: 'text-[var(--caution-bright)]',   border: 'border-[var(--caution)]'   },
+    UNSAFE:    { bg: 'bg-[var(--unsafe)]/20',  text: 'text-[var(--unsafe-bright)]',  border: 'border-[var(--unsafe)]'  },
+    DANGEROUS: { bg: 'bg-[var(--dangerous)]/20',    text: 'text-[var(--dangerous-bright)]',    border: 'border-[var(--dangerous)]'    },
+    LAND:      { bg: 'bg-[var(--bg-surface-2)]',   text: 'text-[var(--text-secondary)]',   border: 'border-[var(--border-base)]'   },
+    UNRATED:   { bg: 'bg-[var(--bg-base)]',   text: 'text-[var(--text-secondary)]',   border: 'border-[var(--border-base)]'   },
   };
   const color = levelColors[level] || levelColors.UNRATED;
 
@@ -309,24 +309,24 @@ export default function PointDetailSheet({ point, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-sm animate-fade-in">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl max-h-[94vh] flex flex-col overflow-hidden">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-3xl w-full max-w-2xl shadow-2xl max-h-[94vh] flex flex-col overflow-hidden">
 
         {/* ── Header ─────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950/60 flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--border-base)] bg-[var(--bg-base)] flex-shrink-0">
           <div className="flex items-center space-x-2.5 min-w-0">
-            <span className="text-xl font-black text-white">{pid}</span>
-            <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+            <span className="text-xl font-black text-[var(--text-primary)]">{pid}</span>
+            <span className="text-xs font-mono px-2 py-0.5 rounded bg-[var(--bg-surface-2)] text-[var(--text-secondary)]">
               {point.lat !== undefined && point.lat !== null
                 ? `${Number(point.lat).toFixed(3)}°N, ${Number(point.lon).toFixed(3)}°E`
                 : t('pointDetail.quadrantCenter')}
             </span>
             {isLand && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-400 border border-slate-600">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border border-[var(--border-base)]">
                 LAND
               </span>
             )}
             {totalAvailable > 0 && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--accent-dim)] text-[var(--accent-primary)] border border-[var(--accent-primary)]">
                 {totalAvailable}/26
               </span>
             )}
@@ -334,7 +334,7 @@ export default function PointDetailSheet({ point, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer flex-shrink-0"
+            className="p-1.5 rounded-xl bg-[var(--bg-surface-2)] hover:bg-[var(--bg-surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer flex-shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
@@ -345,10 +345,10 @@ export default function PointDetailSheet({ point, onClose }) {
 
           {/* Land point notice */}
           {isLand && (
-            <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-700 text-center">
-              <MapPin className="w-8 h-8 text-slate-500 mx-auto mb-2" />
-              <p className="text-sm font-bold text-slate-300">Land Point — Analysis Not Applicable</p>
-              <p className="text-xs text-slate-500 mt-1">This grid point falls on land and was excluded from safety scoring.</p>
+            <div className="p-4 rounded-2xl bg-slate-800/40 border border-[var(--border-base)] text-center">
+              <MapPin className="w-8 h-8 text-[var(--text-muted)] mx-auto mb-2" />
+              <p className="text-sm font-bold text-[var(--text-secondary)]">Land Point — Analysis Not Applicable</p>
+              <p className="text-xs text-[var(--text-muted)] mt-1">This grid point falls on land and was excluded from safety scoring.</p>
             </div>
           )}
 
@@ -356,21 +356,21 @@ export default function PointDetailSheet({ point, onClose }) {
           {!isLand && (
             <div className={`p-4 rounded-2xl border ${color.bg} ${color.border} flex items-center justify-between`}>
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t('pointDetail.riskAssessment')}</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">{t('pointDetail.riskAssessment')}</div>
                 <div className={`text-3xl font-black ${color.text} mt-0.5`}>
                   {score !== null ? (
-                    <>{score}<span className="text-sm font-semibold text-slate-400"> / 100</span></>
+                    <>{score}<span className="text-sm font-semibold text-[var(--text-secondary)]"> / 100</span></>
                   ) : (
-                    <span className="text-lg font-bold text-slate-400">{t('grid.unrated')}</span>
+                    <span className="text-lg font-bold text-[var(--text-secondary)]">{t('grid.unrated')}</span>
                   )}
                 </div>
               </div>
               <div className="text-right space-y-1">
-                <span className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border ${color.border} ${color.text} bg-slate-950/50`}>
+                <span className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider border ${color.border} ${color.text} bg-[var(--bg-base)]`}>
                   {level}
                 </span>
                 {risk.confidence && (
-                  <div className="text-[10px] text-slate-500 font-mono">
+                  <div className="text-[10px] text-[var(--text-muted)] font-mono">
                     conf. {Math.round(risk.confidence * 100)}%
                   </div>
                 )}
@@ -380,36 +380,36 @@ export default function PointDetailSheet({ point, onClose }) {
 
           {/* Score Breakdown */}
           {!isLand && (score !== null || baseline !== null) && (
-            <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
-                <Scale className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="p-3.5 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-base)] space-y-2">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center space-x-1.5">
+                <Scale className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                 <span>{t('pointDetail.auditTrail')}</span>
               </h4>
-              <div className="space-y-1.5 text-xs text-slate-300 font-mono">
+              <div className="space-y-1.5 text-xs text-[var(--text-secondary)] font-mono">
                 <div className="flex justify-between">
                   <span>{t('pointDetail.baselineScore')}:</span>
-                  <span className="font-bold text-white">{baseline !== null ? baseline : t('pointDetail.unavailable')}</span>
+                  <span className="font-bold text-[var(--text-primary)]">{baseline !== null ? baseline : t('pointDetail.unavailable')}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>{t('pointDetail.llmDelta')}:</span>
-                  <span className={`font-bold ${llmAdj !== null && llmAdj >= 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                  <span className={`font-bold ${llmAdj !== null && llmAdj >= 0 ? 'text-[var(--caution-bright)]' : 'text-[var(--safe-bright)]'}`}>
                     {llmAdj !== null ? (llmAdj >= 0 ? `+${llmAdj}` : llmAdj) : '0'}
                   </span>
                 </div>
                 {hardFloor !== null && (
-                  <div className="flex justify-between text-rose-400">
+                  <div className="flex justify-between text-[var(--dangerous-bright)]">
                     <span>{t('pointDetail.deterministicFloor')}:</span>
                     <span className="font-bold">{hardFloor} ({t('pointDetail.floored')})</span>
                   </div>
                 )}
-                <div className="pt-1.5 border-t border-slate-800 flex justify-between font-sans text-sm font-bold text-white">
+                <div className="pt-1.5 border-t border-[var(--border-base)] flex justify-between font-sans text-sm font-bold text-[var(--text-primary)]">
                   <span>{t('pointDetail.finalScore')}:</span>
                   <span className={color.text}>{score !== null ? score : t('grid.unrated')}</span>
                 </div>
               </div>
               {(hardRules.length > 0 || (score !== null && score >= 80)) && (
-                <div className="mt-1.5 p-2.5 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-200 text-xs flex items-start space-x-2">
-                  <AlertTriangle className="w-4 h-4 text-rose-400 mt-0.5 flex-shrink-0" />
+                <div className="mt-1.5 p-2.5 rounded-xl bg-rose-950/60 border border-[var(--dangerous)] text-rose-200 text-xs flex items-start space-x-2">
+                  <AlertTriangle className="w-4 h-4 text-[var(--dangerous-bright)] mt-0.5 flex-shrink-0" />
                   <span><strong>{t('pointDetail.deterministicFloorEnforced')}: </strong>{t('pointDetail.deterministicFloorDesc')}</span>
                 </div>
               )}
@@ -419,12 +419,12 @@ export default function PointDetailSheet({ point, onClose }) {
           {/* Risk Factors */}
           {!isLand && riskFactors.length > 0 && (
             <div className="space-y-1.5">
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                 {t('pointDetail.identifiedHazards')}:
               </h4>
               <div className="flex flex-wrap gap-1.5">
                 {riskFactors.map((factor, idx) => (
-                  <span key={idx} className="px-2 py-1 rounded-lg bg-amber-950/60 border border-amber-700/60 text-amber-300 text-[10px] font-bold flex items-center space-x-1">
+                  <span key={idx} className="px-2 py-1 rounded-lg bg-amber-950/60 border border-amber-700/60 text-[var(--caution-bright)] text-[10px] font-bold flex items-center space-x-1">
                     <AlertTriangle className="w-2.5 h-2.5" />
                     <span>{typeof factor === 'string' ? factor.replace(/_/g, ' ') : JSON.stringify(factor)}</span>
                   </span>
@@ -456,7 +456,7 @@ export default function PointDetailSheet({ point, onClose }) {
           </Section>
 
           {/* 3. Tides */}
-          <Section icon={Navigation} title="Tides" color="text-cyan-400" defaultOpen>
+          <Section icon={Navigation} title="Tides" color="text-[var(--accent-primary)]" defaultOpen>
             {tideKeys.map(k => {
               const m = M(k);
               if (!m) return null;
@@ -465,7 +465,7 @@ export default function PointDetailSheet({ point, onClose }) {
           </Section>
 
           {/* 4. Warnings & Zones */}
-          <Section icon={ShieldAlert} title="Warnings & Zones" color="text-rose-400" defaultOpen>
+          <Section icon={ShieldAlert} title="Warnings & Zones" color="text-[var(--dangerous-bright)]" defaultOpen>
             {/* Boolean tiles */}
             {['official_warning_active','inside_prohibited_zone'].map(k => {
               const m = M(k);
@@ -493,7 +493,7 @@ export default function PointDetailSheet({ point, onClose }) {
           </Section>
 
           {/* 6. Fishing Intelligence (PFZ + Ecosystem) */}
-          <Section icon={Fish} title="Fishing Intelligence" color="text-emerald-400" defaultOpen={false}>
+          <Section icon={Fish} title="Fishing Intelligence" color="text-[var(--safe-bright)]" defaultOpen={false}>
             {['pfz_suitability_score','sst_gradient','distance_to_pfz_km','chlorophyll_mg_m3','dissolved_oxygen_mmol_m3'].map(k => {
               const m = M(k);
               if (!m) return null;
@@ -506,7 +506,7 @@ export default function PointDetailSheet({ point, onClose }) {
 
           {/* No data fallback */}
           {totalAvailable === 0 && !isLand && (
-            <div className="p-4 rounded-2xl bg-slate-950/40 border border-slate-800 text-center text-slate-500 text-xs">
+            <div className="p-4 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-base)] text-center text-[var(--text-muted)] text-xs">
               No measurement data available for this point.
             </div>
           )}
@@ -521,11 +521,11 @@ export default function PointDetailSheet({ point, onClose }) {
         </div>
 
         {/* ── Footer ─────────────────────────────────────────────── */}
-        <div className="flex-shrink-0 px-5 py-3 border-t border-slate-800 bg-slate-950/40">
+        <div className="flex-shrink-0 px-5 py-3 border-t border-[var(--border-base)] bg-[var(--bg-base)]">
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-colors cursor-pointer"
+            className="w-full py-2.5 rounded-xl bg-[var(--bg-surface-2)] hover:bg-[var(--bg-surface-2)] text-[var(--text-primary)] font-bold text-xs transition-colors cursor-pointer"
           >
             {t('pointDetail.closeDetail')}
           </button>

@@ -384,35 +384,35 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
   return (
     <div className="space-y-6">
       {/* Page Title & Breadcrumb Header */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl backdrop-blur-md">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-2xl p-5 sm:p-6 shadow-xl backdrop-blur-md">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center space-x-2">
-              <Compass className="w-6 h-6 text-cyan-400" />
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              <Compass className="w-6 h-6 text-[var(--accent-primary)]" />
+              <h2 className="text-xl sm:text-2xl font-black text-[var(--text-primary)] tracking-tight">
                 {t('input.pageTitle')}
               </h2>
             </div>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
               {t('input.subtitle')}
             </p>
           </div>
-          <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-950 px-3 py-1.5 rounded-lg border border-cyan-800 w-fit">
+          <span className="text-xs font-mono font-bold text-[var(--accent-primary)] bg-[var(--accent-dim)] px-3 py-1.5 rounded-lg border border-[var(--accent-primary)] w-fit">
             {t('input.badgeGis')}
           </span>
         </div>
 
         {/* Preset Location Pills */}
-        <div className="mt-4 pt-4 border-t border-slate-800 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-slate-400 mr-1">{t('home.quickScenarios')}:</span>
+        <div className="mt-4 pt-4 border-t border-[var(--border-base)] flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-[var(--text-secondary)] mr-1">{t('home.quickScenarios')}:</span>
           {presets.map((p, idx) => (
             <button
               key={idx}
               type="button"
               onClick={() => handleApplyPreset(p)}
-              className="text-xs px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 hover:border-cyan-500/60 text-slate-300 hover:text-white transition-all flex items-center space-x-1.5 cursor-pointer"
+              className="text-xs px-3 py-1.5 rounded-lg bg-[var(--bg-base)] border border-[var(--border-base)] hover:border-[var(--accent-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center space-x-1.5 cursor-pointer"
             >
-              <MapPin className="w-3 h-3 text-cyan-400" />
+              <MapPin className="w-3 h-3 text-[var(--accent-primary)]" />
               <span>{p.name}</span>
             </button>
           ))}
@@ -423,23 +423,23 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
         {/* Left Structured Input Form */}
-        <div className="lg:col-span-6 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-md flex flex-col justify-between space-y-5">
-          <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white flex items-center space-x-2">
-              <Ship className="w-4 h-4 text-cyan-400" />
+        <div className="lg:col-span-6 bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-2xl p-6 shadow-xl backdrop-blur-md flex flex-col justify-between space-y-5">
+          <div className="border-b border-[var(--border-base)] pb-3 flex items-center justify-between">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)] flex items-center space-x-2">
+              <Ship className="w-4 h-4 text-[var(--accent-primary)]" />
               <span>{t('input.operationalParameters')}</span>
             </h3>
-            <span className="text-[11px] font-semibold text-slate-400">{t('input.stepCounter')}</span>
+            <span className="text-[11px] font-semibold text-[var(--text-secondary)]">{t('input.stepCounter')}</span>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* 1. Location Input with Location Buttons */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
                 {t('input.locationSection')}
               </label>
               <div className="relative flex items-center">
-                <MapPin className="w-4 h-4 text-cyan-400 absolute left-3.5 pointer-events-none" />
+                <MapPin className="w-4 h-4 text-[var(--accent-primary)] absolute left-3.5 pointer-events-none" />
                 <input
                   type="text"
                   value={locationName}
@@ -451,14 +451,14 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                     }
                   }}
                   placeholder={t('input.locationPlaceholder')}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-28 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl pl-10 pr-28 py-2.5 text-xs sm:text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
                 <button
                   type="button"
                   onClick={handleResolveCoordsFromPlace}
                   disabled={isResolvingCoords || !locationName.trim()}
                   title="Resolve place name to coordinates"
-                  className="absolute right-2 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-sm cursor-pointer"
+                  className="absolute right-2 px-3 py-1.5 rounded-lg bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] disabled:opacity-40 disabled:cursor-not-allowed text-[var(--text-primary)] text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-sm cursor-pointer"
                 >
                   {isResolvingCoords ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -472,7 +472,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
               {/* Coordinates Inputs */}
               <div className="grid grid-cols-2 gap-2 mt-2.5">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                  <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                     {t('input.lat')} (°N)
                   </label>
                   <input
@@ -490,11 +490,11 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                       }
                     }}
                     placeholder="e.g. 12.5000"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono"
+                    className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-3 py-2 text-xs sm:text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                  <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                     {t('input.lon')} (°E)
                   </label>
                   <input
@@ -512,7 +512,7 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                       }
                     }}
                     placeholder="e.g. 74.8000"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono"
+                    className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-3 py-2 text-xs sm:text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono"
                   />
                 </div>
               </div>
@@ -523,12 +523,12 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                   type="button"
                   onClick={handleResolvePlaceFromCoords}
                   disabled={isResolvingPlace || !lat || !lon}
-                  className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center space-x-1.5 transition-colors cursor-pointer"
+                  className="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface-2)] hover:bg-[var(--bg-surface-2)] text-[var(--accent-primary)] border border-[var(--border-base)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center space-x-1.5 transition-colors cursor-pointer"
                 >
                   {isResolvingPlace ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-primary)]" />
                   ) : (
-                    <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                    <MapPin className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                   )}
                   <span>{t('home.getPlace', 'Get Place Name')}</span>
                 </button>
@@ -536,14 +536,14 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                 <button
                   type="button"
                   onClick={handleUseMyLocation}
-                  className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center space-x-1.5 transition-colors cursor-pointer"
+                  className="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface-2)] hover:bg-[var(--bg-surface-2)] text-[var(--text-primary)] border border-[var(--border-base)] flex items-center space-x-1.5 transition-colors cursor-pointer"
                 >
-                  <LocateFixed className="w-3.5 h-3.5 text-cyan-400" />
+                  <LocateFixed className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                   <span>{t('input.useMyGps')}</span>
                 </button>
 
-                <div className="text-[11px] text-cyan-400 font-medium flex items-center space-x-1.5 bg-cyan-950/60 border border-cyan-800/80 px-2.5 py-1.5 rounded-lg">
-                  <Navigation className="w-3 h-3 text-cyan-400 animate-pulse" />
+                <div className="text-[11px] text-[var(--accent-primary)] font-medium flex items-center space-x-1.5 bg-cyan-950/60 border border-cyan-800/80 px-2.5 py-1.5 rounded-lg">
+                  <Navigation className="w-3 h-3 text-[var(--accent-primary)] animate-pulse" />
                   <span>{t('input.clickToAutoFill')}</span>
                 </div>
               </div>
@@ -552,15 +552,15 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
             {/* 2. Activity & Vessel Type */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
                   {t('input.activity')}
                 </label>
                 <div className="relative">
-                  <Fish className="w-4 h-4 text-cyan-400 absolute left-3.5 top-3 pointer-events-none" />
+                  <Fish className="w-4 h-4 text-[var(--accent-primary)] absolute left-3.5 top-3 pointer-events-none" />
                   <select
                     value={activity}
                     onChange={(e) => setActivity(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-8 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl pl-10 pr-8 py-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
                     <option value="">{t('home.selectActivityOptional')}</option>
                     {ACTIVITIES.map((act) => (
@@ -573,15 +573,15 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
                   {t('input.vesselType')}
                 </label>
                 <div className="relative">
-                  <Ship className="w-4 h-4 text-cyan-400 absolute left-3.5 top-3 pointer-events-none" />
+                  <Ship className="w-4 h-4 text-[var(--accent-primary)] absolute left-3.5 top-3 pointer-events-none" />
                   <select
                     value={vesselType}
                     onChange={(e) => setVesselType(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-8 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl pl-10 pr-8 py-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
                     <option value="">{t('home.selectVesselOptional')}</option>
                     {VESSEL_TYPES.map((v) => (
@@ -597,15 +597,15 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
             {/* 3. Date & Time Window */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
                   {t('input.date')}
                 </label>
                 <div className="relative">
-                  <Calendar className="w-4 h-4 text-cyan-400 absolute left-3.5 top-3 pointer-events-none" />
+                  <Calendar className="w-4 h-4 text-[var(--accent-primary)] absolute left-3.5 top-3 pointer-events-none" />
                   <select
                     value={dateOption}
                     onChange={(e) => setDateOption(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-8 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl pl-10 pr-8 py-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
                     <option value="">{t('home.selectDateOptional')}</option>
                     <option value="today">📅 {t('input.today')}</option>
@@ -616,15 +616,15 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
                   {t('input.timeRange')}
                 </label>
                 <div className="relative">
-                  <Clock className="w-4 h-4 text-cyan-400 absolute left-3.5 top-3 pointer-events-none" />
+                  <Clock className="w-4 h-4 text-[var(--accent-primary)] absolute left-3.5 top-3 pointer-events-none" />
                   <select
                     value={timeRange}
                     onChange={(e) => setTimeRange(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-8 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl pl-10 pr-8 py-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
                     <option value="">{t('home.selectWindowOptional')}</option>
                     <option value="morning">🌅 {t('input.morning')}</option>
@@ -639,10 +639,10 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
             {/* 4. Natural Language / Voice Field */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                   {t('input.customQuery')}
                 </label>
-                <span className="text-[10px] text-cyan-400 font-mono">{t('input.nlpActive')}</span>
+                <span className="text-[10px] text-[var(--accent-primary)] font-mono">{t('input.nlpActive')}</span>
               </div>
               <div className="relative">
                 <input
@@ -650,15 +650,15 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
                   value={customQuery}
                   onChange={(e) => setCustomQuery(e.target.value)}
                   placeholder={t('input.customQueryPlaceholder')}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-3.5 pr-12 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl pl-3.5 pr-12 py-2.5 text-xs sm:text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
                 <button
                   type="button"
                   onClick={toggleVoice}
                   className={`absolute right-2 top-2 p-1.5 rounded-lg border transition-all cursor-pointer ${
                     isRecording 
-                      ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
-                      : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
+                      ? 'bg-[var(--dangerous)] text-[var(--text-primary)] border-rose-400 animate-pulse' 
+                      : 'bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border-[var(--border-base)] hover:text-[var(--text-primary)]'
                   }`}
                   title={t('input.voiceInput')}
                 >
@@ -672,9 +672,9 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-sm uppercase tracking-wider flex items-center justify-center space-x-2 transition-all shadow-xl shadow-cyan-500/20 cursor-pointer disabled:opacity-50"
+                className="w-full py-4 rounded-xl bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-hover)] hover:from-cyan-400 hover:to-blue-500 text-black font-black text-sm uppercase tracking-wider flex items-center justify-center space-x-2 transition-all shadow-xl shadow-lg cursor-pointer disabled:opacity-50"
               >
-                <Sparkles className="w-5 h-5 text-slate-950" />
+                <Sparkles className="w-5 h-5 text-black" />
                 <span>{isLoading ? t('input.running') : t('input.analyzeButton')}</span>
               </button>
             </div>
@@ -682,33 +682,33 @@ export default function AnalysisInputPage({ onStartAnalyze, isLoading, defaultVa
         </div>
 
         {/* Right Interactive Leaflet Map */}
-        <div className="lg:col-span-6 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl backdrop-blur-md flex flex-col justify-between">
+        <div className="lg:col-span-6 bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-2xl p-4 shadow-xl backdrop-blur-md flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3 px-1">
             <div className="flex items-center space-x-2">
-              <Layers className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs font-bold text-white uppercase tracking-wider">
+              <Layers className="w-4 h-4 text-[var(--accent-primary)]" />
+              <span className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
                 {t('input.canvasTitle')}
               </span>
             </div>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-[11px] text-[var(--text-secondary)]">
               {t('input.canvasHint')}
             </span>
           </div>
 
-          <div className="relative flex-1 min-h-[380px] sm:min-h-[440px] rounded-xl overflow-hidden border border-slate-800 shadow-inner">
+          <div className="relative flex-1 min-h-[380px] sm:min-h-[440px] rounded-xl overflow-hidden border border-[var(--border-base)] shadow-inner">
             <div ref={mapContainerRef} className="absolute inset-0 w-full h-full" />
             
             {/* Overlay hint */}
-            <div className="absolute top-3 left-3 z-[400] bg-slate-950/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-700 text-xs text-slate-200 shadow-xl pointer-events-none max-w-[85%] truncate">
-              <span className="font-bold text-cyan-400">{t('input.targetLabel')}</span> {locationName || t('input.clickWaterHint')}
+            <div className="absolute top-3 left-3 z-[400] bg-[var(--bg-base)] backdrop-blur-md px-3.5 py-2 rounded-xl border border-[var(--border-base)] text-xs text-[var(--text-primary)] shadow-xl pointer-events-none max-w-[85%] truncate">
+              <span className="font-bold text-[var(--accent-primary)]">{t('input.targetLabel')}</span> {locationName || t('input.clickWaterHint')}
               {(lat && lon) && (
-                <span className="text-slate-400 ml-1.5 font-mono text-[11px]">
+                <span className="text-[var(--text-secondary)] ml-1.5 font-mono text-[11px]">
                   ({lat}°N, {lon}°E)
                 </span>
               )}
             </div>
 
-            <div className="absolute bottom-3 left-3 z-[400] bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-md border border-slate-800 text-[10px] text-slate-400 pointer-events-none">
+            <div className="absolute bottom-3 left-3 z-[400] bg-[var(--bg-base)] backdrop-blur-md px-2.5 py-1 rounded-md border border-[var(--border-base)] text-[10px] text-[var(--text-secondary)] pointer-events-none">
               {t('input.limitNote')}
             </div>
           </div>

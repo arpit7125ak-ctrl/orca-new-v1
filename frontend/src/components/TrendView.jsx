@@ -39,8 +39,8 @@ export default function TrendView({ trendResult }) {
 
   if (!trendResult) {
     return (
-      <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-3xl text-center text-slate-400">
-        <Info className="w-8 h-8 text-cyan-400 mx-auto mb-2" />
+      <div className="p-6 bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-3xl text-center text-[var(--text-secondary)]">
+        <Info className="w-8 h-8 text-[var(--accent-primary)] mx-auto mb-2" />
         <p className="text-sm font-semibold">{t('trend.noTrendResults')}</p>
       </div>
     );
@@ -77,13 +77,13 @@ export default function TrendView({ trendResult }) {
   const getDirectionBadge = (dir) => {
     switch (dir) {
       case 'increasing':
-        return { label: t('trend.dirIncreasing'), bg: 'bg-rose-950/70 text-rose-300 border-rose-800', icon: TrendingUp };
+        return { label: t('trend.dirIncreasing'), bg: 'bg-rose-950/70 text-[var(--dangerous-bright)] border-[var(--dangerous)]', icon: TrendingUp };
       case 'decreasing':
         return { label: t('trend.dirDecreasing'), bg: 'bg-blue-950/70 text-blue-300 border-blue-800', icon: TrendingDown };
       case 'stable':
-        return { label: t('trend.dirStable'), bg: 'bg-emerald-950/70 text-emerald-300 border-emerald-800', icon: Minus };
+        return { label: t('trend.dirStable'), bg: 'bg-emerald-950/70 text-[var(--safe-bright)] border-[var(--safe)]', icon: Minus };
       default:
-        return { label: t('trend.dirInsufficient'), bg: 'bg-slate-800 text-slate-400 border-slate-700', icon: HelpCircle };
+        return { label: t('trend.dirInsufficient'), bg: 'bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border-[var(--border-base)]', icon: HelpCircle };
     }
   };
 
@@ -125,8 +125,8 @@ export default function TrendView({ trendResult }) {
       
       {/* Proxy Warning Notice */}
       {isChlorophyllProxy && (
-        <div className="p-4 rounded-2xl bg-amber-950/60 border border-amber-800 text-amber-200 flex items-start space-x-3 text-xs sm:text-sm shadow-lg">
-          <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+        <div className="p-4 rounded-2xl bg-amber-950/60 border border-[var(--caution)] text-amber-200 flex items-start space-x-3 text-xs sm:text-sm shadow-lg">
+          <AlertTriangle className="w-5 h-5 text-[var(--caution-bright)] flex-shrink-0 mt-0.5" />
           <div>
             <span className="font-bold">{t('trend.proxyNoticeTitle')}: </span>
             <span>{t('trend.proxyNoticeDesc')}</span>
@@ -135,17 +135,17 @@ export default function TrendView({ trendResult }) {
       )}
 
       {/* Main Metric Hero Card */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xl space-y-4">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-3xl p-6 sm:p-7 shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center space-x-2">
-              <Activity className="w-5 h-5 text-cyan-400" />
-              <h3 className="text-base sm:text-lg font-bold text-white capitalize">
+              <Activity className="w-5 h-5 text-[var(--accent-primary)]" />
+              <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)] capitalize">
                 {parameter.replace(/_/g, ' ')} {t('trend.multiYearAnalysisTitle')}
               </h3>
             </div>
-            <p className="text-xs text-slate-400 font-mono mt-0.5">
-              {t('trend.sector')}: <b className="text-slate-200">{locName}</b>
+            <p className="text-xs text-[var(--text-secondary)] font-mono mt-0.5">
+              {t('trend.sector')}: <b className="text-[var(--text-primary)]">{locName}</b>
             </p>
           </div>
 
@@ -159,9 +159,9 @@ export default function TrendView({ trendResult }) {
 
         {/* Magnitude and Confidence Row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-          <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('trend.magnitudeLabel')}</div>
-            <div className="text-xl sm:text-2xl font-black text-white mt-1">
+          <div className="p-4 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-base)]">
+            <div className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">{t('trend.magnitudeLabel')}</div>
+            <div className="text-xl sm:text-2xl font-black text-[var(--text-primary)] mt-1">
               {trend_magnitude !== null && trend_magnitude !== undefined 
                 ? `${trend_magnitude > 0 ? '+' : ''}${trend_magnitude.toFixed(2)} ${unit}/year`
                 : t('pointDetail.unavailable')
@@ -169,9 +169,9 @@ export default function TrendView({ trendResult }) {
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('trend.confidenceLabel')}</div>
-            <div className="text-xl sm:text-2xl font-black text-cyan-400 mt-1">
+          <div className="p-4 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-base)]">
+            <div className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">{t('trend.confidenceLabel')}</div>
+            <div className="text-xl sm:text-2xl font-black text-[var(--accent-primary)] mt-1">
               {confidence !== null && confidence !== undefined 
                 ? `${Math.round(confidence * 100)}%`
                 : t('pointDetail.unavailable')
@@ -179,9 +179,9 @@ export default function TrendView({ trendResult }) {
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('trend.comparisonPeriods')}</div>
-            <div className="text-xs text-slate-300 font-mono mt-1 space-y-0.5">
+          <div className="p-4 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-base)]">
+            <div className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">{t('trend.comparisonPeriods')}</div>
+            <div className="text-xs text-[var(--text-secondary)] font-mono mt-1 space-y-0.5">
               <div>Base: {period?.baseline_start || '—'} to {period?.baseline_end || '—'}</div>
               <div>Eval: {period?.analysis_start || '—'} to {period?.analysis_end || '—'}</div>
             </div>
@@ -190,10 +190,10 @@ export default function TrendView({ trendResult }) {
 
         {/* SVG Time Series Chart */}
         {validMeans.length > 1 ? (
-          <div className="mt-4 p-4 rounded-2xl bg-slate-950 border border-slate-800 overflow-x-auto">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+          <div className="mt-4 p-4 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-base)] overflow-x-auto">
+            <div className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2 flex items-center justify-between">
               <span>{t('trend.monthlyMeansChartTitle')}</span>
-              <span className="text-[11px] font-mono text-cyan-400">{unit}</span>
+              <span className="text-[11px] font-mono text-[var(--accent-primary)]">{unit}</span>
             </div>
             
             <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-44">
@@ -247,15 +247,15 @@ export default function TrendView({ trendResult }) {
             </svg>
           </div>
         ) : (
-          <div className="text-center py-6 text-xs text-slate-500 font-mono">
+          <div className="text-center py-6 text-xs text-[var(--text-muted)] font-mono">
             {t('trend.singleObservationNote')}
           </div>
         )}
 
         {/* Explanation Text */}
         {explanation && (
-          <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2">
-            <div className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider flex items-center space-x-1.5">
+          <div className="p-4 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-base)] text-xs sm:text-sm text-[var(--text-primary)] leading-relaxed space-y-2">
+            <div className="text-[11px] font-bold text-[var(--accent-primary)] uppercase tracking-wider flex items-center space-x-1.5">
               <Info className="w-3.5 h-3.5" />
               <span>{t('trend.historicalExplanation')}</span>
             </div>
@@ -268,10 +268,10 @@ export default function TrendView({ trendResult }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         
         {/* Unusual Events */}
-        <div className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl space-y-3">
+        <div className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-base)] shadow-xl space-y-3">
           <div className="flex items-center space-x-2">
-            <Calendar className="w-4 h-4 text-amber-400" />
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider">
+            <Calendar className="w-4 h-4 text-[var(--caution-bright)]" />
+            <h4 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
               {t('trend.unusualEventsTitle')}
             </h4>
           </div>
@@ -279,30 +279,30 @@ export default function TrendView({ trendResult }) {
           {unusual_events && unusual_events.length > 0 ? (
             <div className="space-y-2">
               {unusual_events.map((ev, i) => (
-                <div key={i} className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs space-y-1">
-                  <div className="flex items-center justify-between text-amber-300 font-bold">
+                <div key={i} className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-base)] text-xs space-y-1">
+                  <div className="flex items-center justify-between text-[var(--caution-bright)] font-bold">
                     <span>{ev.event_type.replace(/_/g, ' ')}</span>
-                    <span className="font-mono text-[10px] text-slate-400">{ev.period_start} to {ev.period_end}</span>
+                    <span className="font-mono text-[10px] text-[var(--text-secondary)]">{ev.period_start} to {ev.period_end}</span>
                   </div>
-                  {ev.description && <p className="text-slate-300">{ev.description}</p>}
+                  {ev.description && <p className="text-[var(--text-secondary)]">{ev.description}</p>}
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-xs text-slate-500 italic">{t('trend.noUnusualEvents')}</p>
+            <p className="text-xs text-[var(--text-muted)] italic">{t('trend.noUnusualEvents')}</p>
           )}
         </div>
 
         {/* Unobserved Factors — Mandatory Honesty Section §72.2 */}
-        <div className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl space-y-3">
+        <div className="p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-base)] shadow-xl space-y-3">
           <div className="flex items-center space-x-2">
-            <ShieldCheck className="w-4 h-4 text-cyan-400" />
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider">
+            <ShieldCheck className="w-4 h-4 text-[var(--accent-primary)]" />
+            <h4 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
               {t('trend.unobservedFactorsTitle')}
             </h4>
           </div>
 
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-[var(--text-secondary)]">
             {t('trend.unobservedFactorsSubtitle')}
           </p>
 
@@ -313,8 +313,8 @@ export default function TrendView({ trendResult }) {
               t('trend.unobservedFactor3'),
               t('trend.unobservedFactor4'),
             ]).map((factor, i) => (
-              <div key={i} className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-xs text-slate-300 flex items-start space-x-2">
-                <span className="text-cyan-400 font-bold">•</span>
+              <div key={i} className="p-2.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-base)] text-xs text-[var(--text-secondary)] flex items-start space-x-2">
+                <span className="text-[var(--accent-primary)] font-bold">•</span>
                 <span>{factor}</span>
               </div>
             ))}
@@ -325,12 +325,12 @@ export default function TrendView({ trendResult }) {
 
       {/* Telemetry Provenance */}
       {data_quality && (
-        <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs text-slate-400">
+        <div className="p-4 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-base)] flex items-center justify-between text-xs text-[var(--text-secondary)]">
           <div className="flex items-center space-x-2">
-            <Database className="w-4 h-4 text-slate-500" />
+            <Database className="w-4 h-4 text-[var(--text-muted)]" />
             <span>{t('trend.dataProvenance')}: {data_quality.source_note || 'Copernicus Marine & Open-Meteo Historical Archive'}</span>
           </div>
-          <span className="font-mono text-[11px] text-slate-500">{t('trend.freshness')}: {data_quality.freshness || 'Archived'}</span>
+          <span className="font-mono text-[11px] text-[var(--text-muted)]">{t('trend.freshness')}: {data_quality.freshness || 'Archived'}</span>
         </div>
       )}
 

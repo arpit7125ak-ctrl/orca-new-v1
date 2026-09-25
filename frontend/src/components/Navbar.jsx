@@ -120,29 +120,29 @@ export default function Navbar({
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 shadow-lg">
+    <header className="sticky top-0 z-50 bg-[var(--bg-surface)] backdrop-blur-md border-b border-[var(--border-base)] shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand */}
           <div className="flex items-center space-x-3 cursor-pointer flex-shrink-0" onClick={() => setActiveTab('landing')}>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center shadow-cyan-500/20 shadow-md">
-              <Anchor className="w-5 h-5 text-white animate-pulse" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center shadow-lg shadow-md">
+              <Anchor className="w-5 h-5 text-[var(--text-primary)] animate-pulse" />
             </div>
             <div>
               <div className="flex items-center space-x-1.5">
-                <span className="font-extrabold text-lg tracking-wider text-white">ORCA</span>
-                <span className="px-1.5 py-0.2 text-[9px] font-mono font-semibold bg-cyan-950 text-cyan-400 border border-cyan-700/50 rounded">
+                <span className="font-extrabold text-lg tracking-wider text-[var(--text-primary)]">ORCA</span>
+                <span className="px-1.5 py-0.2 text-[9px] font-mono font-semibold bg-[var(--accent-dim)] text-[var(--accent-primary)] border border-cyan-700/50 rounded">
                   SIH26176
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400 font-medium tracking-tight hidden xl:block">
+              <p className="text-[10px] text-[var(--text-secondary)] font-medium tracking-tight hidden xl:block">
                 Ocean Risk &amp; Coastal Advisory
               </p>
             </div>
           </div>
 
           {/* Navigation Tabs */}
-          <nav className="hidden md:flex items-center space-x-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800/80 overflow-x-auto">
+          <nav className="hidden md:flex items-center space-x-1 bg-[var(--bg-base)] p-1 rounded-xl border border-[var(--border-base)] overflow-x-auto">
             {primaryTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -152,8 +152,8 @@ export default function Navbar({
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150 cursor-pointer ${
                     isActive
-                      ? 'bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                      ? 'bg-[var(--accent-primary)] text-black font-bold shadow-md shadow-lg'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-slate-800/60'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -172,31 +172,31 @@ export default function Navbar({
                 setCustomApiUrl(orcaApi.getApiBase());
                 setShowConfigModal(true);
               }}
-              className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-[11px] font-medium hover:border-cyan-500/50 transition cursor-pointer"
+              className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-[var(--bg-surface-2)] border border-[var(--border-base)] text-[11px] font-medium hover:border-cyan-500/50 transition cursor-pointer"
               title={t('nav.backendGateway')}
             >
               <span className={`w-2 h-2 rounded-full ${
                 backendStatus === 'connected' 
-                  ? 'bg-emerald-400 ring-2 ring-emerald-500/30 animate-ping-slow' 
+                  ? 'bg-[var(--safe)] ring-2 ring-emerald-500/30 animate-ping-slow' 
                   : backendStatus === 'checking'
-                  ? 'bg-amber-400'
-                  : 'bg-rose-500'
+                  ? 'bg-[var(--caution)]'
+                  : 'bg-[var(--dangerous)]'
               }`} />
-              <span className="text-slate-300 hidden sm:inline">
+              <span className="text-[var(--text-secondary)] hidden sm:inline">
                 {backendStatus === 'connected' ? t('nav.online') : backendStatus === 'checking' ? t('nav.checking') : t('nav.offline')}
               </span>
             </button>
 
             {/* Language Selector */}
             <div className="relative flex items-center">
-              <Globe className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
+              <Globe className="w-3.5 h-3.5 text-[var(--text-secondary)] absolute left-2.5 pointer-events-none" />
               <select
                 value={selectedLang}
                 onChange={handleLangChange}
-                className="pl-7 pr-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs font-medium text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                className="pl-7 pr-3 py-1 bg-[var(--bg-surface-2)] border border-[var(--border-base)] rounded-lg text-xs font-medium text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-cyan-500"
               >
                 {languages.map((l) => (
-                  <option key={l.code} value={l.code} className="bg-slate-900 text-white">
+                  <option key={l.code} value={l.code} className="bg-[var(--bg-surface)] text-[var(--text-primary)]">
                     {l.label}
                   </option>
                 ))}
@@ -208,8 +208,8 @@ export default function Navbar({
               onClick={() => setSunlightMode(!sunlightMode)}
               className={`p-2 rounded-lg border transition-all text-xs font-medium flex items-center space-x-1.5 ${
                 sunlightMode
-                  ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md shadow-amber-400/20 font-bold'
-                  : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
+                  ? 'bg-[var(--caution)] text-black border-amber-300 shadow-md shadow-amber-400/20 font-bold'
+                  : 'bg-[var(--bg-surface-2)] border-[var(--border-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
               title={t('nav.sunlightToggleTitle')}
             >
@@ -220,7 +220,7 @@ export default function Navbar({
         </div>
 
         {/* Mobile Navigation Row */}
-        <div className="md:hidden flex overflow-x-auto py-2 space-x-2 border-t border-slate-800 scrollbar-none">
+        <div className="md:hidden flex overflow-x-auto py-2 space-x-2 border-t border-[var(--border-base)] scrollbar-none">
           {primaryTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -230,8 +230,8 @@ export default function Navbar({
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium ${
                   isActive
-                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-cyan-500/20 text-[var(--accent-primary)] border border-cyan-500/40'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -245,29 +245,29 @@ export default function Navbar({
       {/* Backend Configuration Modal */}
       {showConfigModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Activity className="w-4 h-4 text-cyan-400" />
+          <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[var(--border-base)] pb-3">
+              <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <Activity className="w-4 h-4 text-[var(--accent-primary)]" />
                 {t('nav.backendGateway')}
               </h3>
               <button
                 type="button"
                 onClick={() => setShowConfigModal(false)}
-                className="text-slate-400 hover:text-white text-xs px-2 py-1 cursor-pointer"
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs px-2 py-1 cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <div className="text-xs text-slate-300 space-y-2">
-              <div className="flex items-center justify-between p-2 rounded bg-slate-950 border border-slate-800">
+            <div className="text-xs text-[var(--text-secondary)] space-y-2">
+              <div className="flex items-center justify-between p-2 rounded bg-[var(--bg-base)] border border-[var(--border-base)]">
                 <span>{t('nav.status')}</span>
-                <span className={`font-bold ${backendStatus === 'connected' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <span className={`font-bold ${backendStatus === 'connected' ? 'text-[var(--safe-bright)]' : 'text-[var(--dangerous-bright)]'}`}>
                   {backendStatus === 'connected' ? t('nav.connected') : t('nav.disconnected')}
                 </span>
               </div>
-              <label className="block text-slate-400 text-[11px] pt-1">
+              <label className="block text-[var(--text-secondary)] text-[11px] pt-1">
                 {t('nav.apiUrlLabel')}
               </label>
               <input
@@ -275,21 +275,21 @@ export default function Navbar({
                 value={customApiUrl}
                 onChange={(e) => setCustomApiUrl(e.target.value)}
                 placeholder="https://orca-backend-xxxx.onrender.com/api/v1"
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-cyan-300 focus:outline-none focus:border-cyan-500"
+                className="w-full px-3 py-2 bg-[var(--bg-base)] border border-[var(--border-base)] rounded-lg text-xs text-[var(--accent-primary)] focus:outline-none focus:border-cyan-500"
               />
-              <p className="text-[10px] text-slate-400 leading-normal">
+              <p className="text-[10px] text-[var(--text-secondary)] leading-normal">
                 {t('nav.apiUrlHint')}
               </p>
             </div>
 
-            <div className="flex justify-between items-center pt-2 border-t border-slate-800">
+            <div className="flex justify-between items-center pt-2 border-t border-[var(--border-base)]">
               <button
                 type="button"
                 onClick={() => {
                   orcaApi.setApiBase('');
                   setCustomApiUrl(orcaApi.getApiBase());
                 }}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 cursor-pointer"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-surface-2)] cursor-pointer"
               >
                 {t('nav.resetDefault')}
               </button>
@@ -306,7 +306,7 @@ export default function Navbar({
                     setBackendStatus('offline');
                   }
                 }}
-                className="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-950 bg-cyan-400 hover:bg-cyan-300 shadow-md shadow-cyan-500/20 cursor-pointer"
+                className="px-4 py-1.5 rounded-lg text-xs font-semibold text-black bg-[var(--accent-primary)] hover:bg-cyan-300 shadow-md shadow-lg cursor-pointer"
               >
                 {t('nav.saveConnect')}
               </button>

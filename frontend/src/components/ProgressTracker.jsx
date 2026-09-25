@@ -38,27 +38,27 @@ export default function ProgressTracker({ statusInfo }) {
   const progressPercent = currentStatus === 'completed' ? 100 : currentStatus === 'running' ? 65 : 20;
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
+    <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-2xl p-5 shadow-xl">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-2">
-          <div className="p-1.5 rounded-lg bg-cyan-950 text-cyan-400 border border-cyan-800">
+          <div className="p-1.5 rounded-lg bg-[var(--accent-dim)] text-[var(--accent-primary)] border border-[var(--accent-primary)]">
             <Clock className="w-4 h-4 animate-spin-slow" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white">{t('progress.title')}</h3>
-            <p className="text-[11px] text-slate-400">{t('progress.analysisId')} <span className="font-mono text-cyan-400">{statusInfo?.analysis_id || t('progress.generating')}</span></p>
+            <h3 className="text-sm font-bold text-[var(--text-primary)]">{t('progress.title')}</h3>
+            <p className="text-[11px] text-[var(--text-secondary)]">{t('progress.analysisId')} <span className="font-mono text-[var(--accent-primary)]">{statusInfo?.analysis_id || t('progress.generating')}</span></p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <span className="text-xs font-mono font-semibold text-cyan-400">{progressPercent}%</span>
-          <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+          <span className="text-xs font-mono font-semibold text-[var(--accent-primary)]">{progressPercent}%</span>
+          <Loader2 className="w-4 h-4 text-[var(--accent-primary)] animate-spin" />
         </div>
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden mb-4">
+      <div className="w-full h-2 bg-[var(--bg-surface-2)] rounded-full overflow-hidden mb-4">
         <div 
-          className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-emerald-400 transition-all duration-500 rounded-full"
+          className="h-full bg-gradient-to-r from-[var(--accent-primary)] via-blue-500 to-emerald-400 transition-all duration-500 rounded-full"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
@@ -73,25 +73,25 @@ export default function ProgressTracker({ statusInfo }) {
               key={step.key} 
               className={`p-2.5 rounded-xl border text-xs transition-all ${
                 isDone
-                  ? 'bg-emerald-950/20 border-emerald-800/40 text-emerald-300'
+                  ? 'bg-emerald-950/20 border-emerald-800/40 text-[var(--safe-bright)]'
                   : isCurrent
                   ? 'bg-cyan-950/40 border-cyan-600 text-cyan-200 ring-1 ring-cyan-500/30'
-                  : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
+                  : 'bg-[var(--bg-base)] border-[var(--border-base)] text-[var(--text-muted)]'
               }`}
             >
               <div className="flex items-center space-x-1.5 font-semibold mb-1">
                 {isDone ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[var(--safe-bright)] flex-shrink-0" />
                 ) : isCurrent ? (
-                  <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin flex-shrink-0" />
+                  <Loader2 className="w-3.5 h-3.5 text-[var(--accent-primary)] animate-spin flex-shrink-0" />
                 ) : (
-                  <div className="w-3.5 h-3.5 rounded-full border border-slate-700 flex items-center justify-center text-[9px]">
+                  <div className="w-3.5 h-3.5 rounded-full border border-[var(--border-base)] flex items-center justify-center text-[9px]">
                     {idx + 1}
                   </div>
                 )}
                 <span className="truncate">{t(step.labelKey)}</span>
               </div>
-              <p className="text-[10px] text-slate-400 line-clamp-1">{t(step.descKey)}</p>
+              <p className="text-[10px] text-[var(--text-secondary)] line-clamp-1">{t(step.descKey)}</p>
             </div>
           );
         })}

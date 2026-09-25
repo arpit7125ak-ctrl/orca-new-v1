@@ -369,28 +369,28 @@ export default function HomeAskOrca({
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 py-4 sm:py-8">
+    <div className="w-full space-y-6">
 
       {/* Cached / Recent Advisory Banner */}
       {cachedAnalysis && (
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-lg backdrop-blur-md">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 flex items-center justify-between shadow-lg">
           <div className="flex items-center space-x-3 min-w-0">
             <span className={`w-3 h-3 rounded-full flex-shrink-0 ${cachedAnalysis.decision?.recommendation_type === 'go'
-                ? 'bg-emerald-400'
+                ? 'bg-[var(--safe-bright)]'
                 : cachedAnalysis.decision?.recommendation_type === 'go_with_caution'
-                  ? 'bg-amber-400'
-                  : 'bg-rose-500'
+                  ? 'bg-[var(--caution-bright)]'
+                  : 'bg-[var(--dangerous-bright)]'
               }`} />
             <div className="truncate">
               <div className="flex items-center space-x-2">
-                <span className="text-xs font-bold text-white uppercase tracking-wider">
+                <span className="text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-[0.12em]">
                   {t('home.recentAdvisory')}
                 </span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--bg-base)] text-[var(--text-secondary)]">
                   {cachedAnalysis.analysis_id}
                 </span>
               </div>
-              <p className="text-xs text-slate-300 truncate mt-0.5">
+              <p className="text-sm text-[var(--text-secondary)] truncate mt-0.5">
                 {cachedAnalysis.decision?.one_line_recommendation || t('home.noActiveAnalysis')}
               </p>
             </div>
@@ -398,7 +398,7 @@ export default function HomeAskOrca({
 
           <button
             onClick={() => onViewCached && onViewCached(cachedAnalysis)}
-            className="ml-3 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 text-xs font-semibold flex items-center space-x-1 flex-shrink-0 transition-colors cursor-pointer"
+            className="ml-3 px-3 py-1.5 rounded bg-[var(--bg-base)] hover:bg-[var(--bg-surface-2)] text-[var(--accent-primary)] text-xs font-bold flex items-center space-x-1 flex-shrink-0 transition-colors cursor-pointer border border-[var(--border-base)]"
           >
             <span>{t('home.viewAdvisory')}</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -407,39 +407,39 @@ export default function HomeAskOrca({
       )}
 
       {/* Main "Ask ORCA" Box */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-5">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 sm:p-8 shadow-2xl space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Compass className="w-6 h-6 text-cyan-400" />
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            <Compass className="w-6 h-6 text-[var(--accent-primary)]" />
+            <h1 className="text-xl sm:text-2xl font-black text-[var(--text-primary)] tracking-tight">
               {t('home.copilotTitle')}
             </h1>
           </div>
-          <div className="text-[11px] font-mono text-cyan-300 bg-cyan-950 px-2.5 py-1 rounded-full border border-cyan-800">
+          <div className="text-[10px] font-bold tracking-widest uppercase text-[var(--accent-primary)] bg-[var(--accent-glow)] px-2.5 py-1 rounded border border-[var(--accent-dim)]">
             {t('home.nlpBadge')}
           </div>
         </div>
 
-        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+        <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
           {t('home.subtitle')}
         </p>
 
         {/* Input Text Box with Microphone */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="relative">
             <textarea
               rows={3}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('home.placeholder')}
-              className="w-full bg-slate-950 border border-slate-700 rounded-2xl p-4 pr-14 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder:text-slate-500 resize-none font-medium leading-relaxed"
+              className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl p-4 pr-14 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] placeholder:text-[var(--text-muted)] resize-none font-medium leading-relaxed transition-colors"
             />
             <button
               type="button"
               onClick={toggleMic}
-              className={`absolute right-3 top-3 p-2.5 rounded-xl border transition-all cursor-pointer ${isRecording
-                  ? 'bg-rose-500 text-white border-rose-400 animate-pulse'
-                  : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white hover:bg-slate-700'
+              className={`absolute right-3 top-3 p-2.5 rounded-lg border transition-all cursor-pointer ${isRecording
+                  ? 'bg-[var(--dangerous)] text-[var(--text-primary)] border-[var(--dangerous-bright)] animate-pulse'
+                  : 'bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border-[var(--border-base)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
                 }`}
               title={t('home.micTitle')}
             >
@@ -448,17 +448,17 @@ export default function HomeAskOrca({
           </div>
 
           {/* Quick-Question Chips */}
-          <div className="space-y-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('home.quickAsksLabel')}</span>
+          <div className="space-y-2">
+            <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">{t('home.quickAsksLabel')}</span>
             <div className="flex flex-wrap gap-2">
               {quickAsks.map((chip, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={() => setQuery(chip.query)}
-                  className="px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-cyan-500/60 text-xs text-slate-300 hover:text-white transition-all cursor-pointer flex items-center space-x-1.5"
+                  className="px-3 py-1.5 rounded bg-[var(--bg-base)] border border-[var(--border-base)] hover:border-[var(--accent-primary)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer flex items-center space-x-1.5"
                 >
-                  <Sparkles className="w-3 h-3 text-cyan-400" />
+                  <Sparkles className="w-3 h-3 text-[var(--accent-primary)]" />
                   <span>{t(chip.labelKey)}</span>
                 </button>
               ))}
@@ -466,32 +466,32 @@ export default function HomeAskOrca({
           </div>
 
           {/* Collapsible Refine Section */}
-          <div className="pt-2 border-t border-slate-800/80">
+          <div className="pt-4 border-t border-[var(--border-base)]">
             <button
               type="button"
               onClick={() => setIsRefineOpen(!isRefineOpen)}
-              className="w-full flex items-center justify-between text-xs font-bold text-slate-300 hover:text-white py-2 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-between text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] py-2 transition-colors cursor-pointer"
             >
-              <span className="flex items-center space-x-2">
-                <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="flex items-center space-x-2 uppercase tracking-wider">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                 <span>{t('home.refineLabel')}</span>
               </span>
               {isRefineOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
 
             {isRefineOpen && (
-              <div className="mt-3 p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4 animate-fade-in">
+              <div className="mt-3 p-4 rounded-xl bg-[var(--bg-base)] border border-[var(--border-base)] space-y-5">
                 {/* Location + GPS + Map Picker */}
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-semibold text-slate-300">{t('home.targetLocation')}</label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">{t('home.targetLocation')}</label>
                     <div className="flex items-center space-x-2.5">
                       <button
                         type="button"
                         onClick={handleResolvePlaceFromCoords}
                         disabled={isResolvingPlace || !lat || !lon}
                         title="Reverse lookup coordinates to coastal place name"
-                        className="text-[11px] text-cyan-400 hover:text-cyan-300 disabled:opacity-40 disabled:cursor-not-allowed font-semibold flex items-center space-x-1 cursor-pointer"
+                        className="text-[11px] text-[var(--accent-primary)] hover:text-[var(--accent-hover)] disabled:opacity-40 disabled:cursor-not-allowed font-semibold flex items-center space-x-1 cursor-pointer"
                       >
                         {isResolvingPlace ? (
                           <Loader2 className="w-3 h-3 animate-spin" />
@@ -504,10 +504,10 @@ export default function HomeAskOrca({
                       <button
                         type="button"
                         onClick={() => setShowMapPicker(!showMapPicker)}
-                        className={`text-[11px] font-semibold flex items-center space-x-1 px-2 py-0.5 rounded-lg border transition-colors cursor-pointer ${
+                        className={`text-[11px] font-bold uppercase tracking-wider flex items-center space-x-1 px-2 py-1 rounded border transition-colors cursor-pointer ${
                           showMapPicker
-                            ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400'
-                            : 'text-cyan-400 hover:text-cyan-300 border-cyan-900/60 bg-cyan-950/40'
+                            ? 'bg-[var(--accent-primary)] text-black border-[var(--accent-primary)]'
+                            : 'text-[var(--accent-primary)] hover:text-[var(--accent-hover)] border-[var(--border-base)] bg-[var(--bg-surface-2)]'
                         }`}
                       >
                         <Navigation className="w-3 h-3" />
@@ -517,7 +517,7 @@ export default function HomeAskOrca({
                       <button
                         type="button"
                         onClick={handleUseMyLocation}
-                        className="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold flex items-center space-x-1 cursor-pointer"
+                        className="text-[11px] text-[var(--accent-primary)] hover:text-[var(--accent-hover)] font-semibold flex items-center space-x-1 cursor-pointer"
                       >
                         <MapPin className="w-3 h-3" />
                         <span>{t('common.gps')}</span>
@@ -525,7 +525,7 @@ export default function HomeAskOrca({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                     {/* Place Name with "Get Coords" Button */}
                     <div className="sm:col-span-6 relative flex items-center">
                       <input
@@ -539,14 +539,14 @@ export default function HomeAskOrca({
                           }
                         }}
                         placeholder={t('home.placeNamePlaceholder')}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-3 pr-24 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        className="w-full bg-[var(--bg-surface-2)] border border-[var(--border-base)] rounded px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
                       />
                       <button
                         type="button"
                         onClick={handleResolveCoordsFromPlace}
                         disabled={isResolvingCoords || !placeName.trim()}
                         title="Resolve place name to coordinates"
-                        className="absolute right-1.5 px-2.5 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-semibold flex items-center space-x-1 transition-all shadow-sm cursor-pointer"
+                        className="absolute right-1 px-2.5 py-1 rounded bg-[var(--bg-surface)] hover:bg-[var(--border-hover)] border border-[var(--border-base)] disabled:opacity-40 disabled:cursor-not-allowed text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[10px] font-bold uppercase tracking-wider flex items-center space-x-1 cursor-pointer"
                       >
                         {isResolvingCoords ? (
                           <Loader2 className="w-3 h-3 animate-spin" />
@@ -573,7 +573,7 @@ export default function HomeAskOrca({
                           }
                         }}
                         placeholder={t('home.latPlaceholder')}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono"
+                        className="w-full bg-[var(--bg-surface-2)] border border-[var(--border-base)] rounded px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] font-mono"
                       />
                     </div>
 
@@ -593,26 +593,26 @@ export default function HomeAskOrca({
                           }
                         }}
                         placeholder={t('home.lonPlaceholder')}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono"
+                        className="w-full bg-[var(--bg-surface-2)] border border-[var(--border-base)] rounded px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] font-mono"
                       />
                     </div>
                   </div>
 
                   {/* Interactive Embedded Leaflet Map */}
                   {showMapPicker && (
-                    <div className="mt-3 rounded-2xl overflow-hidden border border-slate-700 relative shadow-inner">
-                      <div className="bg-slate-900/90 px-3 py-1.5 border-b border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
-                        <span className="font-semibold text-cyan-300 flex items-center space-x-1">
+                    <div className="mt-3 rounded overflow-hidden border border-[var(--border-base)] relative shadow-inner">
+                      <div className="bg-[var(--bg-surface)] px-3 py-1.5 border-b border-[var(--border-base)] text-[11px] text-[var(--text-secondary)] flex items-center justify-between">
+                        <span className="font-bold text-[var(--accent-primary)] flex items-center space-x-1">
                           <Layers className="w-3.5 h-3.5" />
                           <span>{t('home.mapClickHint')}</span>
                         </span>
-                        <span className="font-mono text-slate-400">
+                        <span className="font-mono text-[var(--text-secondary)]">
                           {lat && lon ? `${lat}°N, ${lon}°E` : t('home.noPin')}
                         </span>
                       </div>
                       <div
                         ref={mapContainerRef}
-                        className="w-full bg-slate-950 relative z-0"
+                        className="w-full bg-[var(--bg-base)] relative z-0"
                         style={{ height: '250px', minHeight: '250px' }}
                       />
                     </div>
@@ -620,13 +620,13 @@ export default function HomeAskOrca({
                 </div>
 
                 {/* Activity & Vessel */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">{t('home.maritimeActivity')}</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-1">{t('home.maritimeActivity')}</label>
                     <select
                       value={activity}
                       onChange={(e) => setActivity(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      className="w-full bg-[var(--bg-surface-2)] border border-[var(--border-base)] rounded px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
                     >
                       <option value="">{t('home.selectActivityOptional')}</option>
                       {ACTIVITIES.map((act) => (
@@ -638,11 +638,11 @@ export default function HomeAskOrca({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">{t('home.vesselType')}</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-1">{t('home.vesselType')}</label>
                     <select
                       value={vesselType}
                       onChange={(e) => setVesselType(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      className="w-full bg-[var(--bg-surface-2)] border border-[var(--border-base)] rounded px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
                     >
                       <option value="">{t('home.selectVesselOptional')}</option>
                       {VESSEL_TYPES.map((v) => (
@@ -655,13 +655,13 @@ export default function HomeAskOrca({
                 </div>
 
                 {/* Date & Time */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">{t('home.date')}</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-1">{t('home.date')}</label>
                     <select
                       value={dateOption}
                       onChange={(e) => setDateOption(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      className="w-full bg-[var(--bg-surface-2)] border border-[var(--border-base)] rounded px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
                     >
                       <option value="">{t('home.selectDateOptional')}</option>
                       <option value="today">📅 {t('home.today')}</option>
@@ -671,11 +671,11 @@ export default function HomeAskOrca({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">{t('home.timeWindow')}</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-1">{t('home.timeWindow')}</label>
                     <select
                       value={timeRange}
                       onChange={(e) => setTimeRange(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      className="w-full bg-[var(--bg-surface-2)] border border-[var(--border-base)] rounded px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
                     >
                       <option value="">{t('home.selectWindowOptional')}</option>
                       <option value="morning">🌅 {t('home.morning')}</option>
@@ -688,14 +688,14 @@ export default function HomeAskOrca({
 
                 {/* Language Selection */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">{t('home.languageLabel')}</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-1">{t('home.languageLabel')}</label>
                   <select
                     value={langOverride || selectedLang || 'auto'}
                     onChange={(e) => {
                       setLangOverride(e.target.value);
                       if (onSelectLang) onSelectLang(e.target.value);
                     }}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    className="w-full bg-[var(--bg-surface-2)] border border-[var(--border-base)] rounded px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
                   >
                     <option value="auto">🌐 {t('nav.autoDetect')}</option>
                     <option value="en">English (EN)</option>
@@ -717,9 +717,9 @@ export default function HomeAskOrca({
           {/* Primary Action Button */}
           <button
             type="submit"
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-sm uppercase tracking-wider flex items-center justify-center space-x-2 transition-all shadow-xl shadow-cyan-500/25 cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
+            className="w-full py-4 rounded bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-black font-black text-sm uppercase tracking-[0.15em] flex items-center justify-center space-x-2 transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
           >
-            <Sparkles className="w-5 h-5 text-slate-950" />
+            <Sparkles className="w-5 h-5 text-black" />
             <span>{t('home.analyzeButton')}</span>
           </button>
         </form>

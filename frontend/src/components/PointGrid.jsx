@@ -48,10 +48,10 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
 
   if (rawPoints.length === 0) {
     return (
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 text-center text-slate-400">
-        <Compass className="w-8 h-8 text-cyan-400 mx-auto mb-2 animate-spin-slow" />
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-2xl p-6 text-center text-[var(--text-secondary)]">
+        <Compass className="w-8 h-8 text-[var(--accent-primary)] mx-auto mb-2 animate-spin-slow" />
         <p className="text-sm font-semibold">{t('grid.noMatrixLoaded')}</p>
-        <p className="text-xs text-slate-500 mt-1">{t('grid.submitQueryHint')}</p>
+        <p className="text-xs text-[var(--text-muted)] mt-1">{t('grid.submitQueryHint')}</p>
       </div>
     );
   }
@@ -87,18 +87,18 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
   });
 
   return (
-    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl">
+    <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-2xl p-5 shadow-xl">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm sm:text-base font-bold text-white flex items-center space-x-2">
-            <Compass className="w-4 h-4 text-cyan-400" />
+          <h3 className="text-sm sm:text-base font-bold text-[var(--text-primary)] flex items-center space-x-2">
+            <Compass className="w-4 h-4 text-[var(--accent-primary)]" />
             <span>{t('grid.title')}</span>
           </h3>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[var(--text-secondary)]">
             {t('grid.subtitle')}
           </p>
         </div>
-        <span className="text-xs font-mono font-bold text-cyan-400 bg-cyan-950 px-2.5 py-1 rounded-lg border border-cyan-800">
+        <span className="text-xs font-mono font-bold text-[var(--accent-primary)] bg-[var(--accent-dim)] px-2.5 py-1 rounded-lg border border-[var(--accent-primary)]">
           {t('grid.evaluatedCount', { count: points.length })}
         </span>
       </div>
@@ -114,21 +114,21 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
           const isSelected = selectedPoint?.point_id === id || selectedPoint?.id === id;
 
           // Color scale
-          let badgeColor = 'bg-slate-800/40 text-slate-400 border-slate-700';
-          let barColor = 'bg-slate-700';
+          let badgeColor = 'bg-slate-800/40 text-[var(--text-secondary)] border-[var(--border-base)]';
+          let barColor = 'bg-[var(--bg-surface-2)]';
           if (hasScore) {
             if (score > 80 || pt.status === 'DANGEROUS') {
-              badgeColor = 'bg-rose-500/20 text-rose-400 border-rose-500/40';
-              barColor = 'bg-rose-500';
+              badgeColor = 'bg-rose-500/20 text-[var(--dangerous-bright)] border-rose-500/40';
+              barColor = 'bg-[var(--dangerous)]';
             } else if (score > 60 || pt.status === 'UNSAFE') {
-              badgeColor = 'bg-orange-500/20 text-orange-400 border-orange-500/40';
-              barColor = 'bg-orange-500';
+              badgeColor = 'bg-orange-500/20 text-[var(--unsafe-bright)] border-orange-500/40';
+              barColor = 'bg-[var(--unsafe)]';
             } else if (score > 30 || pt.status === 'CAUTION') {
-              badgeColor = 'bg-amber-500/20 text-amber-400 border-amber-500/40';
-              barColor = 'bg-amber-400';
+              badgeColor = 'bg-amber-500/20 text-[var(--caution-bright)] border-amber-500/40';
+              barColor = 'bg-[var(--caution)]';
             } else {
-              badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-              barColor = 'bg-emerald-500';
+              badgeColor = 'bg-emerald-500/10 text-[var(--safe-bright)] border-emerald-500/30';
+              barColor = 'bg-[var(--safe)]';
             }
           }
 
@@ -139,26 +139,26 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
               className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
                 isSelected
                   ? 'bg-cyan-950/40 border-cyan-500 ring-2 ring-cyan-500/40 shadow-lg'
-                  : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/60'
+                  : 'bg-[var(--bg-base)] border-[var(--border-base)] hover:border-slate-700 hover:bg-slate-900/60'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-1.5">
                   <span className="text-base">{info.compass}</span>
                   <div>
-                    <span className="text-xs font-bold text-white">{id}</span>
-                    <span className="text-[10px] text-slate-400 ml-1.5">({labelText})</span>
+                    <span className="text-xs font-bold text-[var(--text-primary)]">{id}</span>
+                    <span className="text-[10px] text-[var(--text-secondary)] ml-1.5">({labelText})</span>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-1">
                   {pt.isPreferred && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[var(--accent-dim)] text-[var(--accent-primary)] border border-[var(--accent-primary)]">
                       {t('grid.best')}
                     </span>
                   )}
                   {pt.isWorst && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800">
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[var(--dangerous)]/20 text-[var(--dangerous-bright)] border border-[var(--dangerous)]">
                       {t('grid.worst')}
                     </span>
                   )}
@@ -169,7 +169,7 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
               </div>
 
               {/* Score bar */}
-              <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mb-2">
+              <div className="w-full h-1.5 bg-[var(--bg-surface-2)] rounded-full overflow-hidden mb-2">
                 {hasScore ? (
                   <div className={`h-full ${barColor} rounded-full`} style={{ width: `${score}%` }} />
                 ) : (
@@ -178,8 +178,8 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
               </div>
 
               {/* Coordinates and Hazard Factors */}
-              <div className="text-[11px] text-slate-300 space-y-1">
-                <div className="flex justify-between text-slate-400 text-[10px]">
+              <div className="text-[11px] text-[var(--text-secondary)] space-y-1">
+                <div className="flex justify-between text-[var(--text-secondary)] text-[10px]">
                   <span>{t('map.latLabel')}: {typeof pt.lat === 'number' ? pt.lat.toFixed(3) : (validLat !== null ? validLat.toFixed(3) : '—')}°N</span>
                   <span>{t('map.lonLabel')}: {typeof pt.lon === 'number' ? pt.lon.toFixed(3) : (validLon !== null ? validLon.toFixed(3) : '—')}°E</span>
                 </div>
@@ -188,7 +188,7 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
                 {(pt.waveVal || pt.windVal) && (
                   <div className="flex items-center space-x-2 text-[10px] py-0.5 font-mono">
                     {pt.waveVal && (
-                      <span className="text-cyan-300 bg-cyan-950/50 px-1.5 py-0.5 rounded border border-cyan-800/60">
+                      <span className="text-[var(--accent-primary)] bg-cyan-950/50 px-1.5 py-0.5 rounded border border-cyan-800/60">
                         🌊 {pt.waveVal}
                       </span>
                     )}
@@ -201,12 +201,12 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
                 )}
 
                 {pt.official_warning && (
-                  <div className="text-[10px] font-bold text-rose-400 truncate">
+                  <div className="text-[10px] font-bold text-[var(--dangerous-bright)] truncate">
                     ⚠️ {pt.official_warning.issuing_authority} {pt.official_warning.floor_level || 'Alert'}
                   </div>
                 )}
 
-                <div className="text-[10px] text-slate-400 line-clamp-2 pt-1 border-t border-slate-800/60">
+                <div className="text-[10px] text-[var(--text-secondary)] line-clamp-2 pt-1 border-t border-[var(--border-base)]">
                   {pt.finding}
                 </div>
               </div>

@@ -111,13 +111,13 @@ export default function HistoryPage({ onSelectAnalysis }) {
   const getKindBadge = (kind) => {
     switch (kind) {
       case 'route':
-        return { labelKey: 'history.badgeRoute', defaultLabel: 'Route Plan', bg: 'bg-cyan-950 text-cyan-300 border-cyan-800', icon: Navigation };
+        return { labelKey: 'history.badgeRoute', defaultLabel: 'Route Plan', bg: 'bg-[var(--accent-dim)] text-[var(--accent-primary)] border-[var(--accent-primary)]', icon: Navigation };
       case 'trend':
-        return { labelKey: 'history.badgeTrend', defaultLabel: 'Trend Series', bg: 'bg-purple-950 text-purple-300 border-purple-800', icon: TrendingUp };
+        return { labelKey: 'history.badgeTrend', defaultLabel: 'Trend Series', bg: 'bg-[var(--accent-dim)] text-[var(--accent-primary)] border-[var(--accent-primary)]', icon: TrendingUp };
       case 'chat':
         return { labelKey: 'history.badgeChat', defaultLabel: 'Chat Query', bg: 'bg-blue-950 text-blue-300 border-blue-800', icon: MessageSquare };
       default:
-        return { labelKey: 'history.badgePoint', defaultLabel: 'Point Advisory', bg: 'bg-emerald-950 text-emerald-300 border-emerald-800', icon: Compass };
+        return { labelKey: 'history.badgePoint', defaultLabel: 'Point Advisory', bg: 'bg-[var(--safe)]/20 text-[var(--safe-bright)] border-[var(--safe)]', icon: Compass };
     }
   };
 
@@ -125,15 +125,15 @@ export default function HistoryPage({ onSelectAnalysis }) {
     <div className="max-w-4xl mx-auto space-y-6 py-4 sm:py-6">
       
       {/* Header */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-3xl p-6 sm:p-8 shadow-xl backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <Clock className="w-6 h-6 text-cyan-400" />
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            <Clock className="w-6 h-6 text-[var(--accent-primary)]" />
+            <h2 className="text-xl sm:text-2xl font-black text-[var(--text-primary)] tracking-tight">
               {t('history.title', { defaultValue: 'Advisory & Mission History' })}
             </h2>
           </div>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
             {t('history.subtitle', { defaultValue: 'Local session audit log of recent point analyses, route calculations, and ocean trend evaluations.' })}
           </p>
         </div>
@@ -141,7 +141,7 @@ export default function HistoryPage({ onSelectAnalysis }) {
         {historyItems.length > 0 && (
           <button
             onClick={handleClearAll}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800 text-xs font-semibold transition-colors cursor-pointer w-fit"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 text-[var(--dangerous-bright)] border border-[var(--dangerous)] text-xs font-semibold transition-colors cursor-pointer w-fit"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>{t('history.clearAll', { defaultValue: 'Clear All' })}</span>
@@ -150,15 +150,15 @@ export default function HistoryPage({ onSelectAnalysis }) {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/60 border border-slate-800 p-3 rounded-2xl">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[var(--bg-surface)] border border-[var(--border-base)] p-3 rounded-2xl">
         <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+          <Search className="w-4 h-4 text-[var(--text-secondary)] absolute left-3 top-2.5 pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('history.searchPlaceholder', { defaultValue: 'Search by location, title or ID...' })}
-            className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder:text-slate-500"
+            className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl pl-9 pr-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder:text-slate-500"
           />
         </div>
 
@@ -169,8 +169,8 @@ export default function HistoryPage({ onSelectAnalysis }) {
               onClick={() => setFilter(f.id)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
                 filter === f.id
-                  ? 'bg-cyan-500 text-slate-950 font-bold'
-                  : 'bg-slate-800 text-slate-400 hover:text-white'
+                  ? 'bg-[var(--accent-primary)] text-black font-bold'
+                  : 'bg-[var(--bg-surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               {t(f.labelKey, { defaultValue: f.defaultLabel })}
@@ -182,10 +182,10 @@ export default function HistoryPage({ onSelectAnalysis }) {
       {/* History List */}
       <div className="space-y-3">
         {filtered.length === 0 ? (
-          <div className="text-center py-16 bg-slate-900/40 border border-slate-800 rounded-3xl p-6 text-slate-400 space-y-2">
+          <div className="text-center py-16 bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-3xl p-6 text-[var(--text-secondary)] space-y-2">
             <Clock className="w-8 h-8 text-slate-600 mx-auto" />
-            <p className="text-sm font-semibold text-slate-300">{t('history.noHistory', { defaultValue: 'No local advisory history yet.' })}</p>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm font-semibold text-[var(--text-secondary)]">{t('history.noHistory', { defaultValue: 'No local advisory history yet.' })}</p>
+            <p className="text-xs text-[var(--text-muted)]">
               {t('history.noHistorySub', { defaultValue: 'Run a safety assessment, plan a nautical route, or request a trend series to view audit logs here.' })}
             </p>
           </div>
@@ -199,19 +199,19 @@ export default function HistoryPage({ onSelectAnalysis }) {
             return (
               <div
                 key={item.analysis_id}
-                className={`p-5 rounded-3xl bg-slate-900/80 border transition-all shadow-lg backdrop-blur-md space-y-2.5 ${
+                className={`p-5 rounded-3xl bg-[var(--bg-surface)] border transition-all shadow-lg backdrop-blur-md space-y-2.5 ${
                   isUnavailable 
                     ? 'border-rose-900/60 bg-rose-950/20' 
-                    : 'border-slate-800 hover:border-cyan-500/50'
+                    : 'border-[var(--border-base)] hover:border-cyan-500/50'
                 }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center space-x-2">
-                    <KindIcon className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-                    <span className="text-sm font-bold text-white">
+                    <KindIcon className="w-4 h-4 text-[var(--accent-primary)] flex-shrink-0" />
+                    <span className="text-sm font-bold text-[var(--text-primary)]">
                       {item.title || item.place || t('history.coastalAnalysis', { defaultValue: 'Coastal Analysis' })}
                     </span>
-                    <span className="text-[10px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                    <span className="text-[10px] font-mono text-[var(--text-secondary)] bg-[var(--bg-base)] px-2 py-0.5 rounded border border-[var(--border-base)]">
                       {item.analysis_id}
                     </span>
                   </div>
@@ -220,25 +220,25 @@ export default function HistoryPage({ onSelectAnalysis }) {
                     <span className={`text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-lg border ${badge.bg}`}>
                       {t(badge.labelKey, { defaultValue: badge.defaultLabel })}
                     </span>
-                    <span className="text-[10px] font-mono text-slate-400">
+                    <span className="text-[10px] font-mono text-[var(--text-secondary)]">
                       {item.created_at ? new Date(item.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : t('history.recent', { defaultValue: 'Recent' })}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs text-slate-400">
-                  <div className="flex items-center space-x-1 text-slate-400">
-                    <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                <div className="flex items-center justify-between pt-2 border-t border-[var(--border-base)] text-xs text-[var(--text-secondary)]">
+                  <div className="flex items-center space-x-1 text-[var(--text-secondary)]">
+                    <MapPin className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                     <span>{item.place || t('history.coastalSector', { defaultValue: 'Coastal Sector' })}</span>
                   </div>
 
                   <div className="flex items-center space-x-3">
                     {isUnavailable ? (
-                      <div className="flex items-center space-x-2 text-rose-400">
+                      <div className="flex items-center space-x-2 text-[var(--dangerous-bright)]">
                         <span className="text-xs">{t('history.unavailableOnServer', { defaultValue: 'No longer available on server' })}</span>
                         <button
                           onClick={(e) => handleRemove(e, item.analysis_id)}
-                          className="px-2 py-0.5 rounded bg-rose-950 hover:bg-rose-900 text-rose-200 border border-rose-800 text-[11px] font-semibold cursor-pointer"
+                          className="px-2 py-0.5 rounded bg-[var(--dangerous)]/20 hover:bg-rose-900 text-rose-200 border border-[var(--dangerous)] text-[11px] font-semibold cursor-pointer"
                         >
                           {t('history.remove', { defaultValue: 'Remove' })}
                         </button>
@@ -248,7 +248,7 @@ export default function HistoryPage({ onSelectAnalysis }) {
                         <button
                           onClick={() => handleOpen(item)}
                           disabled={isLoadingThis}
-                          className="text-cyan-400 hover:text-cyan-300 font-semibold flex items-center space-x-1 cursor-pointer disabled:opacity-50"
+                          className="text-[var(--accent-primary)] hover:text-cyan-300 font-semibold flex items-center space-x-1 cursor-pointer disabled:opacity-50"
                         >
                           <span>{isLoadingThis ? t('history.loading', { defaultValue: 'Loading...' }) : t('history.openResult', { defaultValue: 'Open Result' })}</span>
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -256,7 +256,7 @@ export default function HistoryPage({ onSelectAnalysis }) {
                         <button
                           onClick={(e) => handleRemove(e, item.analysis_id)}
                           title={t('history.removeFromHistory', { defaultValue: 'Remove from history' })}
-                          className="p-1 rounded-lg hover:bg-slate-800 text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
+                          className="p-1 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-muted)] hover:text-rose-400 transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

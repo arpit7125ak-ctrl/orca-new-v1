@@ -310,19 +310,19 @@ export default function AlertsPage() {
     <div className="max-w-5xl mx-auto space-y-6 py-4 sm:py-6 px-3 sm:px-4">
       
       {/* Header */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-3xl p-6 sm:p-8 shadow-xl backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <Bell className="w-6 h-6 text-amber-400" />
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            <Bell className="w-6 h-6 text-[var(--caution-bright)]" />
+            <h2 className="text-xl sm:text-2xl font-black text-[var(--text-primary)] tracking-tight">
               {t('alerts.title')}
             </h2>
           </div>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
             {t('alerts.subtitle')}
           </p>
-          <div className="text-[11px] font-mono text-slate-500 mt-2">
-            {t('alerts.subscriberId')}: <span className="text-cyan-400">{subscriberId}</span>
+          <div className="text-[11px] font-mono text-[var(--text-muted)] mt-2">
+            {t('alerts.subscriberId')}: <span className="text-[var(--accent-primary)]">{subscriberId}</span>
           </div>
         </div>
 
@@ -330,12 +330,12 @@ export default function AlertsPage() {
         <div className="flex flex-col items-start md:items-end gap-2">
           {webPushConfig.checked && (
             webPushConfig.enabled ? (
-              <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/60 px-3 py-1.5 rounded-xl border border-emerald-800/80 flex items-center space-x-1.5">
+              <span className="text-xs font-mono font-bold text-[var(--safe-bright)] bg-emerald-950/60 px-3 py-1.5 rounded-xl border border-emerald-800/80 flex items-center space-x-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>{t('alerts.pushReady')}</span>
               </span>
             ) : (
-              <span className="text-xs font-mono font-bold text-amber-400 bg-amber-950/60 px-3 py-1.5 rounded-xl border border-amber-800/80 flex items-center space-x-1.5">
+              <span className="text-xs font-mono font-bold text-[var(--caution-bright)] bg-amber-950/60 px-3 py-1.5 rounded-xl border border-amber-800/80 flex items-center space-x-1.5">
                 <Info className="w-3.5 h-3.5" />
                 <span>{t('alerts.pushNotConfigured')}</span>
               </span>
@@ -346,11 +346,11 @@ export default function AlertsPage() {
 
       {/* Web Push Setup Notice if server lacks VAPID */}
       {webPushConfig.checked && !webPushConfig.enabled && (
-        <div className="p-4 rounded-2xl bg-amber-950/30 border border-amber-800/50 flex items-start space-x-3 text-xs text-amber-300">
-          <Info className="w-5 h-5 flex-shrink-0 text-amber-400 mt-0.5" />
+        <div className="p-4 rounded-2xl bg-amber-950/30 border border-amber-800/50 flex items-start space-x-3 text-xs text-[var(--caution-bright)]">
+          <Info className="w-5 h-5 flex-shrink-0 text-[var(--caution-bright)] mt-0.5" />
           <div>
             <p className="font-semibold text-amber-200">{t('alerts.pushNoticeTitle')}</p>
-            <p className="mt-1 text-slate-300 leading-relaxed">
+            <p className="mt-1 text-[var(--text-secondary)] leading-relaxed">
               {t('alerts.pushNoticeBody')}
             </p>
           </div>
@@ -361,16 +361,16 @@ export default function AlertsPage() {
       {webPushConfig.checked && webPushConfig.enabled && !pushSubPayload && (
         <div className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-center space-x-3 text-cyan-200">
-            <Zap className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+            <Zap className="w-5 h-5 text-[var(--accent-primary)] flex-shrink-0" />
             <div>
-              <div className="font-bold text-white">{t('alerts.enableBrowserPush')}</div>
-              <div className="text-slate-300 text-[11px]">{t('alerts.enableBrowserPushDesc')}</div>
+              <div className="font-bold text-[var(--text-primary)]">{t('alerts.enableBrowserPush')}</div>
+              <div className="text-[var(--text-secondary)] text-[11px]">{t('alerts.enableBrowserPushDesc')}</div>
             </div>
           </div>
           <button
             type="button"
             onClick={handleEnableWebPush}
-            className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs whitespace-nowrap transition-colors cursor-pointer"
+            className="px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-black font-bold rounded-xl text-xs whitespace-nowrap transition-colors cursor-pointer"
           >
             {t('alerts.enableDevicePush')}
           </button>
@@ -380,13 +380,13 @@ export default function AlertsPage() {
       {/* Feedback alerts */}
       {errorMsg && (
         <div className="p-4 rounded-2xl bg-rose-950/60 border border-rose-800/80 text-rose-200 text-xs flex items-center space-x-2">
-          <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 text-[var(--dangerous-bright)]" />
           <span>{errorMsg}</span>
         </div>
       )}
       {successMsg && (
         <div className="p-4 rounded-2xl bg-emerald-950/60 border border-emerald-800/80 text-emerald-200 text-xs flex items-center space-x-2">
-          <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-400" />
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-[var(--safe-bright)]" />
           <span>{successMsg}</span>
         </div>
       )}
@@ -394,35 +394,35 @@ export default function AlertsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* Left Column: Subscription Form */}
-        <div className="lg:col-span-6 bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4 backdrop-blur-md">
-          <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center space-x-2">
-              <Plus className="w-4 h-4 text-cyan-400" />
+        <div className="lg:col-span-6 bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-3xl p-6 shadow-xl space-y-4 backdrop-blur-md">
+          <div className="border-b border-[var(--border-base)] pb-3 flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)] flex items-center space-x-2">
+              <Plus className="w-4 h-4 text-[var(--accent-primary)]" />
               <span>{t('alerts.configureSubscription')}</span>
             </h3>
-            <span className="text-[11px] font-semibold text-slate-400 font-mono">POST /alerts/subscriptions</span>
+            <span className="text-[11px] font-semibold text-[var(--text-secondary)] font-mono">POST /alerts/subscriptions</span>
           </div>
 
           <form onSubmit={handleSaveSubscription} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
                 {t('alerts.monitoredPlaceName')}
               </label>
               <div className="relative">
-                <MapPin className="w-4 h-4 text-cyan-400 absolute left-3 top-2.5 pointer-events-none" />
+                <MapPin className="w-4 h-4 text-[var(--accent-primary)] absolute left-3 top-2.5 pointer-events-none" />
                 <input
                   type="text"
                   value={locationName}
                   onChange={(e) => setLocationName(e.target.value)}
                   placeholder={t('alerts.locationPlaceholder')}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl pl-9 pr-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-cyan-500"
                 />
               </div>
             </div>
 
             {/* Coordinates */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
                 {t('alerts.orCoordinate')}
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -432,7 +432,7 @@ export default function AlertsPage() {
                   value={lat}
                   onChange={(e) => setLat(e.target.value)}
                   placeholder={t('alerts.latitudePlaceholder')}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-cyan-500"
                 />
                 <input
                   type="number"
@@ -440,20 +440,20 @@ export default function AlertsPage() {
                   value={lon}
                   onChange={(e) => setLon(e.target.value)}
                   placeholder={t('alerts.longitudePlaceholder')}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-cyan-500"
                 />
               </div>
             </div>
 
             {/* Threshold Severity */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
                 {t('alerts.minLevelSection')}
               </label>
               <select
                 value={minLevel}
                 onChange={(e) => setMinLevel(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-cyan-500"
               >
                 <option value="CAUTION">{t('alerts.levelCautionDesc')}</option>
                 <option value="UNSAFE">{t('alerts.levelUnsafeDesc')}</option>
@@ -463,19 +463,19 @@ export default function AlertsPage() {
 
             {/* Alert Categories */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">
                 {t('alerts.monitoredHazardsSection')}
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 {ALERT_TYPE_OPTIONS.map(({ key, labelKey, icon }) => (
-                  <label key={key} className="flex items-center space-x-2 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700 transition-colors">
+                  <label key={key} className="flex items-center space-x-2 bg-[var(--bg-base)] p-2.5 rounded-xl border border-[var(--border-base)] cursor-pointer hover:border-slate-700 transition-colors">
                     <input
                       type="checkbox"
                       checked={Boolean(selectedTypes[key])}
                       onChange={() => handleToggleType(key)}
-                      className="rounded border-slate-700 text-cyan-500 focus:ring-cyan-500"
+                      className="rounded border-[var(--border-base)] text-[var(--accent-primary)] focus:ring-cyan-500"
                     />
-                    <span className="text-slate-300 text-[11px] truncate">{icon} {t(labelKey)}</span>
+                    <span className="text-[var(--text-secondary)] text-[11px] truncate">{icon} {t(labelKey)}</span>
                   </label>
                 ))}
               </div>
@@ -483,7 +483,7 @@ export default function AlertsPage() {
 
             {/* Quiet Hours */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
                 {t('alerts.quietHours')}
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -492,27 +492,27 @@ export default function AlertsPage() {
                   value={quietStart}
                   onChange={(e) => setQuietStart(e.target.value)}
                   placeholder={t('alerts.quietStartPlaceholder')}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-cyan-500"
                 />
                 <input
                   type="text"
                   value={quietEnd}
                   onChange={(e) => setQuietEnd(e.target.value)}
                   placeholder={t('alerts.quietEndPlaceholder')}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-cyan-500"
                 />
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-950/50 border border-slate-800 text-[11px] text-slate-400">
-              <span className="font-bold text-amber-400">{t('alerts.safetyRule')}: </span>
+            <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border-base)] text-[11px] text-[var(--text-secondary)]">
+              <span className="font-bold text-[var(--caution-bright)]">{t('alerts.safetyRule')}: </span>
               <span>{t('alerts.safetyRuleDesc')}</span>
             </div>
 
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-cyan-500/20 cursor-pointer"
+              className="w-full py-3 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] disabled:bg-slate-800 disabled:text-slate-500 text-black font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-lg cursor-pointer"
             >
               {submitting ? t('alerts.registering') : t('alerts.saveSubscription')}
             </button>
@@ -523,15 +523,15 @@ export default function AlertsPage() {
         <div className="lg:col-span-6 space-y-6">
           
           {/* Active Subscriptions List */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+          <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-3">
+            <div className="flex items-center justify-between border-b border-[var(--border-base)] pb-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                 {t('alerts.activeSubscriptionsCount', { count: subscriptions.length })}
               </h3>
               <button
                 type="button"
                 onClick={() => refreshEvents(subscriptions)}
-                className="text-xs text-slate-400 hover:text-cyan-400 flex items-center space-x-1 cursor-pointer"
+                className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-primary)] flex items-center space-x-1 cursor-pointer"
                 title={t('alerts.refreshEvents')}
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${eventsLoading ? 'animate-spin' : ''}`} />
@@ -540,34 +540,34 @@ export default function AlertsPage() {
             </div>
 
             {subscriptions.length === 0 ? (
-              <div className="p-6 text-center text-slate-500 text-xs rounded-2xl bg-slate-950/40 border border-slate-800/60">
+              <div className="p-6 text-center text-[var(--text-muted)] text-xs rounded-2xl bg-[var(--bg-base)] border border-[var(--border-base)]">
                 {t('alerts.noSubscriptionsRegistered')}
               </div>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 {subscriptions.map((s) => (
-                  <div key={s.subscription_id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-2">
+                  <div key={s.subscription_id} className="p-3.5 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-base)] flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <div className="text-xs font-bold text-white flex items-center space-x-1.5 truncate">
-                        <MapPin className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                      <div className="text-xs font-bold text-[var(--text-primary)] flex items-center space-x-1.5 truncate">
+                        <MapPin className="w-3.5 h-3.5 text-[var(--accent-primary)] flex-shrink-0" />
                         <span className="truncate">{s.location_label}</span>
                       </div>
-                      <div className="text-[10px] text-slate-400 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <div className="text-[10px] text-[var(--text-secondary)] mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                         <span className={`font-mono font-bold px-1.5 py-0.5 rounded ${
-                          s.minimum_level === 'DANGEROUS' ? 'bg-rose-950 text-rose-300 border border-rose-800' :
-                          s.minimum_level === 'UNSAFE' ? 'bg-amber-950 text-amber-300 border border-amber-800' :
+                          s.minimum_level === 'DANGEROUS' ? 'bg-[var(--dangerous)]/20 text-[var(--dangerous-bright)] border border-[var(--dangerous)]' :
+                          s.minimum_level === 'UNSAFE' ? 'bg-[var(--caution)]/20 text-[var(--caution-bright)] border border-[var(--caution)]' :
                           'bg-yellow-950 text-yellow-300 border border-yellow-800'
                         }`}>
                           {s.minimum_level}+
                         </span>
                         <span>{s.alert_types?.length || 0} {t('alerts.hazardTypesCount')}</span>
                         <span>•</span>
-                        <span className="font-mono text-slate-500">{new Date(s.created_at).toLocaleDateString()}</span>
+                        <span className="font-mono text-[var(--text-muted)]">{new Date(s.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
                     <button
                       onClick={() => handleDeleteSub(s.subscription_id)}
-                      className="p-2 rounded-lg bg-slate-800/80 hover:bg-rose-950 hover:text-rose-400 text-slate-400 transition-colors cursor-pointer flex-shrink-0"
+                      className="p-2 rounded-lg bg-[var(--bg-surface-2)] hover:bg-rose-950 hover:text-rose-400 text-[var(--text-secondary)] transition-colors cursor-pointer flex-shrink-0"
                       title={t('alerts.deactivateSubscription')}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -579,22 +579,22 @@ export default function AlertsPage() {
           </div>
 
           {/* Real Directive Events Inbox */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
-                <Radio className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
+          <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-3">
+            <div className="flex items-center justify-between border-b border-[var(--border-base)] pb-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center space-x-1.5">
+                <Radio className="w-3.5 h-3.5 text-[var(--dangerous-bright)] animate-pulse" />
                 <span>{t('alerts.deliveredEventsCount', { count: events.length })}</span>
               </h3>
-              <span className="text-[10px] font-mono text-slate-500">{t('alerts.liveWorkerLog')}</span>
+              <span className="text-[10px] font-mono text-[var(--text-muted)]">{t('alerts.liveWorkerLog')}</span>
             </div>
 
             {eventsLoading ? (
-              <div className="p-6 text-center text-slate-400 text-xs flex items-center justify-center space-x-2">
-                <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
+              <div className="p-6 text-center text-[var(--text-secondary)] text-xs flex items-center justify-center space-x-2">
+                <RefreshCw className="w-4 h-4 animate-spin text-[var(--accent-primary)]" />
                 <span>{t('alerts.checkingLogs')}</span>
               </div>
             ) : events.length === 0 ? (
-              <div className="p-6 text-center text-slate-500 text-xs rounded-2xl bg-slate-950/40 border border-slate-800/60">
+              <div className="p-6 text-center text-[var(--text-muted)] text-xs rounded-2xl bg-[var(--bg-base)] border border-[var(--border-base)]">
                 {t('alerts.noEventsTriggered')}
               </div>
             ) : (
@@ -616,19 +616,19 @@ export default function AlertsPage() {
                         }`}>
                           {item.level || item.severity || 'ALERT'}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-mono">
+                        <span className="text-[10px] text-[var(--text-secondary)] font-mono">
                           {item.created_at ? new Date(item.created_at).toLocaleTimeString() : t('alerts.recent')}
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-white mt-1">
+                      <h4 className="text-xs font-bold text-[var(--text-primary)] mt-1">
                         {item.title || item.alert_type || t('alerts.directiveDefaultTitle')}
                       </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">
+                      <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                         {item.message || item.text || item.summary || JSON.stringify(item)}
                       </p>
                       {item.subscription_label && (
-                        <div className="text-[10px] text-slate-400 flex items-center space-x-1">
-                          <MapPin className="w-3 h-3 text-cyan-400" />
+                        <div className="text-[10px] text-[var(--text-secondary)] flex items-center space-x-1">
+                          <MapPin className="w-3 h-3 text-[var(--accent-primary)]" />
                           <span>{t('alerts.sector')}: {item.subscription_label}</span>
                         </div>
                       )}

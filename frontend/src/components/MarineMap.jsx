@@ -339,30 +339,30 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
 
   if (!hasValidCoords) {
     return (
-      <div className="relative w-full h-[520px] rounded-2xl overflow-hidden border border-slate-800 shadow-xl bg-slate-950 flex flex-col items-center justify-center space-y-3">
-        <Compass className="w-8 h-8 text-cyan-400 animate-spin-slow" />
-        <span className="text-xs text-slate-400 font-mono">{t('map.awaitingCoords')}</span>
+      <div className="relative w-full h-[520px] rounded-2xl overflow-hidden border border-[var(--border-base)] shadow-xl bg-[var(--bg-base)] flex flex-col items-center justify-center space-y-3">
+        <Compass className="w-8 h-8 text-[var(--accent-primary)] animate-spin-slow" />
+        <span className="text-xs text-[var(--text-secondary)] font-mono">{t('map.awaitingCoords')}</span>
       </div>
     );
   }
 
   return (
 
-    <div className="relative w-full h-[520px] rounded-2xl overflow-hidden border border-slate-800 shadow-xl bg-slate-950">
+    <div className="relative w-full h-[520px] rounded-2xl overflow-hidden border border-[var(--border-base)] shadow-xl bg-[var(--bg-base)]">
       <div ref={mapContainerRef} className="w-full h-full" />
 
       {/* Floating Controls */}
       <div className="absolute top-3 left-3 z-[400] flex flex-col space-y-2">
-        <div className="bg-slate-900/95 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-700/80 shadow-md text-xs">
-          <div className="flex items-center space-x-2 font-bold text-white mb-1">
-            <Compass className="w-3.5 h-3.5 text-cyan-400 animate-spin-slow" />
+        <div className="bg-slate-900/95 backdrop-blur-md px-3 py-2 rounded-xl border border-[var(--border-base)] shadow-md text-xs">
+          <div className="flex items-center space-x-2 font-bold text-[var(--text-primary)] mb-1">
+            <Compass className="w-3.5 h-3.5 text-[var(--accent-primary)] animate-spin-slow" />
             <span>{t('map.title')}</span>
           </div>
-          <p className="text-[11px] text-slate-300">
-            {t('map.center')} <b className="text-cyan-400 font-mono">{validLat.toFixed(3)}°N, {validLon.toFixed(3)}°E</b>
+          <p className="text-[11px] text-[var(--text-secondary)]">
+            {t('map.center')} <b className="text-[var(--accent-primary)] font-mono">{validLat.toFixed(3)}°N, {validLon.toFixed(3)}°E</b>
           </p>
           {isSnapped && (
-            <span className="text-[10px] text-amber-400 font-semibold block mt-0.5">
+            <span className="text-[10px] text-[var(--caution-bright)] font-semibold block mt-0.5">
               ⚠️ {t('map.shorelineSnappedBadge', { dist: plan.location?.validated?.snap_distance_km ? `${plan.location.validated.snap_distance_km}km` : t('map.offshore') })}
             </span>
           )}
@@ -373,8 +373,8 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
             onClick={() => setShowGeofence(!showGeofence)}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-md backdrop-blur-md border ${
               showGeofence
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50'
-                : 'bg-slate-900/80 text-slate-400 border-slate-700'
+                ? 'bg-cyan-500/20 text-[var(--accent-primary)] border-cyan-500/50'
+                : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-base)]'
             }`}
           >
             <ShieldAlert className="w-3.5 h-3.5" />
@@ -385,8 +385,8 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
             onClick={() => setShowPorts(!showPorts)}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-md backdrop-blur-md border ${
               showPorts
-                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
-                : 'bg-slate-900/80 text-slate-400 border-slate-700'
+                ? 'bg-emerald-500/20 text-[var(--safe-bright)] border-emerald-500/50'
+                : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-base)]'
             }`}
           >
             <Anchor className="w-3.5 h-3.5" />
@@ -396,22 +396,22 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
       </div>
 
       {/* Legend */}
-      <div className="absolute bottom-3 left-3 z-[400] bg-slate-900/95 backdrop-blur-md p-2.5 rounded-xl border border-slate-700/80 shadow-md text-[11px] text-slate-300 flex items-center space-x-3">
-        <span className="font-bold text-slate-200">{t('map.riskColorScale')}:</span>
+      <div className="absolute bottom-3 left-3 z-[400] bg-slate-900/95 backdrop-blur-md p-2.5 rounded-xl border border-[var(--border-base)] shadow-md text-[11px] text-[var(--text-secondary)] flex items-center space-x-3">
+        <span className="font-bold text-[var(--text-primary)]">{t('map.riskColorScale')}:</span>
         <div className="flex items-center space-x-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[var(--safe)] inline-block" />
           <span>{t('map.safeRange')}</span>
         </div>
         <div className="flex items-center space-x-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[var(--caution)] inline-block" />
           <span>{t('map.cautionRange')}</span>
         </div>
         <div className="flex items-center space-x-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[var(--unsafe)] inline-block" />
           <span>{t('map.unsafeRange')}</span>
         </div>
         <div className="flex items-center space-x-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-600 inline-block" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[var(--dangerous)] inline-block" />
           <span>{t('map.dangerRange')}</span>
         </div>
       </div>
@@ -420,10 +420,10 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
       <div className="absolute top-3 right-3 z-[400]">
         <button
           onClick={handleRecenter}
-          className="p-2.5 rounded-xl bg-slate-900/95 backdrop-blur-md hover:bg-slate-800 text-white border border-slate-700 shadow-lg text-xs font-semibold flex items-center space-x-1.5"
+          className="p-2.5 rounded-xl bg-slate-900/95 backdrop-blur-md hover:bg-[var(--bg-surface-2)] text-[var(--text-primary)] border border-[var(--border-base)] shadow-lg text-xs font-semibold flex items-center space-x-1.5"
           title={t('map.recenterTitle')}
         >
-          <MapPin className="w-4 h-4 text-cyan-400" />
+          <MapPin className="w-4 h-4 text-[var(--accent-primary)]" />
           <span>{t('map.recenter')}</span>
         </button>
       </div>

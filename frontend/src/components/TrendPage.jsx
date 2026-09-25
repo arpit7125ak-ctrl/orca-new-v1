@@ -154,46 +154,46 @@ export default function TrendPage({ selectedLang = 'auto', onNavigateToTab }) {
     <div className="max-w-5xl mx-auto space-y-7 py-4 sm:py-6">
       
       {/* Page Header */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-3xl p-6 sm:p-8 shadow-xl backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2.5">
-            <TrendingUp className="w-6 h-6 text-purple-400" />
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            <TrendingUp className="w-6 h-6 text-[var(--accent-primary)]" />
+            <h2 className="text-xl sm:text-2xl font-black text-[var(--text-primary)] tracking-tight">
               {t('trend.title')}
             </h2>
           </div>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
             {t('trend.subtitle')}
           </p>
         </div>
 
-        <span className="text-xs font-mono font-bold text-purple-300 bg-purple-950 px-3 py-1.5 rounded-xl border border-purple-800 w-fit">
+        <span className="text-xs font-mono font-bold text-[var(--accent-primary)] bg-[var(--accent-dim)] px-3 py-1.5 rounded-xl border border-[var(--accent-primary)] w-fit">
           {t('trend.badge')}
         </span>
       </div>
 
       {/* Error Alert */}
       {errorMessage && (
-        <div className="p-4 rounded-2xl bg-rose-950/80 border border-rose-800 text-rose-200 flex items-start space-x-3 text-xs sm:text-sm shadow-lg">
-          <AlertCircle className="w-5 h-5 text-rose-400 mt-0.5 flex-shrink-0" />
+        <div className="p-4 rounded-2xl bg-rose-950/80 border border-[var(--dangerous)] text-rose-200 flex items-start space-x-3 text-xs sm:text-sm shadow-lg">
+          <AlertCircle className="w-5 h-5 text-[var(--dangerous-bright)] mt-0.5 flex-shrink-0" />
           <div className="flex-1">
             <span className="font-bold">{t('trend.trendError')}: </span>
             <span>{errorMessage}</span>
           </div>
-          <button onClick={() => setErrorMessage(null)} className="text-rose-400 hover:text-white font-semibold">
+          <button onClick={() => setErrorMessage(null)} className="text-[var(--dangerous-bright)] hover:text-[var(--text-primary)] font-semibold">
             {t('route.dismiss')}
           </button>
         </div>
       )}
 
       {/* Setup Form */}
-      <form onSubmit={handleSubmit} className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xl space-y-6">
+      <form onSubmit={handleSubmit} className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-3xl p-6 sm:p-7 shadow-xl space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           
           {/* Location Selection */}
           <div className="space-y-3">
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
-              <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider flex items-center space-x-1.5">
+              <MapPin className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
               <span>{t('trend.targetSectorLabel')}</span>
             </label>
 
@@ -203,7 +203,7 @@ export default function TrendPage({ selectedLang = 'auto', onNavigateToTab }) {
                 value={placeName}
                 onChange={(e) => setPlaceName(e.target.value)}
                 placeholder={t('trend.placeNamePlaceholder')}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-slate-500 font-medium"
+                className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-slate-500 font-medium"
               />
             </div>
 
@@ -214,7 +214,7 @@ export default function TrendPage({ selectedLang = 'auto', onNavigateToTab }) {
                 value={lat}
                 onChange={(e) => setLat(e.target.value)}
                 placeholder={t('trend.latPlaceholder')}
-                className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-purple-500 font-mono text-[11px]"
+                className="bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-3 py-2 text-[var(--text-primary)] placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-purple-500 font-mono text-[11px]"
               />
               <input
                 type="number"
@@ -222,22 +222,22 @@ export default function TrendPage({ selectedLang = 'auto', onNavigateToTab }) {
                 value={lon}
                 onChange={(e) => setLon(e.target.value)}
                 placeholder={t('trend.lonPlaceholder')}
-                className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-purple-500 font-mono text-[11px]"
+                className="bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-3 py-2 text-[var(--text-primary)] placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-purple-500 font-mono text-[11px]"
               />
             </div>
           </div>
 
           {/* Parameter Select */}
           <div className="space-y-3">
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
-              <Layers className="w-3.5 h-3.5 text-purple-400" />
+            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider flex items-center space-x-1.5">
+              <Layers className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
               <span>{t('trend.oceanParamLabel')}</span>
             </label>
 
             <select
               value={parameter}
               onChange={(e) => setParameter(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500 cursor-pointer font-medium"
+              className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-purple-500 cursor-pointer font-medium"
             >
               {PARAMETERS.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -246,7 +246,7 @@ export default function TrendPage({ selectedLang = 'auto', onNavigateToTab }) {
               ))}
             </select>
 
-            <p className="text-[11px] text-slate-400 italic">
+            <p className="text-[11px] text-[var(--text-secondary)] italic">
               {t('trend.chlorophyllProxyNote')}
             </p>
           </div>
@@ -254,10 +254,10 @@ export default function TrendPage({ selectedLang = 'auto', onNavigateToTab }) {
         </div>
 
         {/* Temporal Windows */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-800">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[var(--border-base)]">
           <div className="space-y-2">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1">
-              <Calendar className="w-3 h-3 text-cyan-400" />
+            <span className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider flex items-center space-x-1">
+              <Calendar className="w-3 h-3 text-[var(--accent-primary)]" />
               <span>{t('trend.baselineWindowLabel')}</span>
             </span>
             <div className="grid grid-cols-2 gap-2 text-xs">
@@ -265,20 +265,20 @@ export default function TrendPage({ selectedLang = 'auto', onNavigateToTab }) {
                 type="date"
                 value={baselineStart}
                 onChange={(e) => setBaselineStart(e.target.value)}
-                className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-3 py-2 text-[var(--text-primary)] font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-purple-500"
               />
               <input
                 type="date"
                 value={baselineEnd}
                 onChange={(e) => setBaselineEnd(e.target.value)}
-                className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-3 py-2 text-[var(--text-primary)] font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-purple-500"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1">
-              <Calendar className="w-3 h-3 text-purple-400" />
+            <span className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider flex items-center space-x-1">
+              <Calendar className="w-3 h-3 text-[var(--accent-primary)]" />
               <span>{t('trend.analysisWindowLabel')}</span>
             </span>
             <div className="grid grid-cols-2 gap-2 text-xs">
@@ -286,22 +286,22 @@ export default function TrendPage({ selectedLang = 'auto', onNavigateToTab }) {
                 type="date"
                 value={analysisStart}
                 onChange={(e) => setAnalysisStart(e.target.value)}
-                className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-3 py-2 text-[var(--text-primary)] font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-purple-500"
               />
               <input
                 type="date"
                 value={analysisEnd}
                 onChange={(e) => setAnalysisEnd(e.target.value)}
-                className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-3 py-2 text-[var(--text-primary)] font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-purple-500"
               />
             </div>
           </div>
         </div>
 
         {/* Free text prompt */}
-        <div className="space-y-2 pt-2 border-t border-slate-800">
-          <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+        <div className="space-y-2 pt-2 border-t border-[var(--border-base)]">
+          <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider flex items-center space-x-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
             <span>{t('trend.researchQueryLabel')}</span>
           </label>
           <input
@@ -309,15 +309,15 @@ export default function TrendPage({ selectedLang = 'auto', onNavigateToTab }) {
             value={freeTextQuery}
             onChange={(e) => setFreeTextQuery(e.target.value)}
             placeholder={t('trend.researchQueryPlaceholder')}
-            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-slate-500 font-medium"
+            className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-4 py-2.5 text-xs sm:text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-slate-500 font-medium"
           />
         </div>
 
         {/* Submit */}
         <div className="pt-2 flex items-center justify-between">
-          <span className="text-xs text-slate-400 font-mono">
+          <span className="text-xs text-[var(--text-secondary)] font-mono">
             {isLoading && (
-              <span className="flex items-center space-x-2 text-cyan-400">
+              <span className="flex items-center space-x-2 text-[var(--accent-primary)]">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 <span>{statusMessage || t('common.loading')}</span>
               </span>
@@ -327,7 +327,7 @@ export default function TrendPage({ selectedLang = 'auto', onNavigateToTab }) {
           <button
             type="submit"
             disabled={isLoading}
-            className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-purple-600/20 disabled:opacity-50 cursor-pointer flex items-center space-x-2"
+            className="px-6 py-2.5 rounded-xl bg-[var(--accent-primary)] hover:bg-purple-500 text-[var(--text-primary)] font-bold text-xs sm:text-sm transition-all shadow-lg shadow-purple-600/20 disabled:opacity-50 cursor-pointer flex items-center space-x-2"
           >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
             <span>{t('trend.calculateButton')}</span>

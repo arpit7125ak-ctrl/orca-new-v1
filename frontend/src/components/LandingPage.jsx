@@ -42,10 +42,10 @@ export default function LandingPage({ onStartAnalysis, onQuickSelect }) {
 
   // Core intelligence pillars rendered in the hero footer
   const pillars = [
-    { labelKey: 'landing.weather', icon: CloudSun, color: 'text-amber-400', descKey: 'landing.weatherDesc' },
-    { labelKey: 'landing.ocean',   icon: Waves,    color: 'text-cyan-400',   descKey: 'landing.oceanDesc' },
-    { labelKey: 'landing.ecosystem', icon: ShieldAlert, color: 'text-emerald-400', descKey: 'landing.ecosystemDesc' },
-    { labelKey: 'landing.risk',    icon: Scale,    color: 'text-purple-400', descKey: 'landing.riskDesc' },
+    { labelKey: 'landing.weather', icon: CloudSun, color: 'text-[var(--caution-bright)]', descKey: 'landing.weatherDesc' },
+    { labelKey: 'landing.ocean',   icon: Waves,    color: 'text-[var(--accent-primary)]',   descKey: 'landing.oceanDesc' },
+    { labelKey: 'landing.ecosystem', icon: ShieldAlert, color: 'text-[var(--safe-bright)]', descKey: 'landing.ecosystemDesc' },
+    { labelKey: 'landing.risk',    icon: Scale,    color: 'text-[var(--accent-primary)]', descKey: 'landing.riskDesc' },
   ];
 
   const presets = [
@@ -57,17 +57,17 @@ export default function LandingPage({ onStartAnalysis, onQuickSelect }) {
   return (
     <div className="space-y-12 py-6 sm:py-12">
       {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-900/90 via-slate-950 to-slate-950 p-8 sm:p-16 text-center shadow-2xl backdrop-blur-md">
+      <section className="relative overflow-hidden rounded-3xl border border-[var(--border-base)] bg-gradient-to-b from-slate-900/90 via-[var(--bg-base)] to-[var(--bg-base)] p-8 sm:p-16 text-center shadow-2xl backdrop-blur-md">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-cyan-900/20 via-transparent to-transparent pointer-events-none" />
         
         {/* Badge */}
-        <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-cyan-950/80 border border-cyan-800/80 text-xs font-semibold text-cyan-300 mb-6 shadow-inner">
-          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+        <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-cyan-950/80 border border-cyan-800/80 text-xs font-semibold text-[var(--accent-primary)] mb-6 shadow-inner">
+          <span className="w-2 h-2 rounded-full bg-[var(--accent-primary)] animate-pulse" />
           <span>{t('landing.badge')}</span>
         </div>
 
         {/* Hero Title */}
-        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight max-w-4xl mx-auto">
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-[var(--text-primary)] tracking-tight leading-tight max-w-4xl mx-auto">
           {t('landing.headline1')} <br className="hidden sm:inline" />
           <span className="bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-500 bg-clip-text text-transparent">
             {t('landing.headline2')}
@@ -75,7 +75,7 @@ export default function LandingPage({ onStartAnalysis, onQuickSelect }) {
         </h1>
 
         {/* Hero Subtitle */}
-        <p className="mt-5 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
+        <p className="mt-5 text-base sm:text-lg text-[var(--text-secondary)] max-w-2xl mx-auto leading-relaxed">
           {t('landing.subtitle')}
         </p>
 
@@ -83,7 +83,7 @@ export default function LandingPage({ onStartAnalysis, onQuickSelect }) {
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
             onClick={onStartAnalysis}
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-base flex items-center justify-center space-x-3 transition-all shadow-xl shadow-cyan-500/25 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-hover)] hover:from-cyan-400 hover:to-blue-500 text-black font-black text-base flex items-center justify-center space-x-3 transition-all shadow-xl shadow-cyan-500/25 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
           >
             <span>{t('landing.startAnalysis')}</span>
             <ArrowRight className="w-5 h-5" />
@@ -91,17 +91,17 @@ export default function LandingPage({ onStartAnalysis, onQuickSelect }) {
         </div>
 
         {/* 4 Core Pillars */}
-        <div className="mt-12 pt-8 border-t border-slate-800/80 max-w-3xl mx-auto">
+        <div className="mt-12 pt-8 border-t border-[var(--border-base)] max-w-3xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
             {pillars.map((p, idx) => {
               const Icon = p.icon;
               return (
-                <div key={idx} className="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800/60">
+                <div key={idx} className="bg-[var(--bg-surface)] p-3.5 rounded-xl border border-[var(--border-base)]">
                   <div className="flex items-center space-x-2 mb-1">
                     <Icon className={`w-4 h-4 ${p.color}`} />
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">{t(p.labelKey)}</span>
+                    <span className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">{t(p.labelKey)}</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-tight">{t(p.descKey)}</p>
+                  <p className="text-[11px] text-[var(--text-secondary)] leading-tight">{t(p.descKey)}</p>
                 </div>
               );
             })}
@@ -113,15 +113,15 @@ export default function LandingPage({ onStartAnalysis, onQuickSelect }) {
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-base font-bold text-white flex items-center space-x-2">
-              <Compass className="w-4 h-4 text-cyan-400" />
+            <h3 className="text-base font-bold text-[var(--text-primary)] flex items-center space-x-2">
+              <Compass className="w-4 h-4 text-[var(--accent-primary)]" />
               <span>{t('landing.instantMissions')}</span>
             </h3>
-            <p className="text-xs text-slate-400">{t('landing.jumpInto')}</p>
+            <p className="text-xs text-[var(--text-secondary)]">{t('landing.jumpInto')}</p>
           </div>
           <button
             onClick={onStartAnalysis}
-            className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center space-x-1"
+            className="text-xs text-[var(--accent-primary)] hover:text-cyan-300 font-semibold flex items-center space-x-1"
           >
             <span>{t('landing.customCoordinate')}</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -133,19 +133,19 @@ export default function LandingPage({ onStartAnalysis, onQuickSelect }) {
             <div
               key={idx}
               onClick={() => onQuickSelect && onQuickSelect(p)}
-              className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/50 transition-all cursor-pointer group shadow-lg"
+              className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-base)] hover:border-cyan-500/50 transition-all cursor-pointer group shadow-lg"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors flex items-center space-x-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="text-xs font-bold text-[var(--text-primary)] group-hover:text-cyan-300 transition-colors flex items-center space-x-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                   <span>{p.title}</span>
                 </span>
-                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-[var(--bg-surface-2)] text-[var(--text-secondary)]">
                   {p.loc.lat}°N, {p.loc.lon}°E
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mb-3">{p.vessel}</p>
-              <div className="text-[11px] font-bold text-cyan-400 flex items-center space-x-1 group-hover:translate-x-1 transition-transform">
+              <p className="text-xs text-[var(--text-secondary)] mb-3">{p.vessel}</p>
+              <div className="text-[11px] font-bold text-[var(--accent-primary)] flex items-center space-x-1 group-hover:translate-x-1 transition-transform">
                 <span>{t('landing.evaluateSafety')}</span>
                 <ArrowRight className="w-3 h-3" />
               </div>
@@ -156,28 +156,28 @@ export default function LandingPage({ onStartAnalysis, onQuickSelect }) {
 
       {/* System Highlights */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-3">
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+        <div className="p-6 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-base)] space-y-3">
+          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-[var(--accent-primary)]">
             <Cpu className="w-5 h-5" />
           </div>
-          <h4 className="text-sm font-bold text-white">{t('landing.multiAgent')}</h4>
-          <p className="text-xs text-slate-400 leading-relaxed">{t('landing.multiAgentDesc')}</p>
+          <h4 className="text-sm font-bold text-[var(--text-primary)]">{t('landing.multiAgent')}</h4>
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{t('landing.multiAgentDesc')}</p>
         </div>
 
-        <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+        <div className="p-6 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-base)] space-y-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-[var(--accent-primary)]">
             <Scale className="w-5 h-5" />
           </div>
-          <h4 className="text-sm font-bold text-white">{t('landing.explainableAi')}</h4>
-          <p className="text-xs text-slate-400 leading-relaxed">{t('landing.explainableAiDesc')}</p>
+          <h4 className="text-sm font-bold text-[var(--text-primary)]">{t('landing.explainableAi')}</h4>
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{t('landing.explainableAiDesc')}</p>
         </div>
 
-        <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+        <div className="p-6 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-base)] space-y-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-[var(--safe-bright)]">
             <Radio className="w-5 h-5" />
           </div>
-          <h4 className="text-sm font-bold text-white">{t('landing.fishermanUi')}</h4>
-          <p className="text-xs text-slate-400 leading-relaxed">{t('landing.fishermanUiDesc')}</p>
+          <h4 className="text-sm font-bold text-[var(--text-primary)]">{t('landing.fishermanUi')}</h4>
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{t('landing.fishermanUiDesc')}</p>
         </div>
       </section>
     </div>

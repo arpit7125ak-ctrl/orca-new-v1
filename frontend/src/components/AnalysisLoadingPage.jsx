@@ -127,39 +127,39 @@ export default function AnalysisLoadingPage({
     <div className="max-w-3xl mx-auto py-6 sm:py-10 space-y-6">
       
       {/* Top Banner */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md text-center space-y-3 relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 animate-pulse" />
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 sm:p-8 shadow-2xl text-center space-y-4 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[var(--accent-primary)] animate-pulse" />
 
-        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 text-xs font-mono font-bold">
+        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded bg-[var(--accent-glow)] text-[var(--accent-primary)] border border-[var(--accent-dim)] text-[10px] font-mono font-bold tracking-widest uppercase">
           <Cpu className="w-3.5 h-3.5 animate-spin-slow" />
           <span>{t('loading.swarmActive')}</span>
         </div>
 
-        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-wide">
+        <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] tracking-tight">
           {t('loading.title')}
         </h2>
 
-        <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto">
+        <p className="text-sm text-[var(--text-secondary)] max-w-lg mx-auto">
           {t('loading.subtitle')}
         </p>
 
-        <div className="flex items-center justify-center space-x-4 text-xs font-mono pt-2 text-slate-400">
-          <span>{t('loading.mission')} <b className="text-cyan-300">{analysisId || 'req_live_query'}</b></span>
+        <div className="flex items-center justify-center space-x-4 text-xs font-mono pt-2 text-[var(--text-muted)]">
+          <span>{t('loading.mission')} <b className="text-[var(--text-primary)]">{analysisId || 'req_live_query'}</b></span>
           <span>•</span>
           <span className="flex items-center space-x-1">
-            <Clock className="w-3.5 h-3.5 text-cyan-400" />
+            <Clock className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
             <span>{t('loading.elapsed', { n: (elapsed / 1000).toFixed(1) })}</span>
           </span>
         </div>
       </div>
 
       {/* Step-by-Step Multi-Agent Visual Checklist */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-4">
-        <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 sm:p-8 shadow-2xl space-y-5">
+        <div className="border-b border-[var(--border-base)] pb-3 flex items-center justify-between">
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-secondary)]">
             {t('loading.pipelineSteps')}
           </h3>
-          <span className="text-xs font-mono text-cyan-400 font-bold">
+          <span className="text-[10px] font-mono text-[var(--accent-primary)] font-bold">
             {isCompleted ? t('loading.allCompleted', { count: 6 }) : t('loading.inProgressSteps', { step: Math.min(6, activeStepIndex + 1), total: 6 })}
           </span>
         </div>
@@ -174,23 +174,23 @@ export default function AnalysisLoadingPage({
             return (
               <div
                 key={agent.id}
-                className={`p-4 rounded-2xl border transition-all duration-300 ${
+                className={`p-4 rounded-xl border transition-all duration-300 ${
                   isDone
-                    ? 'bg-slate-950/60 border-emerald-900/40 text-slate-200'
+                    ? 'bg-[var(--bg-surface-2)] border-[var(--safe)] text-[var(--text-primary)]'
                     : isActive
-                    ? 'bg-cyan-950/30 border-cyan-500/60 ring-1 ring-cyan-500/40 shadow-lg text-white'
-                    : 'bg-slate-950/30 border-slate-800/60 text-slate-500'
+                    ? 'bg-[var(--bg-base)] border-[var(--accent-primary)] ring-1 ring-[var(--accent-dim)] shadow-lg text-[var(--text-primary)]'
+                    : 'bg-[var(--bg-base)] border-[var(--border-base)] text-[var(--text-muted)]'
                 }`}
               >
                 <div className="flex items-start space-x-3.5">
                   {/* Status Indicator Icon */}
                   <div className="mt-0.5 flex-shrink-0">
                     {isDone ? (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                      <CheckCircle2 className="w-5 h-5 text-[var(--safe-bright)]" />
                     ) : isActive ? (
-                      <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
+                      <Loader2 className="w-5 h-5 text-[var(--accent-primary)] animate-spin" />
                     ) : (
-                      <Circle className="w-5 h-5 text-slate-700" />
+                      <Circle className="w-5 h-5 text-[var(--border-hover)]" />
                     )}
                   </div>
 
@@ -198,26 +198,26 @@ export default function AnalysisLoadingPage({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <Icon className={`w-4 h-4 ${isDone ? 'text-emerald-400' : isActive ? 'text-cyan-400' : 'text-slate-600'}`} />
-                        <h4 className={`text-sm font-bold tracking-tight ${isDone ? 'text-white' : isActive ? 'text-cyan-300' : 'text-slate-400'}`}>
+                        <Icon className={`w-4 h-4 ${isDone ? 'text-[var(--safe-bright)]' : isActive ? 'text-[var(--accent-primary)]' : 'text-[var(--text-muted)]'}`} />
+                        <h4 className={`text-sm font-bold tracking-tight ${isDone ? 'text-[var(--text-primary)]' : isActive ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)]'}`}>
                           {t(agent.nameKey)}
                         </h4>
                       </div>
 
                       {/* State Badge */}
-                      <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded ${
+                      <span className={`text-[10px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 rounded border ${
                         isDone 
-                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/60'
+                          ? 'bg-[var(--safe)]/20 text-[var(--safe-bright)] border-[var(--safe)]/40'
                           : isActive
-                          ? 'bg-cyan-950 text-cyan-300 border border-cyan-800 animate-pulse'
-                          : 'bg-slate-900 text-slate-600'
+                          ? 'bg-[var(--accent-dim)]/30 text-[var(--accent-primary)] border-[var(--accent-primary)]/50 animate-pulse'
+                          : 'bg-[var(--bg-base)] text-[var(--text-muted)] border-[var(--border-base)]'
                       }`}>
                         {isDone ? t('common.completed') : isActive ? t('common.executing') : t('common.waiting')}
                       </span>
                     </div>
 
-                    <p className={`text-xs mt-1 leading-relaxed ${
-                      isDone ? 'text-slate-300' : isActive ? 'text-cyan-100/90 font-medium' : 'text-slate-500'
+                    <p className={`text-xs mt-1.5 leading-relaxed ${
+                      isDone ? 'text-[var(--text-secondary)]' : isActive ? 'text-[var(--text-primary)] font-medium' : 'text-[var(--text-muted)]'
                     }`}>
                       {isDone ? t(agent.doneKey) : isActive ? t(agent.activeKey) : t(agent.pendingKey)}
                     </p>
@@ -230,10 +230,10 @@ export default function AnalysisLoadingPage({
 
         {/* Completion Action CTA */}
         {isCompleted && (
-          <div className="pt-4 border-t border-slate-800 animate-fade-in">
+          <div className="pt-4 border-t border-[var(--border-base)] animate-fade-in">
             <button
               onClick={onViewResults}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-sm uppercase tracking-wider flex items-center justify-center space-x-2 transition-all shadow-xl shadow-emerald-500/20 cursor-pointer"
+              className="w-full py-4 rounded bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-black font-black text-sm uppercase tracking-[0.15em] flex items-center justify-center space-x-2 transition-all shadow-xl cursor-pointer"
             >
               <span>{t('loading.viewAdvisory')}</span>
               <ArrowRight className="w-5 h-5" />

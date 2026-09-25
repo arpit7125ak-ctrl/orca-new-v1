@@ -396,20 +396,20 @@ export default function GeofenceMonitor() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto py-2">
       {/* Header */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl backdrop-blur-md">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-3xl p-5 sm:p-6 shadow-xl backdrop-blur-md">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2">
-              <ShieldAlert className="w-6 h-6 text-cyan-400" />
-              <h2 className="text-lg sm:text-xl font-black text-white">
+              <ShieldAlert className="w-6 h-6 text-[var(--accent-primary)]" />
+              <h2 className="text-lg sm:text-xl font-black text-[var(--text-primary)]">
                 Section 66: Autonomous Geofence & Boundary Sentinel
               </h2>
             </div>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
               {t('geofence.pageSubtitle', { defaultValue: 'Deterministic spatial screening for maritime protected areas, international maritime boundaries, and marine national parks. Response under 1 second without LLM hallucination.' })}
             </p>
-            <div className="text-[11px] font-mono text-slate-500 mt-1">
-              {t('geofence.deviceClientId', { defaultValue: 'Device Client ID' })}: <span className="text-cyan-400">{deviceId}</span>
+            <div className="text-[11px] font-mono text-[var(--text-muted)] mt-1">
+              {t('geofence.deviceClientId', { defaultValue: 'Device Client ID' })}: <span className="text-[var(--accent-primary)]">{deviceId}</span>
             </div>
           </div>
 
@@ -421,11 +421,11 @@ export default function GeofenceMonitor() {
               title={t('geofence.toggleAudio', { defaultValue: 'Toggle Audio Alerts' })}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 soundEnabled 
-                  ? 'bg-cyan-950/60 text-cyan-300 border-cyan-800/80 hover:bg-cyan-900/50' 
-                  : 'bg-slate-950 text-slate-500 border-slate-800 hover:text-slate-400'
+                  ? 'bg-cyan-950/60 text-[var(--accent-primary)] border-cyan-800/80 hover:bg-cyan-900/50' 
+                  : 'bg-[var(--bg-base)] text-[var(--text-muted)] border-[var(--border-base)] hover:text-slate-400'
               }`}
             >
-              {soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-cyan-400" /> : <VolumeX className="w-3.5 h-3.5 text-slate-500" />}
+              {soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-[var(--accent-primary)]" /> : <VolumeX className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
               <span>{soundEnabled ? t('geofence.audioOn', { defaultValue: 'Audio: ON' }) : t('geofence.audioOff', { defaultValue: 'Audio: OFF' })}</span>
             </button>
 
@@ -436,11 +436,11 @@ export default function GeofenceMonitor() {
               title={t('geofence.toggleGps', { defaultValue: 'Toggle Real Device GPS Tracking' })}
               className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                 isTrackingGps 
-                  ? 'bg-emerald-950 text-emerald-300 border-emerald-600 animate-pulse' 
-                  : 'bg-slate-950 text-slate-300 border-slate-700 hover:border-cyan-500 hover:text-white'
+                  ? 'bg-[var(--safe)]/20 text-[var(--safe-bright)] border-emerald-600 animate-pulse' 
+                  : 'bg-[var(--bg-base)] text-[var(--text-secondary)] border-[var(--border-base)] hover:border-cyan-500 hover:text-[var(--text-primary)]'
               }`}
             >
-              <Crosshair className={`w-3.5 h-3.5 ${isTrackingGps ? 'text-emerald-400 animate-spin' : 'text-cyan-400'}`} />
+              <Crosshair className={`w-3.5 h-3.5 ${isTrackingGps ? 'text-[var(--safe-bright)] animate-spin' : 'text-[var(--accent-primary)]'}`} />
               <span>{isTrackingGps ? t('geofence.trackingGps', { defaultValue: 'Tracking Device GPS' }) : t('geofence.trackGps', { defaultValue: 'Track Device GPS' })}</span>
             </button>
           </div>
@@ -449,23 +449,23 @@ export default function GeofenceMonitor() {
         {/* GPS Error Banner */}
         {gpsError && (
           <div className="mt-4 p-3 rounded-xl bg-amber-950/50 border border-amber-800/70 text-amber-200 text-xs flex items-start space-x-2">
-            <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="w-4 h-4 text-[var(--caution-bright)] flex-shrink-0 mt-0.5" />
             <div className="space-y-0.5">
-              <span className="font-semibold text-amber-300">{t('geofence.gpsUnavailable', { defaultValue: 'Device GPS Unavailable' })}: </span>
+              <span className="font-semibold text-[var(--caution-bright)]">{t('geofence.gpsUnavailable', { defaultValue: 'Device GPS Unavailable' })}: </span>
               <span>{gpsError}</span>
             </div>
           </div>
         )}
 
         {/* Test Scenarios */}
-        <div className="mt-4 pt-4 border-t border-slate-800 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-slate-400 mr-1">{t('geofence.sampleScenarios', { defaultValue: 'Sample Scenarios:' })}</span>
+        <div className="mt-4 pt-4 border-t border-[var(--border-base)] flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-[var(--text-secondary)] mr-1">{t('geofence.sampleScenarios', { defaultValue: 'Sample Scenarios:' })}</span>
           {PRESET_SCENARIOS.map((p) => (
             <button
               key={p.id}
               type="button"
               onClick={() => handleApplyPreset(p)}
-              className="text-xs px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 hover:border-cyan-500/50 text-slate-300 hover:text-white transition-all cursor-pointer"
+              className="text-xs px-2.5 py-1 rounded-lg bg-[var(--bg-base)] border border-[var(--border-base)] hover:border-cyan-500/50 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
             >
               {t(p.labelKey, { defaultValue: p.defaultLabel })}
             </button>
@@ -477,69 +477,69 @@ export default function GeofenceMonitor() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Controls Form */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-4 backdrop-blur-md">
-          <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-2">
-            <Navigation className="w-4 h-4 text-cyan-400" />
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-3xl p-5 shadow-xl space-y-4 backdrop-blur-md">
+          <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider flex items-center space-x-2">
+            <Navigation className="w-4 h-4 text-[var(--accent-primary)]" />
             <span>{t('geofence.coordInput', { defaultValue: 'Vessel Coordinate Input' })}</span>
           </h3>
 
           <form onSubmit={(e) => { e.preventDefault(); handleCheck(); }} className="space-y-3.5">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-400 mb-1">{t('geofence.latitude', { defaultValue: 'Latitude (°N)' })}</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">{t('geofence.latitude', { defaultValue: 'Latitude (°N)' })}</label>
                 <input
                   type="number"
                   step="any"
                   value={lat}
                   onChange={(e) => setLat(e.target.value)}
                   placeholder="e.g. 12.50"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white placeholder-slate-600 focus:border-cyan-500 focus:outline-none"
+                  className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-2.5 py-2 text-xs text-[var(--text-primary)] placeholder-slate-600 focus:border-cyan-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-slate-400 mb-1">{t('geofence.longitude', { defaultValue: 'Longitude (°E)' })}</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">{t('geofence.longitude', { defaultValue: 'Longitude (°E)' })}</label>
                 <input
                   type="number"
                   step="any"
                   value={lon}
                   onChange={(e) => setLon(e.target.value)}
                   placeholder="e.g. 74.80"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white placeholder-slate-600 focus:border-cyan-500 focus:outline-none"
+                  className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-2.5 py-2 text-xs text-[var(--text-primary)] placeholder-slate-600 focus:border-cyan-500 focus:outline-none"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-400 mb-1">{t('geofence.speedKnots', { defaultValue: 'Speed (Knots)' })}</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">{t('geofence.speedKnots', { defaultValue: 'Speed (Knots)' })}</label>
                 <input
                   type="text"
                   readOnly={isTrackingGps}
                   value={speedKnots || (isTrackingGps ? 'Unavailable' : '')}
                   onChange={(e) => setSpeedKnots(e.target.value)}
                   placeholder="Manual or GPS"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white placeholder-slate-600 focus:border-cyan-500 focus:outline-none font-mono"
+                  className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-2.5 py-2 text-xs text-[var(--text-primary)] placeholder-slate-600 focus:border-cyan-500 focus:outline-none font-mono"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-slate-400 mb-1">{t('geofence.headingDeg', { defaultValue: 'Heading (°)' })}</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">{t('geofence.headingDeg', { defaultValue: 'Heading (°)' })}</label>
                 <input
                   type="text"
                   readOnly={isTrackingGps}
                   value={headingDeg || (isTrackingGps ? 'Unavailable' : '')}
                   onChange={(e) => setHeadingDeg(e.target.value)}
                   placeholder="Manual or GPS"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white placeholder-slate-600 focus:border-cyan-500 focus:outline-none font-mono"
+                  className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-2.5 py-2 text-xs text-[var(--text-primary)] placeholder-slate-600 focus:border-cyan-500 focus:outline-none font-mono"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-400 mb-1">{t('geofence.vesselTypeLabel', { defaultValue: 'Vessel Type (§7.7)' })}</label>
+              <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">{t('geofence.vesselTypeLabel', { defaultValue: 'Vessel Type (§7.7)' })}</label>
               <select
                 value={vesselType}
                 onChange={(e) => setVesselType(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none"
+                className="w-full bg-[var(--bg-base)] border border-[var(--border-base)] rounded-xl px-2.5 py-2 text-xs text-[var(--text-primary)] focus:border-cyan-500 focus:outline-none"
               >
                 <option value="motorized_country_craft">{t('vessels.motorized_country_craft')}</option>
                 <option value="traditional_non_motorized">{t('vessels.traditional_non_motorized')}</option>
@@ -552,7 +552,7 @@ export default function GeofenceMonitor() {
             <button
               type="submit"
               disabled={isChecking}
-              className="w-full py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center space-x-2 transition-all shadow-md shadow-cyan-500/20 disabled:opacity-50 cursor-pointer"
+              className="w-full py-2.5 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-black font-bold rounded-xl text-xs flex items-center justify-center space-x-2 transition-all shadow-md shadow-lg disabled:opacity-50 cursor-pointer"
             >
               {isChecking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Radio className="w-4 h-4" />}
               <span>{isChecking ? t('geofence.verifying', { defaultValue: 'Verifying Boundary...' }) : t('geofence.scanProximity', { defaultValue: 'Scan Boundary Proximity' })}</span>
@@ -560,25 +560,25 @@ export default function GeofenceMonitor() {
           </form>
 
           {error && (
-            <div className="p-3 bg-rose-950/40 border border-rose-800/60 rounded-xl text-xs text-rose-300 flex items-start space-x-2">
-              <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
+            <div className="p-3 bg-rose-950/40 border border-rose-800/60 rounded-xl text-xs text-[var(--dangerous-bright)] flex items-start space-x-2">
+              <AlertTriangle className="w-4 h-4 text-[var(--dangerous-bright)] flex-shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
         </div>
 
         {/* Results Overview */}
-        <div className="lg:col-span-2 bg-slate-900/80 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-4 backdrop-blur-md">
-          <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-2">
-            <Radio className="w-4 h-4 text-cyan-400" />
+        <div className="lg:col-span-2 bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-3xl p-5 shadow-xl space-y-4 backdrop-blur-md">
+          <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider flex items-center space-x-2">
+            <Radio className="w-4 h-4 text-[var(--accent-primary)]" />
             <span>{t('geofence.analysisStatus', { defaultValue: 'Boundary Analysis Status' })}</span>
           </h3>
 
           {!result ? (
-            <div className="p-6 rounded-2xl border border-slate-800/80 bg-slate-950/40 text-center text-slate-400 space-y-1.5">
-              <ShieldCheck className="w-7 h-7 mx-auto text-cyan-400" />
-              <h4 className="text-xs font-bold text-slate-300">{t('geofence.sentinelStandby', { defaultValue: 'Sentinel Standby' })}</h4>
-              <p className="text-[11px] text-slate-500">
+            <div className="p-6 rounded-2xl border border-[var(--border-base)] bg-[var(--bg-base)] text-center text-[var(--text-secondary)] space-y-1.5">
+              <ShieldCheck className="w-7 h-7 mx-auto text-[var(--accent-primary)]" />
+              <h4 className="text-xs font-bold text-[var(--text-secondary)]">{t('geofence.sentinelStandby', { defaultValue: 'Sentinel Standby' })}</h4>
+              <p className="text-[11px] text-[var(--text-muted)]">
                 {t('geofence.standbyDesc', { defaultValue: 'Enter coordinates, click on the map, or activate device GPS to inspect active territorial and conservation boundaries.' })}
               </p>
             </div>
@@ -589,21 +589,21 @@ export default function GeofenceMonitor() {
                 isInside
                   ? isApproximateLayer
                     ? 'bg-amber-950/70 border-dashed border-2 border-amber-500 text-amber-200'
-                    : 'bg-rose-950/70 border-rose-500 text-rose-100 ring-2 ring-rose-500/40'
+                    : 'bg-rose-950/70 border-[var(--dangerous)] text-rose-100 ring-2 ring-rose-500/40'
                   : isApproaching
                   ? 'bg-amber-950/50 border-amber-500/60 text-amber-200'
                   : isOutsideEEZ
                   ? 'bg-sky-950/60 border-sky-500/60 text-sky-200'
-                  : 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
+                  : 'bg-emerald-950/40 border-emerald-500/50 text-[var(--safe-bright)]'
               }`}>
                 {isInside ? (
-                  <AlertTriangle className="w-6 h-6 text-rose-400 flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-6 h-6 text-[var(--dangerous-bright)] flex-shrink-0 mt-0.5" />
                 ) : isApproaching ? (
-                  <AlertTriangle className="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-6 h-6 text-[var(--caution-bright)] flex-shrink-0 mt-0.5" />
                 ) : isOutsideEEZ ? (
                   <Globe className="w-6 h-6 text-sky-400 flex-shrink-0 mt-0.5" />
                 ) : (
-                  <CheckCircle2 className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-6 h-6 text-[var(--safe-bright)] flex-shrink-0 mt-0.5" />
                 )}
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -626,7 +626,7 @@ export default function GeofenceMonitor() {
                     )}
                   </div>
 
-                  <p className="text-xs leading-relaxed text-slate-200">
+                  <p className="text-xs leading-relaxed text-[var(--text-primary)]">
                     {result.warning_text ||
                       (isSafe
                         ? 'Vessel coordinates operate safely within Indian domestic waters with no restricted boundary violations.'
@@ -636,7 +636,7 @@ export default function GeofenceMonitor() {
                   </p>
 
                   {result.deduplicated && (
-                    <div className="mt-1.5 inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-cyan-950 text-cyan-300 border border-cyan-800">
+                    <div className="mt-1.5 inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[var(--accent-dim)] text-[var(--accent-primary)] border border-[var(--accent-primary)]">
                       <span>Deduplicated (cooldown window active)</span>
                     </div>
                   )}
@@ -645,36 +645,36 @@ export default function GeofenceMonitor() {
 
               {/* Real Telemetry row */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="bg-slate-950/60 p-3 rounded-2xl border border-slate-800">
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">{t('geofence.boundaryLayer', { defaultValue: 'Boundary Layer' })}</span>
-                  <span className="text-xs font-bold text-cyan-400 truncate block mt-0.5" title={result.layer_name || 'Domestic Waters'}>
+                <div className="bg-[var(--bg-base)] p-3 rounded-2xl border border-[var(--border-base)]">
+                  <span className="text-[10px] text-[var(--text-secondary)] uppercase font-semibold block">{t('geofence.boundaryLayer', { defaultValue: 'Boundary Layer' })}</span>
+                  <span className="text-xs font-bold text-[var(--accent-primary)] truncate block mt-0.5" title={result.layer_name || 'Domestic Waters'}>
                     {result.layer_name || 'Domestic Waters (EEZ)'}
                   </span>
-                  <span className="text-[10px] text-slate-500 block mt-0.5 capitalize">
+                  <span className="text-[10px] text-[var(--text-muted)] block mt-0.5 capitalize">
                     {result.constraint_type ? result.constraint_type.replace(/_/g, ' ') : 'Unrestricted Navigation'}
                   </span>
                 </div>
 
-                <div className="bg-slate-950/60 p-3 rounded-2xl border border-slate-800">
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">{t('geofence.separationDistance', { defaultValue: 'Separation Distance' })}</span>
-                  <span className={`text-sm sm:text-base font-black font-mono mt-0.5 block ${isInside ? 'text-rose-400' : isApproaching ? 'text-amber-400' : 'text-emerald-400'}`}>
+                <div className="bg-[var(--bg-base)] p-3 rounded-2xl border border-[var(--border-base)]">
+                  <span className="text-[10px] text-[var(--text-secondary)] uppercase font-semibold block">{t('geofence.separationDistance', { defaultValue: 'Separation Distance' })}</span>
+                  <span className={`text-sm sm:text-base font-black font-mono mt-0.5 block ${isInside ? 'text-[var(--dangerous-bright)]' : isApproaching ? 'text-[var(--caution-bright)]' : 'text-[var(--safe-bright)]'}`}>
                     {isInside
                       ? '0.0 km (Breach)'
                       : result.distance_km !== null && result.distance_km !== undefined
                       ? `${result.distance_km} km`
                       : '> 50.0 km (Clear)'}
                   </span>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">
+                  <span className="text-[10px] text-[var(--text-muted)] block mt-0.5">
                     {isInside ? 'Inside boundary perimeter' : isApproaching ? 'Within 5km warning buffer' : 'Safe separation'}
                   </span>
                 </div>
 
-                <div className="bg-slate-950/60 p-3 rounded-2xl border border-slate-800">
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">{t('geofence.relativeBearing', { defaultValue: 'Relative Bearing' })}</span>
+                <div className="bg-[var(--bg-base)] p-3 rounded-2xl border border-[var(--border-base)]">
+                  <span className="text-[10px] text-[var(--text-secondary)] uppercase font-semibold block">{t('geofence.relativeBearing', { defaultValue: 'Relative Bearing' })}</span>
                   <span className="text-sm sm:text-base font-black text-blue-400 font-mono mt-0.5 block">
                     {result.bearing_deg !== null && result.bearing_deg !== undefined ? `${result.bearing_deg}°` : '—'}
                   </span>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">
+                  <span className="text-[10px] text-[var(--text-muted)] block mt-0.5">
                     {result.bearing_deg !== null && result.bearing_deg !== undefined ? 'Relative angle to barrier' : 'No barrier in perimeter'}
                   </span>
                 </div>
@@ -685,17 +685,17 @@ export default function GeofenceMonitor() {
           {/* Interactive Radar Mini-Map */}
           <div className="space-y-2 pt-1">
             <div className="flex items-center justify-between px-1">
-              <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
-                <Layers className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider flex items-center space-x-1.5">
+                <Layers className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                 <span>{t('geofence.radarView', { defaultValue: 'Boundary Radar View' })}</span>
               </span>
-              <span className="text-[10px] text-slate-400 font-mono">
+              <span className="text-[10px] text-[var(--text-secondary)] font-mono">
                 {t('geofence.clickMapHint', { defaultValue: 'Click map to select coordinate' })}
               </span>
             </div>
-            <div className="relative h-64 sm:h-72 rounded-2xl overflow-hidden border border-slate-800 shadow-inner bg-slate-950">
+            <div className="relative h-64 sm:h-72 rounded-2xl overflow-hidden border border-[var(--border-base)] shadow-inner bg-[var(--bg-base)]">
               <div ref={mapContainerRef} className="absolute inset-0 w-full h-full z-0" />
-              <div className="absolute bottom-2 left-2 z-[400] bg-slate-950/90 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-800 text-[10px] text-slate-300 pointer-events-none flex items-center space-x-2">
+              <div className="absolute bottom-2 left-2 z-[400] bg-[var(--bg-base)] backdrop-blur-md px-2.5 py-1 rounded-lg border border-[var(--border-base)] text-[10px] text-[var(--text-secondary)] pointer-events-none flex items-center space-x-2">
                 {Number.isFinite(parseFloat(lat)) && Number.isFinite(parseFloat(lon)) ? (
                   <>
                     <span>
@@ -704,12 +704,12 @@ export default function GeofenceMonitor() {
                     {result?.bearing_deg !== null && result?.bearing_deg !== undefined && (
                       <>
                         <span>•</span>
-                        <span className="text-cyan-400 font-mono">Bearing: {result.bearing_deg}°</span>
+                        <span className="text-[var(--accent-primary)] font-mono">Bearing: {result.bearing_deg}°</span>
                       </>
                     )}
                   </>
                 ) : (
-                  <span className="text-cyan-400">
+                  <span className="text-[var(--accent-primary)]">
                     Click anywhere on the map or enter coordinates above
                   </span>
                 )}

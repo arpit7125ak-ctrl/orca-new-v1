@@ -191,35 +191,35 @@ export default function DecisionResultsPage({
     <div className="space-y-6 py-2">
       
       {/* Top Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/70 border border-slate-800 p-4 rounded-2xl backdrop-blur-md">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[var(--bg-surface)] border border-[var(--border-base)] p-4 rounded-xl shadow-lg">
         <div className="flex items-center space-x-3">
           <button
             onClick={onBackToInput}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs flex items-center space-x-1.5 transition-colors cursor-pointer"
+            className="p-2 rounded bg-[var(--bg-base)] hover:bg-[var(--bg-surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-base)] text-xs flex items-center space-x-1.5 transition-colors cursor-pointer"
             title={t('results.returnToSetup')}
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="font-semibold">{t('common.setup')}</span>
+            <span className="font-semibold uppercase tracking-wider">{t('common.setup')}</span>
           </button>
 
-          <div className="text-xs">
-            <span className="text-slate-400">{t('results.advisoryReference')} </span>
-            <span className="font-mono font-bold text-cyan-300">{aid}</span>
+          <div className="text-[10px] font-bold uppercase tracking-[0.12em]">
+            <span className="text-[var(--text-secondary)]">{t('results.advisoryReference')} </span>
+            <span className="font-mono text-[var(--accent-primary)]">{aid}</span>
           </div>
         </div>
 
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setIsReportOpen(true)}
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer"
+            className="px-3.5 py-2 rounded bg-[var(--bg-base)] hover:bg-[var(--bg-surface-2)] text-[var(--text-primary)] border border-[var(--border-base)] text-[10px] font-bold uppercase tracking-wider flex items-center space-x-1.5 transition-all cursor-pointer"
           >
-            <FileText className="w-4 h-4 text-cyan-400" />
+            <FileText className="w-4 h-4 text-[var(--accent-primary)]" />
             <span>{t('results.advisoryBulletin')}</span>
           </button>
 
           <button
             onClick={onNewAnalysis}
-            className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center space-x-1.5 transition-all shadow-md shadow-cyan-500/20 cursor-pointer"
+            className="px-4 py-2 rounded bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-black font-black text-[10px] uppercase tracking-widest flex items-center space-x-1.5 transition-all shadow-md cursor-pointer"
           >
             <RotateCcw className="w-4 h-4" />
             <span>{t('results.newMission')}</span>
@@ -235,14 +235,14 @@ export default function DecisionResultsPage({
       />
 
       {/* Action Row */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-900/80 border border-slate-800 rounded-2xl">
-        <div className="flex items-center space-x-2 text-xs text-slate-400">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl shadow-md">
+        <div className="flex items-center space-x-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
           <span>{t('results.missionActions')}:</span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => onNavigateToTab && onNavigateToTab('chat')}
-            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded bg-[var(--bg-base)] hover:bg-[var(--bg-surface-2)] text-[var(--accent-primary)] border border-[var(--border-base)] text-[10px] font-bold uppercase tracking-wider flex items-center space-x-1.5 transition-colors cursor-pointer"
           >
             <MessageSquare className="w-3.5 h-3.5" />
             <span>{t('results.askFollowUp')}</span>
@@ -250,7 +250,7 @@ export default function DecisionResultsPage({
 
           <button
             onClick={() => onNavigateToTab && onNavigateToTab('route')}
-            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded bg-[var(--bg-base)] hover:bg-[var(--bg-surface-2)] text-[var(--safe-bright)] border border-[var(--border-base)] text-[10px] font-bold uppercase tracking-wider flex items-center space-x-1.5 transition-colors cursor-pointer"
           >
             <Navigation className="w-3.5 h-3.5" />
             <span>{t('results.planRoute')}</span>
@@ -258,7 +258,7 @@ export default function DecisionResultsPage({
 
           <button
             onClick={() => setIsReportOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded bg-[var(--bg-base)] hover:bg-[var(--bg-surface-2)] text-[var(--text-primary)] border border-[var(--border-base)] text-[10px] font-bold uppercase tracking-wider flex items-center space-x-1.5 transition-colors cursor-pointer"
           >
             <Share2 className="w-3.5 h-3.5" />
             <span>{t('results.shareReport')}</span>
@@ -267,7 +267,7 @@ export default function DecisionResultsPage({
       </div>
 
       {/* Internal Dashboard Tabs */}
-      <div className="flex items-center space-x-1 border-b border-slate-800 pb-2 overflow-x-auto">
+      <div className="flex items-center space-x-1 border-b border-[var(--border-base)] pb-2 overflow-x-auto">
         {[
           { id: 'overview', labelKey: 'results.tabOverview', icon: MapPin },
           { id: 'charts', labelKey: 'results.tabCharts', icon: BarChart3 },
@@ -281,10 +281,10 @@ export default function DecisionResultsPage({
             <button
               key={tab.id}
               onClick={() => setActiveInternalTab(tab.id)}
-              className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              className={`flex items-center space-x-1.5 px-3 py-2 rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  ? 'bg-[var(--bg-surface)] text-[var(--accent-primary)] border border-[var(--border-base)] border-b-[var(--accent-primary)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -323,31 +323,31 @@ export default function DecisionResultsPage({
 
       {/* Tab 2: Metocean Charts */}
       {activeInternalTab === 'charts' && (
-        <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-6">
-          <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white flex items-center space-x-2">
-              <BarChart3 className="w-4 h-4 text-cyan-400" />
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 shadow-xl space-y-6">
+          <div className="border-b border-[var(--border-base)] pb-3 flex items-center justify-between">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)] flex items-center space-x-2">
+              <BarChart3 className="w-4 h-4 text-[var(--accent-primary)]" />
               <span>{t('results.chartTitle')}</span>
             </h3>
-            <span className="text-[10px] font-mono text-cyan-400">{t('results.zeroInterpolation')}</span>
+            <span className="text-[10px] font-mono text-[var(--text-secondary)]">{t('results.zeroInterpolation')}</span>
           </div>
 
           {/* Point Risk Bars */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-slate-300">{t('results.spatialRiskVariance')}:</h4>
+            <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('results.spatialRiskVariance')}:</h4>
             <div className="grid grid-cols-3 sm:grid-cols-9 gap-2">
               {points.map((pt) => {
                 const hasScore = typeof pt.risk?.final_score === 'number' && !isNaN(pt.risk.final_score);
                 const score = hasScore ? Math.round(pt.risk.final_score) : null;
                 const level = pt.risk?.risk_level || 'UNRATED';
-                const bg = level === 'SAFE' ? 'bg-emerald-500' : level === 'CAUTION' ? 'bg-amber-400' : level === 'UNRATED' ? 'bg-slate-700' : 'bg-rose-500';
+                const bg = level === 'SAFE' ? 'bg-[var(--safe)]' : level === 'CAUTION' ? 'bg-[var(--caution)]' : level === 'UNRATED' ? 'bg-[var(--bg-surface-2)]' : 'bg-[var(--dangerous)]';
                 return (
-                  <div key={pt.point_id} className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-center space-y-1">
-                    <span className="text-xs font-mono font-bold text-white">{pt.point_id}</span>
-                    <div className="w-full bg-slate-800 h-16 rounded-lg flex items-end p-1">
-                      <div className={`w-full rounded ${bg}`} style={{ height: hasScore ? `${score}%` : '4px' }} />
+                  <div key={pt.point_id} className="p-2.5 rounded bg-[var(--bg-base)] border border-[var(--border-base)] text-center space-y-1">
+                    <span className="text-[10px] font-mono font-bold text-[var(--text-primary)]">{pt.point_id}</span>
+                    <div className="w-full bg-[var(--bg-surface-2)] h-16 rounded flex items-end p-0.5">
+                      <div className={`w-full rounded-sm ${bg}`} style={{ height: hasScore ? `${score}%` : '4px' }} />
                     </div>
-                    <span className="text-[10px] font-mono text-slate-300">{hasScore ? `${score}/100` : t('grid.unrated')}</span>
+                    <span className="text-[10px] font-mono text-[var(--text-secondary)]">{hasScore ? `${score}/100` : t('grid.unrated')}</span>
                   </div>
                 );
               })}
@@ -358,52 +358,52 @@ export default function DecisionResultsPage({
 
       {/* Tab 3: Evidence & Sources */}
       {activeInternalTab === 'evidence' && (
-        <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-4">
-          <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white flex items-center space-x-2">
-              <Database className="w-4 h-4 text-cyan-400" />
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 shadow-xl space-y-4">
+          <div className="border-b border-[var(--border-base)] pb-3 flex items-center justify-between">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)] flex items-center space-x-2">
+              <Database className="w-4 h-4 text-[var(--accent-primary)]" />
               <span>{t('results.evidenceTitle')}</span>
             </h3>
-            <span className="text-[10px] font-mono text-slate-400">{t('results.auditableSources')}</span>
+            <span className="text-[10px] font-mono text-[var(--text-secondary)]">{t('results.auditableSources')}</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+            <div className="p-4 rounded bg-[var(--bg-base)] border border-[var(--border-base)] space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white">India Meteorological Department (IMD)</span>
-                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded">{t('results.verified')}</span>
+                <span className="text-xs font-bold text-[var(--text-primary)]">India Meteorological Department (IMD)</span>
+                <span className="text-[10px] font-mono text-[var(--safe-bright)] bg-[var(--safe)]/20 border border-[var(--safe)]/50 px-2 py-0.5 rounded">{t('results.verified')}</span>
               </div>
-              <p className="text-xs text-slate-300">
+              <p className="text-xs text-[var(--text-secondary)]">
                 Atmospheric wind speed, squall gale gusts, visibility indices, and regional coastal weather bulletins.
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+            <div className="p-4 rounded bg-[var(--bg-base)] border border-[var(--border-base)] space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white">INCOIS (Ministry of Earth Sciences)</span>
-                <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded">{t('results.liveTelemetry')}</span>
+                <span className="text-xs font-bold text-[var(--text-primary)]">INCOIS (Ministry of Earth Sciences)</span>
+                <span className="text-[10px] font-mono text-[var(--accent-primary)] bg-[var(--accent-dim)]/30 border border-[var(--accent-primary)]/50 px-2 py-0.5 rounded">{t('results.liveTelemetry')}</span>
               </div>
-              <p className="text-xs text-slate-300">
+              <p className="text-xs text-[var(--text-secondary)]">
                 Significant wave height, primary swell period, sea surface temperature, and Potential Fishing Zone (PFZ) advisories.
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+            <div className="p-4 rounded bg-[var(--bg-base)] border border-[var(--border-base)] space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white">Bhuvan / Bhoonidhi (ISRO)</span>
-                <span className="text-[10px] font-mono text-purple-400 bg-purple-950 px-2 py-0.5 rounded">{t('results.gisVector')}</span>
+                <span className="text-xs font-bold text-[var(--text-primary)]">Bhuvan / Bhoonidhi (ISRO)</span>
+                <span className="text-[10px] font-mono text-purple-400 bg-purple-900/30 border border-purple-500/50 px-2 py-0.5 rounded">{t('results.gisVector')}</span>
               </div>
-              <p className="text-xs text-slate-300">
+              <p className="text-xs text-[var(--text-secondary)]">
                 Marine Protected Area (MPA) polygons, coastal land-sea masking, and 12 NM territorial water baselines.
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+            <div className="p-4 rounded bg-[var(--bg-base)] border border-[var(--border-base)] space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white">Ministry of External Affairs (MEA)</span>
-                <span className="text-[10px] font-mono text-amber-400 bg-amber-950 px-2 py-0.5 rounded">{t('results.sovereignBoundary')}</span>
+                <span className="text-xs font-bold text-[var(--text-primary)]">Ministry of External Affairs (MEA)</span>
+                <span className="text-[10px] font-mono text-[var(--caution-bright)] bg-[var(--caution)]/30 border border-[var(--caution)]/50 px-2 py-0.5 rounded">{t('results.sovereignBoundary')}</span>
               </div>
-              <p className="text-xs text-slate-300">
+              <p className="text-xs text-[var(--text-secondary)]">
                 International Maritime Boundary Line (IMBL) coordinates for Tamil Nadu, Gujarat, and Andaman borders.
               </p>
             </div>
@@ -413,13 +413,13 @@ export default function DecisionResultsPage({
 
       {/* Tab 4: Data Quality & Freshness */}
       {activeInternalTab === 'quality' && (
-        <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-4">
-          <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white flex items-center space-x-2">
-              <Layers className="w-4 h-4 text-cyan-400" />
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 shadow-xl space-y-4">
+          <div className="border-b border-[var(--border-base)] pb-3 flex items-center justify-between">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)] flex items-center space-x-2">
+              <Layers className="w-4 h-4 text-[var(--accent-primary)]" />
               <span>{t('results.qualityTitle')}</span>
             </h3>
-            <span className="text-[10px] font-mono text-emerald-400">{t('results.fullyIngested')}</span>
+            <span className="text-[10px] font-mono text-[var(--safe-bright)]">{t('results.fullyIngested')}</span>
           </div>
 
           <div className="space-y-2.5">
@@ -428,33 +428,33 @@ export default function DecisionResultsPage({
                 const ageHours = info?.freshness?.age_hours;
                 const ageText = ageHours !== undefined && ageHours !== null ? `${ageHours}h ago` : (info?.freshness?.state || 'Verified Fresh');
                 return (
-                  <div key={param} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+                  <div key={param} className="p-3 rounded bg-[var(--bg-base)] border border-[var(--border-base)] flex items-center justify-between text-xs">
                     <div className="space-y-0.5">
-                      <div className="font-bold text-white capitalize">{param.replace(/_/g, ' ')}</div>
-                      <div className="text-[11px] text-slate-400">{info?.source_note || t('pointDetail.unavailable')}</div>
+                      <div className="font-bold text-[var(--text-primary)] capitalize">{param.replace(/_/g, ' ')}</div>
+                      <div className="text-[10px] text-[var(--text-secondary)]">{info?.source_note || t('pointDetail.unavailable')}</div>
                     </div>
                     <div className="text-right font-mono">
-                      <div className="text-emerald-400 font-bold capitalize">✓ {info?.status || 'available'}</div>
-                      <div className="text-[10px] text-slate-500">{ageText}</div>
+                      <div className="text-[var(--safe-bright)] font-bold capitalize">✓ {info?.status || 'available'}</div>
+                      <div className="text-[10px] text-[var(--text-muted)]">{ageText}</div>
                     </div>
                   </div>
                 );
               })
             ) : executionTrace.length > 0 ? (
               executionTrace.map((row, idx) => (
-                <div key={idx} className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+                <div key={idx} className="p-3 rounded bg-[var(--bg-base)] border border-[var(--border-base)] flex items-center justify-between text-xs">
                   <div className="space-y-0.5">
-                    <div className="font-bold text-white capitalize">{row.agent || row.stage}</div>
-                    <div className="text-[11px] text-slate-400">{row.selection_reason || 'Pipeline Stage'}</div>
+                    <div className="font-bold text-[var(--text-primary)] capitalize">{row.agent || row.stage}</div>
+                    <div className="text-[10px] text-[var(--text-secondary)]">{row.selection_reason || 'Pipeline Stage'}</div>
                   </div>
                   <div className="text-right font-mono">
-                    <div className="text-emerald-400 font-bold">✓ {row.status}</div>
-                    <div className="text-[10px] text-slate-500">{row.duration_ms !== null ? `${row.duration_ms}ms` : '—'}</div>
+                    <div className="text-[var(--safe-bright)] font-bold">✓ {row.status}</div>
+                    <div className="text-[10px] text-[var(--text-muted)]">{row.duration_ms !== null ? `${row.duration_ms}ms` : '—'}</div>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="p-4 text-center text-xs text-slate-500">
+              <div className="p-4 text-center text-xs text-[var(--text-muted)]">
                 {t('pointDetail.unavailable')}
               </div>
             )}

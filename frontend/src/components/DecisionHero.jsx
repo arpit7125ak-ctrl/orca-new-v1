@@ -168,54 +168,54 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
   // Config based on traffic light
   const config = {
     SAFE: {
-      bg: 'from-emerald-950/80 via-emerald-900/40 to-slate-900/90',
-      border: 'border-emerald-500/50',
-      badgeBg: 'bg-emerald-500 text-slate-950',
-      ringColor: '#10b981',
+      bg: 'from-[var(--safe)]/20 to-[var(--bg-surface)]',
+      border: 'border-[var(--safe)]/50',
+      badgeBg: 'bg-[var(--safe)] text-white',
+      ringColor: '#4ade80',
       title: t('hero.safeToSail'),
       titleLocal: t('hero.safeToSail', { lng: language }),
       icon: CheckCircle2,
-      textColor: 'text-emerald-400',
+      textColor: 'text-[var(--safe-bright)]',
     },
     CAUTION: {
-      bg: 'from-amber-950/80 via-amber-900/40 to-slate-900/90',
-      border: 'border-amber-500/50',
-      badgeBg: 'bg-amber-400 text-slate-950',
-      ringColor: '#f59e0b',
+      bg: 'from-[var(--caution)]/20 to-[var(--bg-surface)]',
+      border: 'border-[var(--caution)]/50',
+      badgeBg: 'bg-[var(--caution)] text-white',
+      ringColor: '#fbbf24',
       title: t('hero.proceedWithCaution'),
       titleLocal: t('hero.proceedWithCaution', { lng: language }),
       icon: AlertTriangle,
-      textColor: 'text-amber-400',
+      textColor: 'text-[var(--caution-bright)]',
     },
     UNSAFE: {
-      bg: 'from-rose-950/80 via-rose-900/40 to-slate-900/90',
-      border: 'border-rose-500/50',
-      badgeBg: 'bg-rose-500 text-white',
-      ringColor: '#f43f5e',
+      bg: 'from-[var(--unsafe)]/20 to-[var(--bg-surface)]',
+      border: 'border-[var(--unsafe)]/50',
+      badgeBg: 'bg-[var(--unsafe)] text-white',
+      ringColor: '#f97316',
       title: t('hero.doNotSail'),
       titleLocal: t('hero.doNotSail', { lng: language }),
       icon: XOctagon,
-      textColor: 'text-rose-400',
+      textColor: 'text-[var(--unsafe-bright)]',
     },
     DANGEROUS: {
-      bg: 'from-red-950 via-rose-950/60 to-slate-900/90',
-      border: 'border-red-600',
-      badgeBg: 'bg-red-600 text-white animate-pulse',
-      ringColor: '#dc2626',
+      bg: 'from-[var(--dangerous)]/30 to-[var(--bg-surface)]',
+      border: 'border-[var(--dangerous)]',
+      badgeBg: 'bg-[var(--dangerous-bright)] text-black animate-pulse',
+      ringColor: '#ef4444',
       title: t('hero.criticalDanger'),
       titleLocal: t('hero.criticalDanger', { lng: language }),
       icon: AlertOctagon,
-      textColor: 'text-red-400',
+      textColor: 'text-[var(--dangerous-bright)]',
     },
   }[category] || {
-    bg: 'from-slate-900 via-slate-950 to-slate-900',
-    border: 'border-slate-700/60',
-    badgeBg: 'bg-slate-700 text-slate-200',
-    ringColor: '#64748b',
+    bg: 'from-[var(--bg-surface)] to-[var(--bg-base)]',
+    border: 'border-[var(--border-base)]',
+    badgeBg: 'bg-[var(--bg-surface-2)] text-[var(--text-secondary)]',
+    ringColor: '#576857',
     title: t('hero.assessmentUnavailable'),
     titleLocal: t('hero.assessmentUnavailable', { lng: language }),
     icon: AlertTriangle,
-    textColor: 'text-slate-400',
+    textColor: 'text-[var(--text-muted)]',
   };
 
   const Icon = config.icon;
@@ -235,33 +235,33 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
   };
 
   return (
-    <div className={`rounded-2xl border ${config.border} bg-gradient-to-br ${config.bg} p-5 sm:p-7 shadow-2xl backdrop-blur-md`}>
+    <div className={`rounded-xl border ${config.border} bg-gradient-to-br ${config.bg} p-5 sm:p-7 shadow-2xl`}>
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         
         {/* Left: Traffic light badge & Main Advice */}
         <div className="space-y-4 flex-1">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <div className={`px-4 py-1.5 rounded-full text-sm font-extrabold flex items-center space-x-2 shadow-lg tracking-wide uppercase ${config.badgeBg}`}>
+            <div className={`px-4 py-1.5 rounded-full text-sm font-black flex items-center space-x-2 shadow-lg tracking-widest uppercase ${config.badgeBg}`}>
               <Icon className="w-5 h-5 flex-shrink-0" />
               <span>{config.title}</span>
             </div>
 
-            <div className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-800/80 border border-slate-700 text-slate-300">
-              {t('hero.vesselLabel')}: <span className="text-cyan-400 font-bold capitalize">{plan.vessel_type ? t(`vessels.${plan.vessel_type}`, { defaultValue: plan.vessel_type.replace(/_/g, ' ') }) : t('hero.defaultVessel')}</span>
+            <div className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded bg-[var(--bg-base)] border border-[var(--border-base)] text-[var(--text-secondary)]">
+              {t('hero.vesselLabel')}: <span className="text-[var(--accent-primary)] font-black capitalize">{plan.vessel_type ? t(`vessels.${plan.vessel_type}`, { defaultValue: plan.vessel_type.replace(/_/g, ' ') }) : t('hero.defaultVessel')}</span>
             </div>
 
-            <div className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-800/80 border border-slate-700 text-slate-300">
-              {t('hero.activityLabel')}: <span className="text-cyan-400 font-bold capitalize">{plan.activity ? t(`activities.${plan.activity}`, { defaultValue: plan.activity.replace(/_/g, ' ') }) : t('hero.defaultActivity')}</span>
+            <div className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded bg-[var(--bg-base)] border border-[var(--border-base)] text-[var(--text-secondary)]">
+              {t('hero.activityLabel')}: <span className="text-[var(--accent-primary)] font-black capitalize">{plan.activity ? t(`activities.${plan.activity}`, { defaultValue: plan.activity.replace(/_/g, ' ') }) : t('hero.defaultActivity')}</span>
             </div>
           </div>
 
           {/* Section 77: Large High-Contrast Headline Advice */}
           <div>
-            <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
+            <h2 className="text-xl sm:text-2xl font-black text-[var(--text-primary)] leading-tight tracking-tight">
               {advice}
             </h2>
             {language !== 'en' && (
-              <p className="text-sm font-medium text-slate-300 mt-1">
+              <p className="text-sm font-bold text-[var(--text-secondary)] mt-1">
                 {config.titleLocal}
               </p>
             )}
@@ -272,10 +272,10 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
             {/* Audio Listen Button */}
             <button
               onClick={handleAudioPlayback}
-              className={`px-4 py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center space-x-2 transition-all shadow-md ${
+              className={`px-4 py-2 rounded font-black text-[10px] uppercase tracking-widest flex items-center space-x-2 transition-all shadow-md ${
                 isPlayingAudio
-                  ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-300 animate-pulse'
-                  : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950'
+                  ? 'bg-[var(--accent-hover)] text-black ring-2 ring-[var(--accent-primary)] animate-pulse'
+                  : 'bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-black'
               }`}
             >
               {isPlayingAudio ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
@@ -285,16 +285,16 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
             {/* Official Report Button */}
             <button
               onClick={onOpenReport}
-              className="px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 flex items-center space-x-2 transition-all"
+              className="px-4 py-2 rounded font-bold text-[10px] uppercase tracking-widest bg-[var(--bg-surface-2)] hover:bg-[var(--border-base)] text-[var(--text-primary)] border border-[var(--border-base)] flex items-center space-x-2 transition-all"
             >
-              <FileText className="w-4 h-4 text-cyan-400" />
+              <FileText className="w-4 h-4 text-[var(--accent-primary)]" />
               <span>{t('results.advisoryBulletin')}</span>
             </button>
           </div>
         </div>
 
         {/* Right: Score Gauge & Key Metrics */}
-        <div className="flex items-center space-x-6 bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
+        <div className="flex items-center space-x-6 bg-[var(--bg-surface-2)] p-4 rounded-xl border border-[var(--border-base)]">
           {/* Circular Score Ring */}
           <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center flex-shrink-0">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
@@ -302,7 +302,7 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
                 cx="50"
                 cy="50"
                 r="42"
-                stroke="#1e293b"
+                stroke="var(--bg-base)"
                 strokeWidth="10"
                 fill="none"
               />
@@ -323,7 +323,7 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
               <span className={`text-2xl sm:text-3xl font-black ${config.textColor}`}>
                 {hasScore ? score : '--'}
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                 {t('hero.riskScore')}
               </span>
             </div>
@@ -348,31 +348,31 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
 
             return (
               <div className="space-y-2 text-xs">
-                <div className="flex items-center space-x-2 text-slate-300">
-                  <Waves className={`w-4 h-4 flex-shrink-0 ${waveIsHazard ? 'text-amber-400' : 'text-cyan-400'}`} />
+                <div className="flex items-center space-x-2 text-[var(--text-secondary)]">
+                  <Waves className={`w-4 h-4 flex-shrink-0 ${waveIsHazard ? 'text-[var(--caution-bright)]' : 'text-[var(--accent-primary)]'}`} />
                   {waveVal ? (
                     <span>
-                      {t('hero.waveStatus')}: <b className={waveIsHazard ? 'text-amber-300' : 'text-white'}>{waveVal}</b>
-                      {periodVal && <span className="text-slate-500"> · {periodVal}</span>}
+                      {t('hero.waveStatus')}: <b className={waveIsHazard ? 'text-[var(--caution-bright)]' : 'text-[var(--text-primary)]'}>{waveVal}</b>
+                      {periodVal && <span className="text-[var(--text-muted)]"> · {periodVal}</span>}
                     </span>
                   ) : (
-                    <span>{t('hero.waveStatus')}: <b className="text-white">{waveIsHazard ? t('hero.highRough') : t('hero.inspected')}</b></span>
+                    <span>{t('hero.waveStatus')}: <b className="text-[var(--text-primary)]">{waveIsHazard ? t('hero.highRough') : t('hero.inspected')}</b></span>
                   )}
                 </div>
-                <div className="flex items-center space-x-2 text-slate-300">
-                  <Wind className={`w-4 h-4 flex-shrink-0 ${windIsHazard ? 'text-amber-400' : 'text-cyan-400'}`} />
+                <div className="flex items-center space-x-2 text-[var(--text-secondary)]">
+                  <Wind className={`w-4 h-4 flex-shrink-0 ${windIsHazard ? 'text-[var(--caution-bright)]' : 'text-[var(--accent-primary)]'}`} />
                   {windVal ? (
                     <span>
-                      {t('hero.windStatus')}: <b className={windIsHazard ? 'text-amber-300' : 'text-white'}>{windVal}</b>
-                      {gustVal && <span className="text-slate-500"> (gust {gustVal})</span>}
+                      {t('hero.windStatus')}: <b className={windIsHazard ? 'text-[var(--caution-bright)]' : 'text-[var(--text-primary)]'}>{windVal}</b>
+                      {gustVal && <span className="text-[var(--text-muted)]"> (gust {gustVal})</span>}
                     </span>
                   ) : (
-                    <span>{t('hero.windStatus')}: <b className="text-white">{windIsHazard ? t('hero.hazardousGusts') : t('hero.favorable')}</b></span>
+                    <span>{t('hero.windStatus')}: <b className="text-[var(--text-primary)]">{windIsHazard ? t('hero.hazardousGusts') : t('hero.favorable')}</b></span>
                   )}
                 </div>
-                <div className="flex items-center space-x-2 text-slate-300">
-                  <Compass className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-                  <span>{t('hero.safeQuadrant')}: <b className="text-cyan-300 font-bold">{decision.preferred_point || (status === 'DANGEROUS' ? t('hero.noneStayInPort', 'None (Stay in Port)') : t('pointDetail.unavailable', 'N/A'))}</b></span>
+                <div className="flex items-center space-x-2 text-[var(--text-secondary)]">
+                  <Compass className="w-4 h-4 text-[var(--accent-primary)] flex-shrink-0" />
+                  <span>{t('hero.safeQuadrant')}: <b className="text-[var(--accent-primary)] font-bold">{decision.preferred_point || (status === 'DANGEROUS' ? t('hero.noneStayInPort', 'None (Stay in Port)') : t('pointDetail.unavailable', 'N/A'))}</b></span>
                 </div>
               </div>
             );
@@ -383,15 +383,15 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
 
       {/* Actionable Recommendations List */}
       {recommendations.length > 0 && (
-        <div className="mt-5 pt-4 border-t border-slate-800/80">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center space-x-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+        <div className="mt-5 pt-4 border-t border-[var(--border-base)]">
+          <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-2 flex items-center space-x-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
             <span>{t('hero.operationalDirectives')}</span>
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {recommendations.map((rec, i) => (
-              <div key={i} className="flex items-start space-x-2 text-xs text-slate-200 bg-slate-950/40 p-2.5 rounded-lg border border-slate-800/60">
-                <span className="text-cyan-400 font-bold">•</span>
+              <div key={i} className="flex items-start space-x-2 text-xs text-[var(--text-primary)] bg-[var(--bg-base)] p-2.5 rounded border border-[var(--border-base)]">
+                <span className="text-[var(--accent-primary)] font-bold">•</span>
                 <span>{rec}</span>
               </div>
             ))}
@@ -401,9 +401,9 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
 
       {/* Safe Harbors recommendation */}
       {safeHarbors.length > 0 && (
-        <div className="mt-3 text-xs text-slate-300 bg-slate-950/50 p-2.5 rounded-lg border border-slate-800 flex items-center space-x-2">
-          <Compass className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-          <span>{t('hero.recommendedSafeHarbors')}: <strong className="text-emerald-300">{safeHarbors.join(', ')}</strong></span>
+        <div className="mt-3 text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] bg-[var(--safe)]/10 p-2.5 rounded border border-[var(--safe)]/30 flex items-center space-x-2">
+          <Compass className="w-4 h-4 text-[var(--safe-bright)] flex-shrink-0" />
+          <span>{t('hero.recommendedSafeHarbors')}: <strong className="text-[var(--safe-bright)]">{safeHarbors.join(', ')}</strong></span>
         </div>
       )}
     </div>

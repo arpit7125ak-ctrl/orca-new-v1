@@ -71,24 +71,24 @@ function MarkdownRenderer({ content }) {
     const headers = parseCells(headerRow);
 
     return (
-      <div key={`table-${key}`} className="overflow-x-auto my-4 rounded-xl border border-slate-800">
+      <div key={`table-${key}`} className="overflow-x-auto my-4 rounded-xl border border-[var(--border-base)]">
         <table className="w-full text-left text-xs border-collapse">
-          <thead className="bg-slate-950 border-b border-slate-800">
+          <thead className="bg-[var(--bg-base)] border-b border-[var(--border-base)]">
             <tr>
               {headers.map((h, i) => (
-                <th key={i} className="p-2.5 font-bold text-slate-300">
+                <th key={i} className="p-2.5 font-bold text-[var(--text-secondary)]">
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60 bg-slate-900/40">
+          <tbody className="divide-y divide-slate-800/60 bg-[var(--bg-surface)]">
             {bodyRows.map((row, rIdx) => {
               const cells = parseCells(row);
               return (
                 <tr key={rIdx} className="hover:bg-slate-800/30">
                   {cells.map((c, cIdx) => (
-                    <td key={cIdx} className="p-2.5 text-slate-300 font-mono">
+                    <td key={cIdx} className="p-2.5 text-[var(--text-secondary)] font-mono">
                       {c}
                     </td>
                   ))}
@@ -115,14 +115,14 @@ function MarkdownRenderer({ content }) {
 
     // Horizontal rule
     if (line.trim().match(/^---+$|^\*\*\*+$/)) {
-      elements.push(<hr key={i} className="border-slate-800 my-4" />);
+      elements.push(<hr key={i} className="border-[var(--border-base)] my-4" />);
       continue;
     }
 
     // Headings
     if (line.startsWith('# ')) {
       elements.push(
-        <h1 key={i} className="text-xl sm:text-2xl font-black text-white tracking-tight mt-4 mb-2">
+        <h1 key={i} className="text-xl sm:text-2xl font-black text-[var(--text-primary)] tracking-tight mt-4 mb-2">
           {line.replace('# ', '')}
         </h1>
       );
@@ -130,7 +130,7 @@ function MarkdownRenderer({ content }) {
     }
     if (line.startsWith('## ')) {
       elements.push(
-        <h2 key={i} className="text-base sm:text-lg font-bold text-cyan-300 tracking-wide mt-5 mb-2 border-b border-slate-800/80 pb-1">
+        <h2 key={i} className="text-base sm:text-lg font-bold text-[var(--accent-primary)] tracking-wide mt-5 mb-2 border-b border-[var(--border-base)] pb-1">
           {line.replace('## ', '')}
         </h2>
       );
@@ -138,7 +138,7 @@ function MarkdownRenderer({ content }) {
     }
     if (line.startsWith('### ')) {
       elements.push(
-        <h3 key={i} className="text-sm font-semibold text-slate-200 mt-3 mb-1">
+        <h3 key={i} className="text-sm font-semibold text-[var(--text-primary)] mt-3 mb-1">
           {line.replace('### ', '')}
         </h3>
       );
@@ -149,7 +149,7 @@ function MarkdownRenderer({ content }) {
     if (line.trim().startsWith('- ')) {
       const itemText = line.trim().replace(/^- /, '');
       elements.push(
-        <li key={i} className="ml-4 list-disc text-xs sm:text-sm text-slate-300 leading-relaxed py-0.5">
+        <li key={i} className="ml-4 list-disc text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed py-0.5">
           {renderInlineMarkdown(itemText)}
         </li>
       );
@@ -163,7 +163,7 @@ function MarkdownRenderer({ content }) {
 
     // Paragraph
     elements.push(
-      <p key={i} className="text-xs sm:text-sm text-slate-300 leading-relaxed my-1.5">
+      <p key={i} className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed my-1.5">
         {renderInlineMarkdown(line)}
       </p>
     );
@@ -207,11 +207,11 @@ function renderInlineMarkdown(text) {
     }
 
     if (first.type === 'bold') {
-      parts.push(<strong key={key++} className="font-bold text-white">{first.content}</strong>);
+      parts.push(<strong key={key++} className="font-bold text-[var(--text-primary)]">{first.content}</strong>);
     } else if (first.type === 'code') {
-      parts.push(<code key={key++} className="px-1 py-0.5 rounded bg-slate-950 text-cyan-400 font-mono text-[11px] border border-slate-800">{first.content}</code>);
+      parts.push(<code key={key++} className="px-1 py-0.5 rounded bg-[var(--bg-base)] text-[var(--accent-primary)] font-mono text-[11px] border border-[var(--border-base)]">{first.content}</code>);
     } else if (first.type === 'italic') {
-      parts.push(<em key={key++} className="italic text-slate-400">{first.content}</em>);
+      parts.push(<em key={key++} className="italic text-[var(--text-secondary)]">{first.content}</em>);
     }
 
     remaining = remaining.slice(first.index + first.len);
@@ -271,19 +271,19 @@ export default function ReportModal({ analysis, isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
         
         {/* Header */}
-        <div className="p-4 sm:p-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between gap-3">
+        <div className="p-4 sm:p-5 bg-[var(--bg-base)] border-b border-[var(--border-base)] flex items-center justify-between gap-3">
           <div className="flex items-center space-x-2.5 min-w-0">
-            <div className="p-2 rounded-lg bg-cyan-950 text-cyan-400 border border-cyan-800 flex-shrink-0">
+            <div className="p-2 rounded-lg bg-[var(--accent-dim)] text-[var(--accent-primary)] border border-[var(--accent-primary)] flex-shrink-0">
               <FileText className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm sm:text-base font-bold text-white truncate">
+              <h3 className="text-sm sm:text-base font-bold text-[var(--text-primary)] truncate">
                 {t('report.bulletinTitle', { defaultValue: 'Authoritative Maritime Advisory Bulletin' })}
               </h3>
-              <p className="text-[11px] text-slate-400 font-mono truncate">
+              <p className="text-[11px] text-[var(--text-secondary)] font-mono truncate">
                 {t('report.analysisReference', { defaultValue: 'Analysis Reference' })}: {analysisId || t('report.unrecorded', { defaultValue: 'Unrecorded' })}
               </p>
             </div>
@@ -295,23 +295,23 @@ export default function ReportModal({ analysis, isOpen, onClose }) {
                 <button
                   type="button"
                   onClick={() => setRawView(!rawView)}
-                  className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs hidden sm:inline-block border border-slate-700 cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface-2)] hover:bg-[var(--bg-surface-2)] text-[var(--text-secondary)] text-xs hidden sm:inline-block border border-[var(--border-base)] cursor-pointer"
                 >
                   {rawView ? t('report.formatted', { defaultValue: 'Formatted' }) : t('report.rawMarkdown', { defaultValue: 'Raw Markdown' })}
                 </button>
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs flex items-center space-x-1 cursor-pointer"
+                  className="p-2 rounded-lg bg-[var(--bg-surface-2)] hover:bg-[var(--bg-surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-base)] text-xs flex items-center space-x-1 cursor-pointer"
                   title={t('report.copyMarkdown', { defaultValue: 'Copy Markdown' })}
                 >
-                  {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  {copied ? <Check className="w-4 h-4 text-[var(--safe-bright)]" /> : <Copy className="w-4 h-4" />}
                   <span className="hidden md:inline">{copied ? t('report.copied', { defaultValue: 'Copied' }) : t('report.copy', { defaultValue: 'Copy' })}</span>
                 </button>
                 <button
                   type="button"
                   onClick={handlePrint}
-                  className="p-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center space-x-1 cursor-pointer"
+                  className="p-2 rounded-lg bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-black font-bold text-xs flex items-center space-x-1 cursor-pointer"
                   title={t('report.printBulletin', { defaultValue: 'Print Bulletin' })}
                 >
                   <Printer className="w-4 h-4" />
@@ -323,7 +323,7 @@ export default function ReportModal({ analysis, isOpen, onClose }) {
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-lg bg-slate-800 hover:bg-rose-900/60 text-slate-400 hover:text-rose-200 border border-slate-700 cursor-pointer"
+              className="p-2 rounded-lg bg-[var(--bg-surface-2)] hover:bg-rose-900/60 text-[var(--text-secondary)] hover:text-rose-200 border border-[var(--border-base)] cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -331,18 +331,18 @@ export default function ReportModal({ analysis, isOpen, onClose }) {
         </div>
 
         {/* Content area */}
-        <div className="flex-1 p-4 sm:p-6 overflow-y-auto font-sans text-slate-200 space-y-4 bg-slate-900/95">
+        <div className="flex-1 p-4 sm:p-6 overflow-y-auto font-sans text-[var(--text-primary)] space-y-4 bg-slate-900/95">
           {loading && (
-            <div className="py-20 flex flex-col items-center justify-center space-y-3 text-slate-400 text-sm">
-              <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
+            <div className="py-20 flex flex-col items-center justify-center space-y-3 text-[var(--text-secondary)] text-sm">
+              <RefreshCw className="w-6 h-6 animate-spin text-[var(--accent-primary)]" />
               <span>{t('report.retrievingRecord', { defaultValue: 'Retrieving immutable advisory record from server...' })}</span>
             </div>
           )}
 
           {error && !loading && (
             <div className="p-6 rounded-2xl bg-rose-950/40 border border-rose-800/80 space-y-3">
-              <div className="flex items-center space-x-2 text-rose-300 font-bold text-sm">
-                <AlertTriangle className="w-5 h-5 flex-shrink-0 text-rose-400" />
+              <div className="flex items-center space-x-2 text-[var(--dangerous-bright)] font-bold text-sm">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0 text-[var(--dangerous-bright)]" />
                 <span>{t('report.errorTitle', { defaultValue: 'Unable to generate or retrieve advisory report' })}</span>
               </div>
               <p className="text-xs text-rose-200/90 leading-relaxed font-mono">
@@ -362,18 +362,18 @@ export default function ReportModal({ analysis, isOpen, onClose }) {
           {!loading && !error && reportData && (
             <div className="space-y-4">
               {/* Metadata Banner */}
-              <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+              <div className="p-3.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-base)] flex flex-wrap items-center justify-between gap-2 text-[11px] text-[var(--text-secondary)]">
                 <div className="flex items-center space-x-2">
-                  <Database className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>{t('report.reportId', { defaultValue: 'Report ID' })}: <code className="font-mono text-cyan-300">{reportData.report_id}</code></span>
+                  <Database className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                  <span>{t('report.reportId', { defaultValue: 'Report ID' })}: <code className="font-mono text-[var(--accent-primary)]">{reportData.report_id}</code></span>
                   {reportData.cached && (
-                    <span className="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 font-bold text-[10px]">
+                    <span className="px-1.5 py-0.5 rounded bg-[var(--safe)]/20 text-[var(--safe-bright)] border border-[var(--safe)] font-bold text-[10px]">
                       {t('report.cachedRecord', { defaultValue: 'Cached Immutable Record' })}
                     </span>
                   )}
                 </div>
                 {reportData.generated_at && (
-                  <div className="flex items-center space-x-1.5 font-mono text-slate-400">
+                  <div className="flex items-center space-x-1.5 font-mono text-[var(--text-secondary)]">
                     <Calendar className="w-3.5 h-3.5" />
                     <span>{new Date(reportData.generated_at).toLocaleString()}</span>
                   </div>
@@ -382,11 +382,11 @@ export default function ReportModal({ analysis, isOpen, onClose }) {
 
               {/* Main Report Body */}
               {rawView ? (
-                <pre className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-300 whitespace-pre-wrap overflow-x-auto">
+                <pre className="p-4 rounded-xl bg-[var(--bg-base)] border border-[var(--border-base)] text-xs font-mono text-[var(--text-secondary)] whitespace-pre-wrap overflow-x-auto">
                   {content}
                 </pre>
               ) : (
-                <div className="p-4 sm:p-6 rounded-2xl bg-slate-950/50 border border-slate-800/80">
+                <div className="p-4 sm:p-6 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-base)]">
                   <MarkdownRenderer content={content} />
                 </div>
               )}
@@ -395,7 +395,7 @@ export default function ReportModal({ analysis, isOpen, onClose }) {
         </div>
 
         {/* Footer info */}
-        <div className="p-3 bg-slate-950 border-t border-slate-800 text-center text-[11px] text-slate-500">
+        <div className="p-3 bg-[var(--bg-base)] border-t border-[var(--border-base)] text-center text-[11px] text-[var(--text-muted)]">
           {t('report.footerProvenance', { defaultValue: 'Generated exclusively from persisted metocean evidence & official boundary verification (§103).' })}
         </div>
 

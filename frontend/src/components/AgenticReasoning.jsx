@@ -96,42 +96,42 @@ export default function AgenticReasoning({ analysis }) {
   const samplingMode = plan.sampling?.mode || plan.sampling_mode || '9-Point Local Grid';
 
   return (
-    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-6">
+    <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-2xl p-5 sm:p-6 shadow-xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center space-x-2">
-            <Workflow className="w-5 h-5 text-purple-400" />
-            <h3 className="text-base font-bold text-white">{t('reasoning.title')}</h3>
+            <Workflow className="w-5 h-5 text-[var(--accent-primary)]" />
+            <h3 className="text-base font-bold text-[var(--text-primary)]">{t('reasoning.title')}</h3>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[var(--text-secondary)]">
             {t('reasoning.subtitle')}
           </p>
         </div>
-        <div className="flex items-center space-x-2 text-xs font-mono text-purple-300 bg-purple-950/60 px-2.5 py-1 rounded-full border border-purple-800">
+        <div className="flex items-center space-x-2 text-xs font-mono text-[var(--accent-primary)] bg-purple-950/60 px-2.5 py-1 rounded-full border border-[var(--accent-primary)]">
           <Clock className="w-3.5 h-3.5" />
           <span>{t('reasoning.pipelineLatency', { ms: totalDuration })}</span>
         </div>
       </div>
 
       {/* Orchestrator Plan Metadata */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-[var(--bg-base)] p-3.5 rounded-xl border border-[var(--border-base)]">
         <div>
-          <span className="text-[10px] text-slate-400 uppercase font-semibold block">{t('reasoning.missionIntent')}</span>
-          <span className="text-xs font-bold text-cyan-400 capitalize">{String(intent).replace(/_/g, ' ')}</span>
+          <span className="text-[10px] text-[var(--text-secondary)] uppercase font-semibold block">{t('reasoning.missionIntent')}</span>
+          <span className="text-xs font-bold text-[var(--accent-primary)] capitalize">{String(intent).replace(/_/g, ' ')}</span>
         </div>
         <div>
-          <span className="text-[10px] text-slate-400 uppercase font-semibold block">{t('reasoning.languageDetection')}</span>
-          <span className="text-xs font-bold text-white uppercase">{detectedLanguage} ({confidence}% {t('reasoning.confidence')})</span>
+          <span className="text-[10px] text-[var(--text-secondary)] uppercase font-semibold block">{t('reasoning.languageDetection')}</span>
+          <span className="text-xs font-bold text-[var(--text-primary)] uppercase">{detectedLanguage} ({confidence}% {t('reasoning.confidence')})</span>
         </div>
         <div>
-          <span className="text-[10px] text-slate-400 uppercase font-semibold block">{t('reasoning.gridSamplingMode')}</span>
-          <span className="text-xs font-bold text-purple-300 capitalize">{String(samplingMode).replace(/_/g, ' ')}</span>
+          <span className="text-[10px] text-[var(--text-secondary)] uppercase font-semibold block">{t('reasoning.gridSamplingMode')}</span>
+          <span className="text-xs font-bold text-[var(--accent-primary)] capitalize">{String(samplingMode).replace(/_/g, ' ')}</span>
         </div>
       </div>
 
       {/* Activated Specialist Agents */}
       <div>
-        <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2.5 flex items-center space-x-1.5">
+        <h4 className="text-xs font-bold text-[var(--safe-bright)] uppercase tracking-wider mb-2.5 flex items-center space-x-1.5">
           <CheckCircle2 className="w-3.5 h-3.5" />
           <span>{t('reasoning.activatedAgents', { count: selectedAgentsList.length })}</span>
         </h4>
@@ -141,29 +141,29 @@ export default function AgenticReasoning({ analysis }) {
               const agentName = item.agent;
               const description = agentDescriptions[agentName] || item.reason || t('reasoning.defaultSpecialistDesc');
               return (
-                <div key={idx} className="bg-slate-950/50 border border-emerald-900/30 p-2.5 rounded-xl text-xs space-y-0.5">
+                <div key={idx} className="bg-[var(--bg-base)] border border-emerald-900/30 p-2.5 rounded-xl text-xs space-y-0.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-emerald-300 capitalize">{String(agentName).replace(/_/g, ' ')} {t('reasoning.agentSuffix')}</span>
-                    <span className="text-[9px] font-semibold bg-emerald-950 text-emerald-400 px-1.5 py-0.2 rounded border border-emerald-800">
+                    <span className="font-mono font-bold text-[var(--safe-bright)] capitalize">{String(agentName).replace(/_/g, ' ')} {t('reasoning.agentSuffix')}</span>
+                    <span className="text-[9px] font-semibold bg-[var(--safe)]/20 text-[var(--safe-bright)] px-1.5 py-0.2 rounded border border-[var(--safe)]">
                       {t('reasoning.executed')}
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-400 truncate" title={description}>{description}</p>
+                  <p className="text-[10px] text-[var(--text-secondary)] truncate" title={description}>{description}</p>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="p-3 bg-slate-950/40 rounded-xl border border-slate-800 text-slate-500 text-xs text-center">
+          <div className="p-3 bg-[var(--bg-base)] rounded-xl border border-[var(--border-base)] text-[var(--text-muted)] text-xs text-center">
             {t('reasoning.noAgentsSelected', 'No specialist agents required for this query.')}
           </div>
         )}
       </div>
 
       {/* Real Execution Trace Log */}
-      <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800/80">
-        <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center space-x-1.5">
-          <Clock className="w-3.5 h-3.5 text-cyan-400" />
+      <div className="bg-[var(--bg-base)] p-4 rounded-xl border border-[var(--border-base)]">
+        <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-3 flex items-center space-x-1.5">
+          <Clock className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
           <span>{t('reasoning.chronologicalTrace')}</span>
         </h4>
         {trace.length > 0 ? (
@@ -171,20 +171,20 @@ export default function AgenticReasoning({ analysis }) {
             {trace.map((step, idx) => {
               const isCompleted = step.status === 'completed' || step.status === 200 || step.status === 202;
               const isFailed = step.status === 'failed' || step.status === 'error';
-              const dotColor = isCompleted ? 'bg-emerald-400' : isFailed ? 'bg-rose-400' : 'bg-amber-400';
+              const dotColor = isCompleted ? 'bg-[var(--safe)]' : isFailed ? 'bg-[var(--dangerous)]' : 'bg-[var(--caution)]';
               const durationLabel = step.duration_ms !== null 
                 ? (step.duration_ms >= 1000 ? `${(step.duration_ms / 1000).toFixed(2)}s` : `${step.duration_ms}ms`)
                 : '—';
 
               return (
-                <div key={idx} className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-slate-900/60 border border-slate-800/60">
+                <div key={idx} className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-base)]">
                   <div className="flex items-center space-x-2 truncate mr-2">
-                    <span className="text-[10px] font-mono text-slate-500">{String(idx + 1).padStart(2, '0')}</span>
-                    <span className="font-medium text-slate-200 truncate">{step.step}</span>
+                    <span className="text-[10px] font-mono text-[var(--text-muted)]">{String(idx + 1).padStart(2, '0')}</span>
+                    <span className="font-medium text-[var(--text-primary)] truncate">{step.step}</span>
                     <span className="text-[10px] font-mono text-cyan-400/80 hidden sm:inline">({step.agent})</span>
                   </div>
                   <div className="flex items-center space-x-3 flex-shrink-0">
-                    <span className="font-mono text-[11px] text-slate-400">{durationLabel}</span>
+                    <span className="font-mono text-[11px] text-[var(--text-secondary)]">{durationLabel}</span>
                     <span className={`w-2 h-2 rounded-full ${dotColor}`} title={step.status} />
                   </div>
                 </div>
@@ -192,7 +192,7 @@ export default function AgenticReasoning({ analysis }) {
             })}
           </div>
         ) : (
-          <div className="p-3 bg-slate-950/40 rounded-xl border border-slate-800 text-slate-500 text-xs text-center">
+          <div className="p-3 bg-[var(--bg-base)] rounded-xl border border-[var(--border-base)] text-[var(--text-muted)] text-xs text-center">
             {t('reasoning.traceNotAvailable', 'Execution trace not recorded for this analysis.')}
           </div>
         )}

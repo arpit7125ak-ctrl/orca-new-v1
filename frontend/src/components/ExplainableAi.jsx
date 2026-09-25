@@ -76,18 +76,18 @@ export default function ExplainableAi({ analysis }) {
     : ((analysis.data_quality && typeof analysis.data_quality === 'object') ? analysis.data_quality : {});
 
   return (
-    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-6">
+    <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-2xl p-5 sm:p-6 shadow-xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center space-x-2">
-            <Scale className="w-5 h-5 text-cyan-400" />
-            <h3 className="text-base font-bold text-white">{t('xai.title')}</h3>
+            <Scale className="w-5 h-5 text-[var(--accent-primary)]" />
+            <h3 className="text-base font-bold text-[var(--text-primary)]">{t('xai.title')}</h3>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[var(--text-secondary)]">
             {t('xai.subtitle')}
           </p>
         </div>
-        <span className="text-xs px-2.5 py-1 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 font-mono font-bold">
+        <span className="text-xs px-2.5 py-1 rounded-full bg-[var(--accent-dim)] text-[var(--accent-primary)] border border-[var(--accent-primary)] font-mono font-bold">
           {t('xai.badge')}
         </span>
       </div>
@@ -95,9 +95,9 @@ export default function ExplainableAi({ analysis }) {
       {/* Active Official Warning Banner */}
       {officialWarning && (
         <div className="bg-rose-950/40 border border-rose-600/70 p-3 rounded-xl flex items-start space-x-2.5 text-xs text-rose-200">
-          <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
+          <AlertTriangle className="w-4 h-4 text-[var(--dangerous-bright)] flex-shrink-0 mt-0.5" />
           <div>
-            <strong className="text-white">{t('xai.activeWarningTitle', { authority: warningAuthority })}:</strong>{' '}
+            <strong className="text-[var(--text-primary)]">{t('xai.activeWarningTitle', { authority: warningAuthority })}:</strong>{' '}
             {t('xai.warningMandatoryFloor', {
               bulletin: warningBulletin,
               level: officialWarning.floor_level || 'WARNING',
@@ -110,21 +110,21 @@ export default function ExplainableAi({ analysis }) {
       {/* 4-Stage Scoring Breakdown Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         {/* Baseline Card */}
-        <div className="bg-slate-950/60 border border-slate-800 p-3.5 rounded-xl">
-          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+        <div className="bg-[var(--bg-base)] border border-[var(--border-base)] p-3.5 rounded-xl">
+          <div className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-1 flex items-center justify-between">
             <span>{t('xai.card1Baseline')}</span>
             <Activity className="w-3.5 h-3.5 text-blue-400" />
           </div>
-          <div className="text-2xl font-black text-white font-mono">
+          <div className="text-2xl font-black text-[var(--text-primary)] font-mono">
             {rawBaseline !== null ? (
               <>
-                {Math.round(rawBaseline)}<span className="text-xs text-slate-400">/100</span>
+                {Math.round(rawBaseline)}<span className="text-xs text-[var(--text-secondary)]">/100</span>
               </>
             ) : (
-              <span className="text-sm text-slate-500 font-normal">{t('pointDetail.unavailable')}</span>
+              <span className="text-sm text-[var(--text-muted)] font-normal">{t('pointDetail.unavailable')}</span>
             )}
           </div>
-          <p className="text-[10px] text-slate-400 mt-1">
+          <p className="text-[10px] text-[var(--text-secondary)] mt-1">
             {t('xai.card1Desc')}
           </p>
         </div>
@@ -133,53 +133,53 @@ export default function ExplainableAi({ analysis }) {
         <div className={`border p-3.5 rounded-xl ${
           constraintFloor 
             ? 'bg-amber-950/30 border-amber-500/50' 
-            : 'bg-slate-950/60 border-slate-800'
+            : 'bg-[var(--bg-base)] border-[var(--border-base)]'
         }`}>
-          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+          <div className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-1 flex items-center justify-between">
             <span>{t('xai.card2Floor')}</span>
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <ShieldCheck className="w-3.5 h-3.5 text-[var(--safe-bright)]" />
           </div>
           <div className="text-lg font-black font-mono flex items-center space-x-1">
-            <span className={constraintFloor ? 'text-amber-400' : 'text-emerald-400'}>
+            <span className={constraintFloor ? 'text-[var(--caution-bright)]' : 'text-[var(--safe-bright)]'}>
               {constraintFloor ? `${p0Risk.constraint_floor}/100` : t('xai.none')}
             </span>
           </div>
-          <p className="text-[10px] text-slate-400 mt-1 truncate" title={constraintReason}>
+          <p className="text-[10px] text-[var(--text-secondary)] mt-1 truncate" title={constraintReason}>
             {constraintReason}
           </p>
         </div>
 
         {/* LLM Adjustment Card */}
-        <div className="bg-slate-950/60 border border-slate-800 p-3.5 rounded-xl">
-          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+        <div className="bg-[var(--bg-base)] border border-[var(--border-base)] p-3.5 rounded-xl">
+          <div className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-1 flex items-center justify-between">
             <span>{t('xai.card3Delta')}</span>
-            <Cpu className="w-3.5 h-3.5 text-purple-400" />
+            <Cpu className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
           </div>
-          <div className="text-2xl font-black font-mono text-purple-300">
+          <div className="text-2xl font-black font-mono text-[var(--accent-primary)]">
             {llmAdjustment !== null ? (
               llmAdjustment > 0 ? `+${llmAdjustment}` : `${llmAdjustment}`
             ) : (
               '0'
             )}
           </div>
-          <p className="text-[10px] text-slate-400 mt-1">
+          <p className="text-[10px] text-[var(--text-secondary)] mt-1">
             {t('xai.card3Desc')}
           </p>
         </div>
 
         {/* Final Synthesized Score Card */}
         <div className="bg-cyan-950/30 border border-cyan-500/40 p-3.5 rounded-xl">
-          <div className="text-[11px] font-semibold text-cyan-300 uppercase tracking-wider mb-1 flex items-center justify-between">
+          <div className="text-[11px] font-semibold text-[var(--accent-primary)] uppercase tracking-wider mb-1 flex items-center justify-between">
             <span>{t('xai.card4Final')}</span>
-            <BarChart3 className="w-3.5 h-3.5 text-cyan-400" />
+            <BarChart3 className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
           </div>
-          <div className="text-2xl font-black font-mono text-cyan-300">
+          <div className="text-2xl font-black font-mono text-[var(--accent-primary)]">
             {finalScore !== null ? (
               <>
-                {finalScore}<span className="text-xs text-slate-400">/100</span>
+                {finalScore}<span className="text-xs text-[var(--text-secondary)]">/100</span>
               </>
             ) : (
-              <span className="text-sm text-slate-500 font-normal">{t('pointDetail.unavailable')}</span>
+              <span className="text-sm text-[var(--text-muted)] font-normal">{t('pointDetail.unavailable')}</span>
             )}
           </div>
           <p className="text-[10px] text-cyan-400/80 mt-1">
@@ -192,11 +192,11 @@ export default function ExplainableAi({ analysis }) {
       {dimensionScores && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {Object.entries(dimensionScores).map(([dim, val]) => (
-            <div key={dim} className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 uppercase font-semibold block capitalize truncate">
+            <div key={dim} className="bg-[var(--bg-base)] p-2.5 rounded-xl border border-[var(--border-base)]">
+              <span className="text-[10px] text-[var(--text-secondary)] uppercase font-semibold block capitalize truncate">
                 {dim.replace(/_/g, ' ')}
               </span>
-              <span className="text-sm font-bold text-white font-mono mt-0.5 block">
+              <span className="text-sm font-bold text-[var(--text-primary)] font-mono mt-0.5 block">
                 {val !== null && val !== undefined ? `${val}/100` : '—'}
               </span>
             </div>
@@ -206,25 +206,25 @@ export default function ExplainableAi({ analysis }) {
 
       {/* Key Auditable Findings */}
       <div>
-        <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2.5">
+        <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2.5">
           {t('xai.auditableFindingsTitle', { pointId: displayPointId })}
         </h4>
         {keyFindings.length > 0 ? (
           <div className="space-y-2">
             {keyFindings.map((finding, idx) => (
-              <div key={idx} className="flex items-start justify-between bg-slate-950/50 p-3 rounded-xl border border-slate-800/80 text-xs">
+              <div key={idx} className="flex items-start justify-between bg-[var(--bg-base)] p-3 rounded-xl border border-[var(--border-base)] text-xs">
                 <div className="space-y-0.5 flex-1 pr-2">
-                  <div className="font-bold text-slate-200">{finding.factor}</div>
-                  <p className="text-slate-400 text-[11px]">{finding.impact}</p>
+                  <div className="font-bold text-[var(--text-primary)]">{finding.factor}</div>
+                  <p className="text-[var(--text-secondary)] text-[11px]">{finding.impact}</p>
                 </div>
-                <span className="px-2 py-1 rounded bg-slate-800 text-cyan-300 font-mono font-semibold text-[11px] whitespace-nowrap">
+                <span className="px-2 py-1 rounded bg-[var(--bg-surface-2)] text-[var(--accent-primary)] font-mono font-semibold text-[11px] whitespace-nowrap">
                   {finding.value}
                 </span>
               </div>
             ))}
           </div>
         ) : (
-          <div className="p-3 bg-slate-950/40 rounded-xl border border-slate-800 text-slate-500 text-xs text-center">
+          <div className="p-3 bg-[var(--bg-base)] rounded-xl border border-[var(--border-base)] text-[var(--text-muted)] text-xs text-center">
             {t('xai.noHighlights')}
           </div>
         )}
@@ -232,16 +232,16 @@ export default function ExplainableAi({ analysis }) {
 
       {/* Real Data Quality & Source Citations */}
       {Object.keys(dataQuality).length > 0 && (
-        <div className="bg-slate-950/40 p-3.5 rounded-xl border border-slate-800">
-          <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-300 uppercase tracking-wider mb-2.5">
-            <Database className="w-3.5 h-3.5 text-cyan-400" />
+        <div className="bg-[var(--bg-base)] p-3.5 rounded-xl border border-[var(--border-base)]">
+          <div className="flex items-center space-x-1.5 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2.5">
+            <Database className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
             <span>{t('xai.telemetryProvenanceTitle')}</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
             {Object.entries(dataQuality).slice(0, 8).map(([param, info]) => (
-              <div key={param} className="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
-                <span className="text-slate-400 block text-[10px] truncate capitalize">{String(param).replace(/_/g, ' ')}</span>
-                <span className="text-cyan-300 font-mono font-semibold text-[10px] block truncate">{info?.source_note || t('xai.provenanceUnavailable')}</span>
+              <div key={param} className="bg-[var(--bg-surface)] p-2 rounded-lg border border-[var(--border-base)]">
+                <span className="text-[var(--text-secondary)] block text-[10px] truncate capitalize">{String(param).replace(/_/g, ' ')}</span>
+                <span className="text-[var(--accent-primary)] font-mono font-semibold text-[10px] block truncate">{info?.source_note || t('xai.provenanceUnavailable')}</span>
               </div>
             ))}
           </div>
