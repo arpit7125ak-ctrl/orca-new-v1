@@ -3,6 +3,16 @@ import React, { useState } from 'react';
 import { Compass, Waves, Wind, MapPin, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+function getRiskGlyph(status) {
+  switch (status) {
+    case 'SAFE': return '●'; // circle
+    case 'CAUTION': return '◆'; // diamond
+    case 'UNSAFE': return '▲'; // triangle
+    case 'DANGEROUS': return '⯃'; // octagon
+    default: return '○';
+  }
+}
+
 // --------------------------------------------------------------------------
 // PointCard - extracted for local expanded state
 // --------------------------------------------------------------------------
@@ -23,7 +33,7 @@ function PointCard({ pt, id, info, labelText, hasScore, score, isSelected, badge
           : 'bg-[var(--bg-base)] border-[var(--border-base)] hover:border-slate-700 hover:bg-slate-900/60'
       }`}
     >
-      <div className="flex justify-between items-start mb-2" onClick={() => onSelect(pt)}>
+      <div className="flex justify-between items-start mb-2" onClick={() => onSelect(pt.rawPoint || pt)}>
         <div className="flex items-center space-x-2">
           <span className="text-sm sm:text-base">{info.compass}</span>
           <div>
@@ -45,8 +55,9 @@ function PointCard({ pt, id, info, labelText, hasScore, score, isSelected, badge
               {t('grid.worst', { defaultValue: 'WORST' })}
             </span>
           )}
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeColor}`}>
-            {hasScore ? `${score}/100` : t('grid.unrated')}
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center space-x-1 ${badgeColor}`}>
+            <span className="text-[9px] mr-1">{getRiskGlyph(pt.status)}</span>
+            <span>{hasScore ? `${score}/100` : t('grid.unrated', { defaultValue: 'Unrated' })}</span>
           </span>
           <button 
             onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
@@ -116,27 +127,42 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
     'P8': { labelKey: 'grid.dirP8', compass: '↖' }
   };
 
-  const pointsData = rawPoints.map(p => {
-    let waveRaw = 0, windRaw = 0, visRaw = 100;
-    
-    if (p.waveVal) {
-      const match = String(p.waveVal).match(/([0-9.]+)/);
-      if (match) waveRaw = parseFloat(match[1]);
-    }
-    if (p.windVal) {
-      const match = String(p.windVal).match(/([0-9.]+)/);
-      if (match) windRaw = parseFloat(match[1]);
-    }
-    
-    const factors = p.risk?.environmental_factors;
-    if (factors) {
-      const v = factors.find(f => (f.factor || '').toLowerCase().includes('visib'));
-      if (v) {
-        const m = String(v.value).match(/([0-9.]+)/);
-        if (m) visRaw = parseFloat(m[1]);
-      }
-    }
-    return { ...p, waveRaw, windRaw, visRaw };
+  const pointsData = rawPoints.map((p, idx) => {
+    const pRisk = p.risk || {};
+    const factors = Array.isArray(pRisk.risk_factors) ? pRisk.risk_factors : [];
+    const formattedFactors = factors.map((f) => String(f).replace(/_/g, ' ')).join(', ');
+    const finding = (Array.isArray(pRisk.key_findings) ? pRisk.key_findings[0] : null) || pRisk.reasoning || t('grid.noneReported', { defaultValue: 'None reported' });
+    const isPreferred = analysis?.decision?.preferred_point === (p.point_id || `P${idx}`);
+    const isWorst = analysis?.decision?.worst_point === (p.point_id || `P${idx}`);
+
+    const meas = p.measurements || {};
+    const waveVal = meas.wave_height_m?.value != null ? `${meas.wave_height_m.value} m` : null;
+    const windVal = meas.wind_speed_ms?.value != null ? `${meas.wind_speed_ms.value} m/s` : null;
+    const waveRaw = meas.wave_height_m?.value != null ? Number(meas.wave_height_m.value) : 0;
+    const windRaw = meas.wind_speed_ms?.value != null ? Number(meas.wind_speed_ms.value) : 0;
+    const visRaw = meas.visibility_km?.value != null ? Number(meas.visibility_km.value) : 100;
+
+    return {
+      point_id: p.point_id || `P${idx}`,
+      lat: p.lat,
+      lon: p.lon,
+      risk_score: pRisk.final_score ?? null,
+      status: pRisk.risk_level || 'UNRATED',
+      dominant_hazard: formattedFactors || t('grid.noneReported', { defaultValue: 'None reported' }),
+      finding,
+      isPreferred,
+      isWorst,
+      official_warning: pRisk.official_warnings?.[0] || null,
+      point_status: p.point_status || null,
+      waveVal,
+      windVal,
+      waveRaw,
+      windRaw,
+      visRaw,
+      rawPoint: p,
+      risk: pRisk,
+      measurements: meas,
+    };
   });
 
   const [sortMode, setSortMode] = useState('default');

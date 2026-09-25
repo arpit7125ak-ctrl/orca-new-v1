@@ -332,10 +332,10 @@ export default function DecisionResultsPage({
                {[
                  { label: 'Overall Risk', value: analysis?.decision?.risk_level || 'N/A', color: analysis?.decision?.risk_level === 'SAFE' ? 'text-[#2FAE72]' : 'text-[#E59A24]' },
                  { label: 'Active Alerts', value: (analysis?.points?.[0]?.risk?.official_warnings?.length || 0).toString().padStart(2, '0') },
-                 { label: 'Max Wave', value: pts.length ? Math.max(...pts.map(p => p.risk?.weather?.wave_height_m || p.risk?.metocean?.wave_height_m || 0)).toFixed(1) + ' m' : 'N/A' },
-                 { label: 'Max Wind', value: pts.length ? Math.max(...pts.map(p => (p.risk?.weather?.wind_speed_ms || 0) * 1.94)).toFixed(0) + ' kt' : 'N/A' },
-                 { label: 'Visibility', value: pts[0]?.risk?.weather?.visibility_km?.toFixed(1) ? pts[0].risk.weather.visibility_km.toFixed(1) + ' km' : 'N/A' },
-                 { label: 'Tide', value: pts[0]?.risk?.metocean?.tide_surge_m?.toFixed(1) ? pts[0].risk.metocean.tide_surge_m.toFixed(1) + ' m' : 'N/A' },
+                 { label: 'Max Wave', value: pts.length ? (Math.max(0, ...pts.map(p => p.measurements?.wave_height_m?.value ?? p.risk?.weather?.wave_height_m ?? 0))).toFixed(1) + ' m' : 'N/A' },
+                 { label: 'Max Wind', value: pts.length ? ((Math.max(0, ...pts.map(p => p.measurements?.wind_speed_ms?.value ?? p.risk?.weather?.wind_speed_ms ?? 0))) * 1.94).toFixed(0) + ' kt' : 'N/A' },
+                 { label: 'Visibility', value: (pts[0]?.measurements?.visibility_km?.value ?? pts[0]?.risk?.weather?.visibility_km) != null ? `${Number(pts[0]?.measurements?.visibility_km?.value ?? pts[0]?.risk?.weather?.visibility_km).toFixed(1)} km` : 'N/A' },
+                 { label: 'Tide', value: (pts[0]?.measurements?.tide_height_m?.value ?? pts[0]?.risk?.metocean?.tide_surge_m) != null ? `${Number(pts[0]?.measurements?.tide_height_m?.value ?? pts[0]?.risk?.metocean?.tide_surge_m).toFixed(1)} m` : 'N/A' },
                ].map((m, i) => (
                   <div key={i} className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-lg p-3 flex flex-col justify-center shadow-sm card-enter card-enter-1 interactive-card">
                      <span className="text-[9px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-0.5">{m.label}</span>

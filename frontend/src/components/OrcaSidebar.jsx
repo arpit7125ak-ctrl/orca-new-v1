@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18next from 'i18next';
 import { 
-  Anchor, Sun, Activity, Globe, ShieldAlert, MapPin, 
+  Anchor, Sun, Moon, Activity, Globe, ShieldAlert, MapPin, 
   Layers, Bell, Navigation, TrendingUp, Clock, User, 
   Menu, X, Search, FileText
 } from 'lucide-react';
@@ -88,35 +88,54 @@ export default function OrcaSidebar({
       <button
         key={item.id}
         onClick={() => { setActiveTab(item.id); setIsMobileOpen(false); }}
-        className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 mb-1
+        className={`w-full flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 mb-0.5
           ${isActive 
-            ? 'bg-[var(--bg-surface-2)] text-[var(--accent-primary)] border-l-2 border-[var(--accent-primary)] translate-x-1' 
+            ? 'bg-[var(--bg-surface-2)] text-[var(--accent-primary)] border-l-2 border-[var(--accent-primary)] translate-x-1 font-bold' 
             : 'border-l-2 border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] hover:translate-x-0.5'}`}
       >
-        <Icon className="w-4 h-4" />
-        <span>{t(item.labelKey, { defaultValue: item.fallback })}</span>
+        <Icon className="w-4 h-4 shrink-0" />
+        <span className="truncate">{t(item.labelKey, { defaultValue: item.fallback })}</span>
       </button>
     );
   };
 
+  const currentTheme = typeof document !== 'undefined' ? (document.documentElement.getAttribute('data-theme') || 'deep') : 'deep';
+
+  const handleCycleTheme = () => {
+    let nextTheme = 'deep';
+    if (currentTheme === 'deep') nextTheme = 'chart';
+    else if (currentTheme === 'chart') nextTheme = 'sunlight';
+    else nextTheme = 'deep';
+
+    try {
+      localStorage.setItem('orca-theme', nextTheme);
+      document.documentElement.setAttribute('data-theme', nextTheme);
+      document.documentElement.classList.toggle('sunlight-mode', nextTheme === 'sunlight');
+      document.documentElement.classList.toggle('chart-mode', nextTheme === 'chart');
+      if (setSunlightMode) {
+        setSunlightMode(nextTheme === 'sunlight');
+      }
+    } catch (e) {}
+  };
+
   const sidebarContent = (
-    <div className="h-full flex flex-col bg-[var(--bg-base)] border-r border-[var(--border-base)] w-64 overflow-y-auto">
+    <div className="h-full flex flex-col bg-[var(--bg-base)] border-r border-[var(--border-base)] w-64 overflow-hidden">
       {/* Brand */}
-      <div className="p-4 border-b border-[var(--border-base)] flex items-center space-x-3">
-        <div className="w-10 h-10 rounded bg-[var(--accent-glow)] border border-[var(--accent-dim)] flex items-center justify-center">
-          <Anchor className="w-6 h-6 text-[var(--accent-primary)]" />
+      <div className="p-3.5 border-b border-[var(--border-base)] flex items-center space-x-3 shrink-0">
+        <div className="w-9 h-9 rounded bg-[var(--accent-glow)] border border-[var(--accent-dim)] flex items-center justify-center shrink-0">
+          <Anchor className="w-5 h-5 text-[var(--accent-primary)]" />
         </div>
         <div>
-          <div className="font-black text-lg tracking-[0.15em] text-[var(--text-primary)]">ORCA</div>
-          <div className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold">Command Center</div>
+          <div className="font-black text-base tracking-[0.15em] text-[var(--text-primary)]">ORCA</div>
+          <div className="text-[9px] text-[var(--text-secondary)] uppercase tracking-widest font-bold">Command Center</div>
         </div>
       </div>
 
       {/* Nav Groups */}
-      <div className="flex-1 p-3 overflow-y-auto">
+      <div className="flex-1 p-2.5 overflow-y-auto custom-scrollbar">
         {navGroups.map((group, idx) => (
-          <div key={idx} className="mb-6">
-            <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)] px-3 mb-2">
+          <div key={idx} className="mb-3.5">
+            <div className="text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)] px-2.5 mb-1.5">
               {group.title}
             </div>
             {group.items.map(renderNavButton)}
@@ -124,7 +143,7 @@ export default function OrcaSidebar({
         ))}
 
         <div className="mb-2">
-           <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)] px-3 mb-2">
+           <div className="text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)] px-2.5 mb-1.5">
               SETTINGS
             </div>
             {renderNavButton({ id: 'profile', labelKey: 'nav.profile', icon: User, fallback: 'Profile & Settings' })}
@@ -132,7 +151,7 @@ export default function OrcaSidebar({
       </div>
 
       {/* Bottom controls */}
-      <div className="p-4 border-t border-[var(--border-base)] space-y-3 bg-[var(--bg-surface)]">
+      <div className="p-3 border-t border-[var(--border-base)] space-y-2.5 bg-[var(--bg-surface)] shrink-0">
         {/* Language */}
         <div className="relative flex items-center">
           <Globe className="w-4 h-4 text-[var(--text-secondary)] absolute left-2.5 pointer-events-none" />
@@ -147,17 +166,25 @@ export default function OrcaSidebar({
           </select>
         </div>
 
-        {/* Sunlight Mode */}
+        {/* 3-Way Theme Switcher (deep / chart / sunlight) */}
         <button
-          onClick={() => setSunlightMode(!sunlightMode)}
-          className={`w-full flex items-center justify-center space-x-2 py-1.5 rounded text-xs font-bold border transition-colors ${
-            sunlightMode
+          onClick={handleCycleTheme}
+          className={`w-full flex items-center justify-between px-3 py-1.5 rounded text-xs font-bold border transition-colors ${
+            currentTheme === 'sunlight'
               ? 'bg-[var(--accent-primary)] text-black border-[var(--accent-primary)]'
+              : currentTheme === 'chart'
+              ? 'bg-sky-950 text-sky-400 border-sky-800'
               : 'bg-[var(--bg-base)] text-[var(--text-secondary)] border-[var(--border-base)] hover:text-[var(--text-primary)]'
           }`}
+          title="Cycle theme: Deep (Dark) → Chart (Light) → Sunlight (High Contrast)"
         >
-          <Sun className="w-4 h-4" />
-          <span>{sunlightMode ? 'Sunlight Mode ON' : 'Sunlight Mode OFF'}</span>
+          <div className="flex items-center space-x-2">
+            {currentTheme === 'sunlight' ? <Sun className="w-4 h-4 text-black" /> : currentTheme === 'chart' ? <Sun className="w-4 h-4 text-sky-400" /> : <Moon className="w-4 h-4 text-[var(--accent-primary)]" />}
+            <span>
+              {currentTheme === 'sunlight' ? 'Theme: Sunlight' : currentTheme === 'chart' ? 'Theme: Chart Light' : 'Theme: Deep Dark'}
+            </span>
+          </div>
+          <span className="text-[9px] uppercase font-mono px-1 py-0.5 rounded bg-black/30 text-white/50">3-WAY</span>
         </button>
 
         {/* Backend Status */}

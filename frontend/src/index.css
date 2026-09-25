@@ -55,17 +55,35 @@
   background: var(--border-hover);
 }
 
-/* Sunlight mode: high contrast */
-.sunlight-mode {
+/* Chart mode: clean light maritime theme */
+[data-theme="chart"], .chart-mode {
+  --bg-base: #f0f4f8;
+  --bg-surface: #ffffff;
+  --bg-surface-2: #e2e8f0;
+  --border-base: #cbd5e1;
+  --border-hover: #94a3b8;
+
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+
+  --accent-primary: #0284c7;
+  --accent-hover: #0369a1;
+  --accent-dim: #e0f2fe;
+  --accent-glow: rgba(2, 132, 199, 0.2);
+}
+
+/* Sunlight mode: high contrast outdoor deck mode */
+[data-theme="sunlight"], .sunlight-mode {
   --bg-base: #ffffff;
   --bg-surface: #f3f4f6;
   --bg-surface-2: #e5e7eb;
-  --border-base: #d1d5db;
-  --border-hover: #9ca3af;
+  --border-base: #000000;
+  --border-hover: #1f2937;
 
   --text-primary: #000000;
-  --text-secondary: #1f2937;
-  --text-muted: #4b5563;
+  --text-secondary: #000000;
+  --text-muted: #1f2937;
 
   --accent-primary: #d4850a;
   --accent-hover: #b45309;
