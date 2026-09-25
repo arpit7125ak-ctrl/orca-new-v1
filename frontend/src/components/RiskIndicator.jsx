@@ -63,21 +63,45 @@ export default function RiskIndicator({ level, score, showScore = true, label, c
   const normLevel = (level || 'UNRATED').toUpperCase();
   const hasScore = score !== null && score !== undefined;
 
-  let badgeColor = 'bg-slate-800/40 text-[var(--text-secondary)] border-[var(--border-base)]';
+  let badgeStyle = {
+    color: 'var(--text-secondary)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'var(--border-base)',
+  };
+
   if (normLevel === 'DANGEROUS' || (hasScore && score > 80)) {
-    badgeColor = 'bg-rose-500/20 text-[var(--dangerous-bright)] border-rose-500/40';
+    badgeStyle = {
+      color: 'var(--dangerous-text)',
+      backgroundColor: 'var(--dangerous-bg)',
+      borderColor: 'var(--dangerous-border)',
+    };
   } else if (normLevel === 'UNSAFE' || (hasScore && score > 50)) {
-    badgeColor = 'bg-orange-500/20 text-orange-400 border-orange-500/40';
+    badgeStyle = {
+      color: 'var(--unsafe-text)',
+      backgroundColor: 'var(--unsafe-bg)',
+      borderColor: 'var(--unsafe-border)',
+    };
   } else if (normLevel === 'CAUTION' || (hasScore && score > 30)) {
-    badgeColor = 'bg-amber-500/20 text-amber-400 border-amber-500/40';
+    badgeStyle = {
+      color: 'var(--caution-text)',
+      backgroundColor: 'var(--caution-bg)',
+      borderColor: 'var(--caution-border)',
+    };
   } else if (normLevel === 'SAFE') {
-    badgeColor = 'bg-emerald-500/20 text-[var(--safe-bright)] border-emerald-500/40';
+    badgeStyle = {
+      color: 'var(--safe-text)',
+      backgroundColor: 'var(--safe-bg)',
+      borderColor: 'var(--safe-border)',
+    };
   }
 
   const displayText = label || (hasScore ? `${Math.round(score)}/100` : 'Unrated');
 
   return (
-    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border inline-flex items-center space-x-1.5 ${badgeColor} ${className}`}>
+    <span 
+      style={badgeStyle}
+      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border inline-flex items-center space-x-1.5 transition-colors ${className}`}
+    >
       <RiskMark level={normLevel} className="w-2.5 h-2.5" />
       <span>{displayText}</span>
     </span>

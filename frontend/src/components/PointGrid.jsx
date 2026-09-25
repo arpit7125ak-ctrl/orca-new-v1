@@ -7,7 +7,7 @@ import RiskIndicator from './RiskIndicator';
 // --------------------------------------------------------------------------
 // PointCard - extracted for local expanded state
 // --------------------------------------------------------------------------
-function PointCard({ pt, id, info, labelText, hasScore, score, isSelected, badgeColor, barColor, validLat, validLon, onSelect, forceExpand }) {
+function PointCard({ pt, id, info, labelText, hasScore, score, isSelected, barBg, validLat, validLon, onSelect, forceExpand }) {
   const { t } = useTranslation('ui');
   const [expanded, setExpanded] = useState(false);
   React.useEffect(() => { setExpanded(forceExpand || false); }, [forceExpand]);
@@ -60,9 +60,9 @@ function PointCard({ pt, id, info, labelText, hasScore, score, isSelected, badge
         </div>
       </div>
 
-      <div className="w-full h-1 bg-[var(--bg-surface-2)] rounded-full overflow-hidden mb-3">
+      <div className="w-full h-1.5 bg-[var(--bg-surface-2)] rounded-full overflow-hidden mb-3">
         {hasScore ? (
-          <div className={`h-full ${barColor} rounded-full`} style={{ width: `${score}%` }} />
+          <div className="h-full rounded-full transition-all duration-300" style={{ width: `${score}%`, backgroundColor: barBg }} />
         ) : (
           <div className="h-full bg-slate-700/50 w-full" />
         )}
@@ -247,21 +247,16 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
           const score = hasScore ? Math.round(pt.risk_score) : null;
           const isSelected = selectedPoint?.point_id === id || selectedPoint?.id === id;
 
-          let badgeColor = 'bg-slate-800/40 text-[var(--text-secondary)] border-[var(--border-base)]';
-          let barColor = 'bg-[var(--bg-surface-2)]';
+          let barBg = 'var(--text-secondary)';
           if (hasScore) {
             if (score > 80 || pt.status === 'DANGEROUS') {
-              badgeColor = 'bg-rose-500/20 text-[var(--dangerous-bright)] border-rose-500/40';
-              barColor = 'bg-gradient-to-r from-orange-600 to-rose-600';
+              barBg = 'var(--dangerous-text)';
             } else if (score > 50 || pt.status === 'UNSAFE') {
-              badgeColor = 'bg-orange-500/20 text-orange-400 border-orange-500/40';
-              barColor = 'bg-gradient-to-r from-amber-500 to-orange-500';
+              barBg = 'var(--unsafe-text)';
             } else if (score > 30 || pt.status === 'CAUTION') {
-              badgeColor = 'bg-amber-500/20 text-amber-400 border-amber-500/40';
-              barColor = 'bg-gradient-to-r from-emerald-500 to-amber-500';
+              barBg = 'var(--caution-text)';
             } else {
-              badgeColor = 'bg-emerald-500/20 text-[var(--safe-bright)] border-emerald-500/40';
-              barColor = 'bg-gradient-to-r from-teal-500 to-emerald-500';
+              barBg = 'var(--safe-text)';
             }
           }
 
@@ -275,8 +270,7 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
               hasScore={hasScore}
               score={score}
               isSelected={isSelected}
-              badgeColor={badgeColor}
-              barColor={barColor}
+              barBg={barBg}
               validLat={validLat}
               validLon={validLon}
               onSelect={onSelectPoint}

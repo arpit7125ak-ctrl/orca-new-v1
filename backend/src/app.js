@@ -95,11 +95,15 @@ function createApp() {
    */
   const healthHandler = async (req, res) => {
 
-    // i will also check the health of the AI service temperorarily, i want to make sure both backends and ai services are running.
-    const aiHealthUrl= "https://orca-ai-service-b0fx.onrender.com/health"
-    const resai = await fetch(aiHealthUrl);
-    const aiData = await resai.json();
-    console.log('AI Health Data:', aiData);
+    // Optional probe of external AI service; must never throw unhandled rejection
+    try {
+      const aiHealthUrl = "https://orca-ai-service-b0fx.onrender.com/health";
+      const resai = await fetch(aiHealthUrl, { signal: AbortSignal.timeout(3000) });
+      const aiData = await resai.json();
+      console.log('AI Health Data:', aiData);
+    } catch (e) {
+      // Gracefully ignore external connection drops / timeouts
+    }
 
     res.status(200).json({
       status: 'ok',
