@@ -93,7 +93,7 @@ function createApp() {
    * GET /health - liveness. Answers "is this process up?"
    * Always 200 if the process can respond at all.
    */
-  const healthHandler = (req, res) => {
+  const healthHandler = async (req, res) => {
 
     // i will also check the health of the AI service temperorarily, i want to make sure both backends and ai services are running.
     const aiHealthUrl= "https://orca-ai-service-b0fx.onrender.com/health"
