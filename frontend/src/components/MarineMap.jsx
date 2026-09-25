@@ -65,6 +65,7 @@ const TIME_STEPS = [
 const TILE_LAYERS = {
   satellite: { label: 'Satellite Base', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', maxZoom: 18 },
   street: { label: 'Street Map', url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', maxZoom: 19 },
+  hybrid: { label: 'Hybrid Map', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', labelUrl: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', maxZoom: 18 },
 };
 
 export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
@@ -85,6 +86,9 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
   const [showRiskMenu, setShowRiskMenu] = useState(false);
   const [clickedZoneId, setClickedZoneId] = useState(null);
   const [gisLayers, setGisLayers] = useState([]);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  const [cursorCoords, setCursorCoords] = useState(null);
+  const [visibleLayers, setVisibleLayers] = useState({ risk: true, gis: true, route: true, grid: true });
 
   const validLat = plan.location?.validated?.lat != null ? Number(plan.location.validated.lat) : Number(plan.location?.original?.lat);
   const validLon = plan.location?.validated?.lon != null ? Number(plan.location.validated.lon) : Number(plan.location?.original?.lon);
@@ -133,6 +137,9 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
       map.createPane('routePane');
       map.getPane('routePane').style.zIndex = 430; // Routes and Markers
 
+      L.control.scale({ nautical: true, imperial: false, metric: true, position: 'bottomright' }).addTo(map);
+      map.on('mousemove', (e) => setCursorCoords(e.latlng));
+
       const tDef = TILE_LAYERS.satellite;
       baseLayerRef.current = L.tileLayer(tDef.url, { maxZoom: tDef.maxZoom }).addTo(map);
       
@@ -143,15 +150,23 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
     }
   }, [hasValidCoords, validLat, validLon]);
 
-  // BASEMAP SWITCHER
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-    if (baseLayerRef.current) map.removeLayer(baseLayerRef.current);
-    const tDef = TILE_LAYERS[activeBase];
-    baseLayerRef.current = L.tileLayer(tDef.url, { maxZoom: tDef.maxZoom }).addTo(map);
-    baseLayerRef.current.bringToBack();
-  }, [activeBase]);
+    const hybridLabelRef = useRef(null);
+
+    // BASEMAP SWITCHER
+    useEffect(() => {
+      const map = mapInstanceRef.current;
+      if (!map) return;
+      if (baseLayerRef.current) map.removeLayer(baseLayerRef.current);
+      if (hybridLabelRef.current) map.removeLayer(hybridLabelRef.current);
+      
+      const tDef = TILE_LAYERS[activeBase];
+      baseLayerRef.current = L.tileLayer(tDef.url, { maxZoom: tDef.maxZoom }).addTo(map);
+      baseLayerRef.current.bringToBack();
+      
+      if (tDef.labelUrl) {
+         hybridLabelRef.current = L.tileLayer(tDef.labelUrl, { maxZoom: tDef.maxZoom, pane: 'gisPane' }).addTo(map);
+      }
+    }, [activeBase]);
 
   // RENDER GIS NAUTICAL ZONES (STATIC - NEVER MOVES)
   useEffect(() => {
@@ -159,6 +174,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
     const group = gisGroupRef.current;
     if (!map || !group || !hasValidCoords) return;
     group.clearLayers();
+    if (!visibleLayers.gis) return;
 
     // Official GIS Polygons and Lines
     gisLayers.forEach((layer) => {
@@ -223,21 +239,28 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
         getTier: (v) => getTierColor(v).tier
       });
       heatmapLayerRef.current.getPane = () => map.getPane('riskPane'); // Attach to riskPane
-      map.addLayer(heatmapLayerRef.current);
+      if (visibleLayers.risk) map.addLayer(heatmapLayerRef.current);
     } else {
       heatmapLayerRef.current.updatePoints(hmPoints);
+      if (visibleLayers.risk && !map.hasLayer(heatmapLayerRef.current)) map.addLayer(heatmapLayerRef.current);
+      if (!visibleLayers.risk && map.hasLayer(heatmapLayerRef.current)) map.removeLayer(heatmapLayerRef.current);
     }
 
     group.clearLayers();
 
     // 3. Draw Grid Sampling Points
     hmPoints.forEach(p => {
+      if (!visibleLayers.grid) return;
       const isClicked = clickedZoneId === p.id;
       const palette = getTierColor(p.value);
-      const iconHtml = `<div class="grid-marker" style="width: 10px; height: 10px; border-radius: 50%; background: #fff; border: 2px solid ${palette.border}; box-shadow: 0 0 10px ${palette.border}; opacity: ${isClicked ? 1 : 0.8};"></div>`;
+      const roundedScore = Math.round(p.value);
+      const iconHtml = `<div class="flex items-center space-x-1" style="transform: translate(-5px, -5px);">
+         <div style="width: 12px; height: 12px; border-radius: 50%; background: ${palette.border}; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.5);"></div>
+         <div style="background: rgba(0,0,0,0.75); color: #fff; padding: 2px 4px; border-radius: 4px; font-size: 9px; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;">${p.id} • ${roundedScore}</div>
+      </div>`;
       
       const m = L.marker([p.lat, p.lon], {
-        pane: 'routePane', icon: L.divIcon({ className: '', html: iconHtml, iconAnchor: [5, 5] })
+        pane: 'routePane', icon: L.divIcon({ className: '', html: iconHtml, iconAnchor: [0, 0] })
       }).addTo(group);
       
       m.on('click', () => {
@@ -248,7 +271,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
 
     // 4. Draw Segmented Risk-Colored Route Overlay
     const waypoints = analysis?.route?.waypoints || analysis?.plan?.route?.waypoints || analysis?.route || [];
-    if (Array.isArray(waypoints) && waypoints.length > 1) {
+    if (visibleLayers.route && Array.isArray(waypoints) && waypoints.length > 1) {
       for (let i = 0; i < waypoints.length - 1; i++) {
         const p1 = waypoints[i], p2 = waypoints[i + 1];
         if (!p1.lat || !p1.lon || !p2.lat || !p2.lon) continue;
@@ -277,12 +300,12 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
       pane: 'routePane',
       icon: L.divIcon({
         className: '',
-        html: `<div style="width:14px;height:14px;border-radius:50%;background:#ffffff;border:3px solid #10b981;box-shadow:0 0 15px rgba(255,255,255,1);"></div>`,
+        html: `<div style="width:14px;height:14px;border-radius:50%;background:#ffffff;border:3px solid #10b981;box-shadow:0 1px 4px rgba(0,0,0,0.5);"></div>`,
         iconAnchor: [7, 7]
       })
     }).addTo(group).bindPopup(`<b>VESSEL / ORIGIN</b>`);
 
-  }, [analysis, activeRiskLayer, selectedTimeOffset, clickedZoneId, validLat, validLon]);
+  }, [analysis, activeRiskLayer, selectedTimeOffset, clickedZoneId, validLat, validLon, visibleLayers]);
 
   if (!hasValidCoords) return <div className="h-[520px] rounded-lg bg-[#0a0d0a] border border-[#243024] flex items-center justify-center"><Compass className="animate-spin text-[#d4850a]" /></div>;
 
@@ -298,120 +321,113 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
   const tierInfo = getTierColor(v);
 
   return (
-    <div className="orca-map-container relative w-full h-[700px] overflow-hidden bg-[#0a0d0a] flex flex-col font-sans">
+    <div className={`orca-map-container relative w-full overflow-hidden bg-[#0a0d0a] flex flex-col font-sans border border-[var(--border-base)] rounded-xl shadow-sm \${isMapFullscreen ? 'fixed inset-0 z-[9999] h-screen' : 'h-[700px]'}`}>
       
       {/* MAP CANVAS */}
-      <div ref={mapContainerRef} className="flex-1 w-full bg-[#0a0d0a]" />
+      <div ref={mapContainerRef} className="flex-1 w-full bg-[#0a0d0a] z-[1]" />
       
-      {/* TOP CONTROLS */}
-      <div className="absolute top-4 left-4 right-4 z-[500] flex justify-between pointer-events-none">
-        <div className="relative pointer-events-auto">
-          <button onClick={() => setShowRiskMenu(!showRiskMenu)} className="flex items-center space-x-2 bg-[#111814]/90 backdrop-blur-md border border-[#243024] px-4 py-2 rounded-xl text-white shadow-lg hover:border-white/40 transition">
-            <Layers className="w-4 h-4 text-white" />
-            <span className="font-bold text-sm tracking-wide">RISK LAYER: <span className="text-[#d4850a]">{LAYERS[activeRiskLayer].label}</span></span>
-            <ChevronDown className="w-4 h-4 text-white/50" />
-          </button>
-          {showRiskMenu && (
-            <div className="absolute top-12 left-0 bg-[#111814]/95 backdrop-blur-xl border border-[#243024] rounded-xl shadow-md w-56 overflow-hidden">
-              {Object.entries(LAYERS).map(([k, def]) => (
-                <button key={k} onClick={() => { setActiveRiskLayer(k); setShowRiskMenu(false); }} className={`w-full text-left px-4 py-3 text-sm font-semibold transition ${activeRiskLayer === k ? 'bg-[#d4850a] text-black' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
-                  {def.label}
-                </button>
-              ))}
+      {/* TOP HEADER */}
+      <div className="absolute top-0 left-0 right-0 z-[500] pointer-events-none flex justify-between items-start p-4">
+         <div className="flex items-center space-x-3 pointer-events-auto bg-[#111814]/95 backdrop-blur-md px-4 py-2 rounded-lg border border-[var(--border-base)] shadow-sm">
+            <span className="font-bold text-xs uppercase tracking-widest text-white">MARITIME RISK MAP</span>
+            <div className="h-3 w-[1px] bg-white/20" />
+            <div className="flex items-center text-[9px] text-[#22d3ee] font-bold uppercase tracking-wider">
+               <span className="w-1.5 h-1.5 rounded-full bg-[#22d3ee] mr-1.5 animate-pulse" />
+               Live Data
             </div>
-          )}
-        </div>
+         </div>
 
-        <div className="relative pointer-events-auto">
-          <button onClick={() => setShowLayerMenu(!showLayerMenu)} className="flex items-center space-x-2 bg-[#111814]/80 backdrop-blur-md border border-[#243024] px-3 py-1.5 rounded-lg text-white/80 text-xs hover:border-white/30 transition">
-            <span>{TILE_LAYERS[activeBase].label}</span>
-            <ChevronDown className="w-3 h-3" />
-          </button>
-          {showLayerMenu && (
-            <div className="absolute top-9 right-0 bg-[#111814]/95 border border-[#243024] rounded-lg shadow-sm w-36 overflow-hidden">
-              {Object.keys(TILE_LAYERS).map(k => (
-                <button key={k} onClick={() => { setActiveBase(k); setShowLayerMenu(false); }} className={`w-full text-left px-3 py-2 text-xs transition ${activeBase === k ? 'bg-white/10 text-white' : 'text-white/60 hover:text-white'}`}>{TILE_LAYERS[k].label}</button>
-              ))}
-            </div>
-          )}
-        </div>
+         <div className="flex items-center space-x-2 pointer-events-auto">
+            <button onClick={() => { if (mapInstanceRef.current) mapInstanceRef.current.setView([validLat, validLon], 9); }} className="bg-[#111814]/95 backdrop-blur-md px-3 py-2 rounded-lg border border-[var(--border-base)] shadow-sm text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
+               Recenter
+            </button>
+            <button onClick={() => setIsMapFullscreen(!isMapFullscreen)} className="bg-[#111814]/95 backdrop-blur-md px-3 py-2 rounded-lg border border-[var(--border-base)] shadow-sm text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
+               {isMapFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+            </button>
+         </div>
       </div>
 
-      {/* RIGHT SIDE INFO PANEL */}
-      {clickedZoneId && (
-        <div className="absolute top-20 right-4 z-[500] w-64 bg-[#111814]/95 backdrop-blur-xl border border-white/10 rounded-lg shadow-md p-4 flex flex-col text-white transform transition-all pointer-events-auto">
-          <div className="flex justify-between items-start mb-3">
-             <div>
-               <div className="text-[10px] text-white/50 font-bold uppercase tracking-widest">{clickedZoneId} AREA</div>
-               <div className="font-black text-lg" style={{ color: tierInfo.border }}>{tierInfo.name}</div>
-             </div>
-             <button onClick={() => setClickedZoneId(null)} className="p-1 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition"><X className="w-4 h-4" /></button>
-          </div>
-          <div className="space-y-3">
-             <div className="bg-black/40 rounded-lg p-2.5 border border-white/5 flex flex-col items-center justify-center">
-               <span className="text-xs text-white/50 mb-1">{LAYERS[activeRiskLayer].label}</span>
-               <span className="text-2xl font-bold font-mono" style={{ color: tierInfo.border }}>{LAYERS[activeRiskLayer].format(v)}</span>
-             </div>
-             {forecastMissing && <div className="text-[10px] text-amber-500/80 bg-amber-500/10 p-2 rounded flex items-center"><Info className="w-3 h-3 mr-1.5 flex-shrink-0" />Forecast unavailable. Showing current data.</div>}
-             <div className="text-xs text-white/60 space-y-1.5 pt-2 border-t border-white/5">
-                <div className="flex justify-between"><span>Wave:</span> <b className="text-white">{activeZoneData?.risk?.weather?.wave_height_m?.toFixed(1) || '-'} m</b></div>
-                <div className="flex justify-between"><span>Wind:</span> <b className="text-white">{Math.round((activeZoneData?.risk?.weather?.wind_speed_ms||0)*1.94)} kt</b></div>
-                <div className="flex justify-between"><span>Vis:</span> <b className="text-white">{activeZoneData?.risk?.weather?.visibility_km?.toFixed(1) || '-'} km</b></div>
-             </div>
-          </div>
-        </div>
-      )}
+      {/* RIGHT CONTROLS PANEL */}
+      <div className="absolute top-16 right-4 z-[500] pointer-events-none flex flex-col items-end space-y-2">
+         
+         {/* Map Style Selector */}
+         <div className="bg-[#111814]/95 backdrop-blur-md border border-[var(--border-base)] rounded-lg shadow-sm p-1.5 pointer-events-auto flex space-x-1">
+            {Object.keys(TILE_LAYERS).map(k => (
+               <button key={k} onClick={() => setActiveBase(k)} className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition cursor-pointer \${activeBase === k ? 'bg-[#243024] text-white' : 'text-white/50 hover:text-white'}`}>
+                  {TILE_LAYERS[k].label.split(' ')[0]}
+               </button>
+            ))}
+         </div>
 
-      {/* TIMELINE & LEGENDS (BOTTOM) */}
-      <div className="absolute bottom-0 left-0 right-0 z-[500] bg-gradient-to-t from-[#000000] via-[#0a0d0a]/90 to-transparent pt-12 pb-5 px-6 pointer-events-auto">
-         <div className="max-w-5xl mx-auto">
-           <div className="flex justify-between items-end mb-6">
-              
-              {/* Dual Legend Section */}
-              <div className="flex space-x-6">
-                {/* GIS Legend */}
-                <div className="flex flex-col space-y-2 bg-[#0a0d0a]/90 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 shadow-lg">
-                  <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">GIS ZONES</span>
-                  <div className="flex space-x-4">
-                    {[{c: '#22B8CF', l: '12 NM'}, {c: '#6C63FF', l: '24 NM'}, {c: '#2DD4BF', l: '50 NM'}, {c: '#D4A72C', l: '100 NM'}].map(z => (
-                      <div key={z.l} className="flex items-center space-x-1.5"><div className="w-3 h-0 border-t-2 border-dashed" style={{ borderColor: z.c }} /><span className="text-[9px] font-bold text-white/70">{z.l}</span></div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Risk Legend */}
-                <div className="flex flex-col space-y-2 bg-[#0a0d0a]/90 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 shadow-lg">
-                  <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">RISK</span>
-                  <div className="flex space-x-3">
-                    {Object.values(RISK_PALETTE).map(p => (
-                      <div key={p.name} className="flex items-center space-x-1.5"><div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.border }} /><span className="text-[9px] font-bold text-white/80 uppercase">{p.name}</span></div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="text-right">
-                 <div className="text-[10px] font-bold text-[#d4850a] uppercase tracking-widest">{selectedTimeOffset === 0 ? 'LIVE CONDITIONS' : 'FORECAST MODEL'}</div>
-                 <div className="text-sm font-mono font-bold text-white">
-                    {selectedTimeOffset === 0 ? 'Current Observation' : (selectedTimeOffset > 0 ? `+${selectedTimeOffset} Hours` : `${selectedTimeOffset} Hours`)}
-                 </div>
-              </div>
-           </div>
+         {/* Layer Controls */}
+         <div className="bg-[#111814]/95 backdrop-blur-md border border-[var(--border-base)] rounded-lg shadow-sm p-3 pointer-events-auto w-48 mt-2">
+            <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest mb-3">MAP LAYERS</div>
+            <div className="space-y-2.5">
+               {Object.entries({ risk: 'Risk Layers', gis: 'GIS Zones', route: 'Route', grid: 'Grid Points' }).map(([key, label]) => (
+                  <label key={key} className="flex items-center space-x-2 cursor-pointer group">
+                     <input type="checkbox" checked={visibleLayers[key]} onChange={() => setVisibleLayers(prev => ({...prev, [key]: !prev[key]}))} className="appearance-none w-3.5 h-3.5 border border-[var(--border-base)] rounded bg-[#111814] checked:bg-[#d4850a] checked:border-[#d4850a] transition cursor-pointer" />
+                     <span className={`text-xs font-medium transition \${visibleLayers[key] ? 'text-white' : 'text-white/40 group-hover:text-white/70'}`}>{label}</span>
+                  </label>
+               ))}
+            </div>
+         </div>
+      </div>
 
-           {/* Interactive Timeline Track */}
-           <div className="relative h-10 flex items-center">
-              <div className="absolute left-0 right-0 h-1 bg-[#243024] rounded-full" />
-              {TIME_STEPS.map((step, i) => {
-                 const isSelected = selectedTimeOffset === step.offset;
-                 const isNow = step.offset === 0;
-                 return (
-                   <div key={step.offset} className="absolute flex flex-col items-center transform -translate-x-1/2" style={{ left: `${(i / (TIME_STEPS.length - 1)) * 100}%` }}>
-                      <button onClick={() => setSelectedTimeOffset(step.offset)} className={`w-4 h-4 rounded-full border-2 transition-all ${isSelected ? 'bg-[#d4850a] border-[#d4850a] scale-150 shadow-[0_0_15px_#d4850a]' : (isNow ? 'bg-[#22d3ee] border-[#22d3ee] shadow-[0_0_10px_#22d3ee] scale-125' : 'bg-[#111814] border-white/30 hover:border-white/70')}`} />
-                      <span className={`mt-2 text-[10px] font-bold tracking-wider ${isSelected ? 'text-[#d4850a]' : (isNow ? 'text-[#22d3ee]' : 'text-white/40')}`}>{step.label}</span>
-                   </div>
-                 );
-              })}
-           </div>
+      {/* BOTTOM OVERLAYS */}
+      <div className="absolute bottom-4 left-4 right-4 z-[500] flex justify-between items-end pointer-events-none">
+         
+         {/* Legends */}
+         <div className="flex space-x-3 pointer-events-auto">
+            {/* GIS Legend */}
+            <div className="flex flex-col bg-[#111814]/95 backdrop-blur-md px-4 py-2 rounded-lg border border-[var(--border-base)] shadow-sm">
+              <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1.5">GIS ZONES</span>
+              <div className="flex space-x-4">
+                {[{c: '#22B8CF', l: '12 NM'}, {c: '#6C63FF', l: '24 NM'}, {c: '#2DD4BF', l: '50 NM'}, {c: '#D4A72C', l: '100 NM'}].map(z => (
+                  <div key={z.l} className="flex items-center space-x-1.5"><div className="w-4 h-0 border-t-2 border-dashed" style={{ borderColor: z.c }} /><span className="text-[9px] font-bold text-white/70">{z.l}</span></div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Risk Legend */}
+            <div className="flex flex-col bg-[#111814]/95 backdrop-blur-md px-4 py-2 rounded-lg border border-[var(--border-base)] shadow-sm">
+              <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1.5">RISK</span>
+              <div className="flex space-x-3">
+                {Object.values(RISK_PALETTE).map(p => (
+                  <div key={p.name} className="flex items-center space-x-1.5"><div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.border }} /><span className="text-[9px] font-bold text-white/80 uppercase">{p.name}</span></div>
+                ))}
+              </div>
+            </div>
+         </div>
+
+         {/* Right Bottom: Coords & Timeline */}
+         <div className="flex flex-col items-end space-y-3 pointer-events-auto">
+            {/* Coordinates */}
+            {cursorCoords && (
+               <div className="bg-[#111814]/95 backdrop-blur-md px-3 py-1.5 rounded-lg border border-[var(--border-base)] shadow-sm font-mono text-[10px] text-white/70">
+                  {Math.abs(cursorCoords.lat).toFixed(4)}° {cursorCoords.lat >= 0 ? 'N' : 'S'} &nbsp;|&nbsp; {Math.abs(cursorCoords.lng).toFixed(4)}° {cursorCoords.lng >= 0 ? 'E' : 'W'}
+               </div>
+            )}
+            
+            {/* Timeline */}
+            <div className="bg-[#111814]/95 backdrop-blur-md border border-[var(--border-base)] rounded-lg py-4 px-6 shadow-sm w-80">
+               <div className="flex justify-between items-center mb-5">
+                  <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest">TIME FORECAST</span>
+                  <span className="text-[9px] font-bold text-[#d4850a]">{selectedTimeOffset === 0 ? 'NOW' : `\${selectedTimeOffset > 0 ? '+' : ''}\${selectedTimeOffset}h`}</span>
+               </div>
+               <div className="relative h-1 flex items-center w-full">
+                  <div className="absolute left-0 right-0 h-0.5 bg-[var(--border-base)]" />
+                  {TIME_STEPS.map((step, i) => {
+                     const isSelected = selectedTimeOffset === step.offset;
+                     const isNow = step.offset === 0;
+                     return (
+                       <div key={step.offset} className="absolute flex flex-col items-center transform -translate-x-1/2" style={{ left: `\${(i / (TIME_STEPS.length - 1)) * 100}%` }}>
+                          <button onClick={() => setSelectedTimeOffset(step.offset)} className={`w-2.5 h-2.5 rounded-full border transition-all cursor-pointer \${isSelected ? 'bg-[#d4850a] border-[#d4850a] scale-125' : (isNow ? 'bg-[#22d3ee] border-[#22d3ee] scale-110' : 'bg-[#111814] border-white/30 hover:border-white/70')}`} />
+                          <span className={`absolute top-3 text-[8px] font-bold tracking-wider \${isSelected ? 'text-[#d4850a]' : (isNow ? 'text-[#22d3ee]' : 'text-white/40')}`}>{step.label}</span>
+                       </div>
+                     );
+                  })}
+               </div>
+            </div>
          </div>
       </div>
     </div>
