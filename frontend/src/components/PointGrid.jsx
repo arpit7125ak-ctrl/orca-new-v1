@@ -49,7 +49,7 @@ function PointCard({ pt, id, info, labelText, hasScore, score, isSelected, barBg
           <RiskIndicator 
             level={pt.status} 
             score={pt.risk_score} 
-            label={hasScore ? `${score}/100` : t('grid.unrated', { defaultValue: 'Unrated' })} 
+            showScore={hasScore}
           />
           <button 
             onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
@@ -248,16 +248,14 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
           const isSelected = selectedPoint?.point_id === id || selectedPoint?.id === id;
 
           let barBg = 'var(--text-secondary)';
-          if (hasScore) {
-            if (score > 80 || pt.status === 'DANGEROUS') {
-              barBg = 'var(--dangerous-text)';
-            } else if (score > 50 || pt.status === 'UNSAFE') {
-              barBg = 'var(--unsafe-text)';
-            } else if (score > 30 || pt.status === 'CAUTION') {
-              barBg = 'var(--caution-text)';
-            } else {
-              barBg = 'var(--safe-text)';
-            }
+          if (pt.status === 'DANGEROUS') {
+            barBg = 'var(--dangerous-text)';
+          } else if (pt.status === 'UNSAFE') {
+            barBg = 'var(--unsafe-text)';
+          } else if (pt.status === 'CAUTION') {
+            barBg = 'var(--caution-text)';
+          } else if (pt.status === 'SAFE') {
+            barBg = 'var(--safe-text)';
           }
 
           return (

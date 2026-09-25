@@ -60,28 +60,37 @@ export function RiskMark({ level, className = "w-3 h-3 inline-block shrink-0" })
 }
 
 export default function RiskIndicator({ level, score, showScore = true, label, className = "" }) {
-  const normLevel = (level || 'UNRATED').toUpperCase();
-  const hasScore = score !== null && score !== undefined;
+  const normLevel = (level || '').toUpperCase();
+  const hasScore = score !== null && score !== undefined && !isNaN(score);
+  const isKnownLevel = ['SAFE', 'CAUTION', 'UNSAFE', 'DANGEROUS'].includes(normLevel);
 
+  // Defensive warning: upstream data gap where a numeric score exists but level is missing/unrated
+  if (!isKnownLevel && hasScore) {
+    console.warn(
+      `[RiskIndicator] Upstream data gap: numeric risk score (${score}) present, but risk level is missing or unrated ("${level}").`
+    );
+  }
+
+  // 1. Badge style selection depends on level ONLY (Single Source of Truth)
   let badgeStyle = {
     color: 'var(--text-secondary)',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderColor: 'var(--border-base)',
   };
 
-  if (normLevel === 'DANGEROUS' || (hasScore && score > 80)) {
+  if (normLevel === 'DANGEROUS') {
     badgeStyle = {
       color: 'var(--dangerous-text)',
       backgroundColor: 'var(--dangerous-bg)',
       borderColor: 'var(--dangerous-border)',
     };
-  } else if (normLevel === 'UNSAFE' || (hasScore && score > 50)) {
+  } else if (normLevel === 'UNSAFE') {
     badgeStyle = {
       color: 'var(--unsafe-text)',
       backgroundColor: 'var(--unsafe-bg)',
       borderColor: 'var(--unsafe-border)',
     };
-  } else if (normLevel === 'CAUTION' || (hasScore && score > 30)) {
+  } else if (normLevel === 'CAUTION') {
     badgeStyle = {
       color: 'var(--caution-text)',
       backgroundColor: 'var(--caution-bg)',
@@ -95,7 +104,18 @@ export default function RiskIndicator({ level, score, showScore = true, label, c
     };
   }
 
-  const displayText = label || (hasScore ? `${Math.round(score)}/100` : 'Unrated');
+  // 2. Display text: Level name must always be visible; score is display-only and appended when available
+  let displayText;
+  if (label) {
+    displayText = label;
+  } else {
+    const levelName = isKnownLevel ? normLevel : 'Unrated';
+    if (hasScore && showScore) {
+      displayText = `${levelName} · ${Math.round(score)}/100`;
+    } else {
+      displayText = levelName;
+    }
+  }
 
   return (
     <span 
