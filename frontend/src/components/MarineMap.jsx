@@ -146,7 +146,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
   useEffect(() => {
     if (!mapContainerRef.current || !hasValidCoords) return;
     if (!mapInstanceRef.current) {
-      const map = L.map(mapContainerRef.current, { center: [validLat, validLon], zoom: 13, zoomControl: false });
+      const map = L.map(mapContainerRef.current, { center: [validLat, validLon], zoom: 11, zoomControl: false });
       L.control.zoom({ position: 'bottomright' }).addTo(map);
       
       // Setup Panes for explicit layer ordering
@@ -171,7 +171,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
       const validPts = pointsData.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon));
       if (validPts.length > 1) {
         const bounds = L.latLngBounds(validPts.map(p => [p.lat, p.lon]));
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 11 });
       }
       setTimeout(() => map.invalidateSize(), 200);
     }
@@ -184,9 +184,9 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
     const validPts = pointsData.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon));
     if (validPts.length > 1) {
       const bounds = L.latLngBounds(validPts.map(p => [p.lat, p.lon]));
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 11 });
     } else if (hasValidCoords) {
-      map.setView([validLat, validLon], 13);
+      map.setView([validLat, validLon], 11);
     }
   }, [pointsData, hasValidCoords, validLat, validLon]);
 
@@ -205,9 +205,9 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
     const validPts = pointsData.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon));
     if (validPts.length > 1) {
       const bounds = L.latLngBounds(validPts.map(p => [p.lat, p.lon]));
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 11 });
     } else if (hasValidCoords) {
-      map.setView([validLat, validLon], 13);
+      map.setView([validLat, validLon], 11);
     }
   };
 
