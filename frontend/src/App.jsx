@@ -42,6 +42,7 @@ import TrendPage from './components/TrendPage';
 import { orcaApi } from './api/client';
 import * as history from './utils/history';
 import { AlertCircle, Compass, Radio } from 'lucide-react';
+import OceanBackground from './components/OceanBackground';
 
 /**
  * Root Application Component.
