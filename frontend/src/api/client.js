@@ -130,13 +130,10 @@ export const orcaApi = {
       const healthUrl = `${base}/health`;
       const resBackend = await fetch(healthUrl);
       const backendData = await resBackend.json();
-      // i will also check the health of the AI service temperorarily, i want to make sure both backends and ai services are running.
-      const aiHealthUrl= "https://orca-ai-service-b0fx.onrender.com/health"
-      const resai = await fetch(aiHealthUrl);
-      const aiData = await resai.json();
+      
+      
 
       console.log('Backend Health Data:', backendData);
-      console.log('AI Health Data:', aiData);
 
       return backendData;
     } catch {

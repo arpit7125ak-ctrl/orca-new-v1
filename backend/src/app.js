@@ -94,6 +94,13 @@ function createApp() {
    * Always 200 if the process can respond at all.
    */
   const healthHandler = (req, res) => {
+
+    // i will also check the health of the AI service temperorarily, i want to make sure both backends and ai services are running.
+    const aiHealthUrl= "https://orca-ai-service-b0fx.onrender.com/health"
+    const resai = await fetch(aiHealthUrl);
+    const aiData = await resai.json();
+    console.log('AI Health Data:', aiData);
+
     res.status(200).json({
       status: 'ok',
       service: 'orca-backend',
