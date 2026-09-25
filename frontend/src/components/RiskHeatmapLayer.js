@@ -12,22 +12,30 @@ export const RiskHeatmapLayer = L.Layer.extend({
     this._canvas = L.DomUtil.create('canvas', 'leaflet-heatmap-layer leaflet-zoom-animated');
     this._canvas.style.pointerEvents = 'none';
     this._canvas.style.opacity = '0.9'; // Transparency handled by fill colors mostly
-    map.getPanes().overlayPane.appendChild(this._canvas);
+    const pane = (this.getPane && this.getPane()) || (this.options?.pane && map.getPane(this.options.pane)) || map.getPanes().overlayPane;
+    pane.appendChild(this._canvas);
     map.on('moveend', this._reset, this);
     map.on('resize', this._reset, this);
     this._reset();
   },
   onRemove: function (map) {
-    L.DomUtil.remove(this._canvas);
+    if (this._canvas) {
+      L.DomUtil.remove(this._canvas);
+      this._canvas = null;
+    }
     map.off('moveend', this._reset, this);
     map.off('resize', this._reset, this);
+    this._map = null;
   },
   updatePoints: function (points) {
     this.points = points;
-    this._draw();
+    if (this._map && this._canvas) {
+      this._draw();
+    }
   },
   _reset: function () {
     const map = this._map;
+    if (!map || !this._canvas) return;
     const size = map.getSize();
     const topLeft = map.containerPointToLayerPoint([0, 0]);
     L.DomUtil.setPosition(this._canvas, topLeft);
@@ -36,6 +44,7 @@ export const RiskHeatmapLayer = L.Layer.extend({
     this._draw();
   },
   _draw: function () {
+    if (!this._map || !this._canvas) return;
     const ctx = this._canvas.getContext('2d');
     const w = this._canvas.width;
     const h = this._canvas.height;

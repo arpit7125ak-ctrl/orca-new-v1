@@ -8,36 +8,56 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import L from 'leaflet';
-import { Compass, ShieldAlert, Layers, MapPin, Anchor, ChevronDown, Clock, Info, X } from 'lucide-react';
+import { Compass, ShieldAlert, Layers, MapPin, Anchor, ChevronDown, Clock, Info, X, Check } from 'lucide-react';
 import { orcaApi } from '../api/client';
 import { RiskHeatmapLayer } from './RiskHeatmapLayer';
 
 // ---------------------------------------------------------------------------
-// DATA-DRIVEN RISK COLOR SYSTEM
+// CANONICAL 4-TIER RISK COLOR SYSTEM & SHAPE GLYPHS
 // ---------------------------------------------------------------------------
 const RISK_PALETTE = {
-  LOW:      { border: '#2FAE72', fill: 'rgba(47, 174, 114, 0.15)', name: 'SAFE', tier: 0 },
-  MODERATE: { border: '#D8B12D', fill: 'rgba(216, 177, 45, 0.20)', name: 'CAUTION', tier: 1 },
-  HIGH:     { border: '#E59A24', fill: 'rgba(229, 154, 36, 0.25)', name: 'MODERATE', tier: 2 },
-  SEVERE:   { border: '#E05A25', fill: 'rgba(224, 90, 37, 0.30)',  name: 'HIGH RISK', tier: 3 },
-  DANGER:   { border: '#D63838', fill: 'rgba(214, 56, 56, 0.35)',  name: 'DANGER', tier: 4 },
-  EXTREME:  { border: '#A91E5B', fill: 'rgba(169, 30, 91, 0.40)',  name: 'EXTREME', tier: 5 },
+  SAFE:      { border: '#34d399', fill: 'rgba(52, 211, 153, 0.20)', name: 'SAFE', tier: 0 },
+  CAUTION:   { border: '#fbbf24', fill: 'rgba(251, 191, 36, 0.25)', name: 'CAUTION', tier: 1 },
+  UNSAFE:    { border: '#fb923c', fill: 'rgba(251, 146, 60, 0.30)', name: 'UNSAFE', tier: 2 },
+  DANGEROUS: { border: '#f87171', fill: 'rgba(248, 113, 113, 0.35)', name: 'DANGEROUS', tier: 3 },
 };
+
+function getLevelPalette(level) {
+  const norm = (level || '').toUpperCase();
+  if (norm === 'SAFE') return RISK_PALETTE.SAFE;
+  if (norm === 'CAUTION') return RISK_PALETTE.CAUTION;
+  if (norm === 'UNSAFE') return RISK_PALETTE.UNSAFE;
+  if (norm === 'DANGEROUS') return RISK_PALETTE.DANGEROUS;
+  return { border: '#94a3b8', fill: 'rgba(148, 163, 184, 0.20)', name: 'UNRATED', tier: -1 };
+}
+
+function getShapeSvg(level, color) {
+  const norm = (level || '').toUpperCase();
+  if (norm === 'SAFE') {
+    return `<svg viewBox="0 0 12 12" width="10" height="10" fill="${color}" style="display:inline-block;vertical-align:middle;"><circle cx="6" cy="6" r="4.5"/></svg>`;
+  }
+  if (norm === 'CAUTION') {
+    return `<svg viewBox="0 0 12 12" width="10" height="10" fill="${color}" style="display:inline-block;vertical-align:middle;"><polygon points="6,1.5 10.5,6 6,10.5 1.5,6"/></svg>`;
+  }
+  if (norm === 'UNSAFE') {
+    return `<svg viewBox="0 0 12 12" width="10" height="10" fill="${color}" style="display:inline-block;vertical-align:middle;"><polygon points="6,1.5 11,10 1,10"/></svg>`;
+  }
+  if (norm === 'DANGEROUS') {
+    return `<svg viewBox="0 0 12 12" width="10" height="10" fill="${color}" style="display:inline-block;vertical-align:middle;"><polygon points="4,1.5 8,1.5 10.5,4 10.5,8 8,10.5 4,10.5 1.5,8 1.5,4"/></svg>`;
+  }
+  return `<svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="${color}" stroke-width="1.5" style="display:inline-block;vertical-align:middle;"><circle cx="6" cy="6" r="4" stroke-dasharray="2 2"/></svg>`;
+}
 
 function getTierColor(val, overrideTier = null) {
   const tier = overrideTier !== null ? overrideTier : (
     val < 35 ? 0 :
-    val < 50 ? 1 :
-    val < 70 ? 2 :
-    val < 85 ? 3 :
-    val < 95 ? 4 : 5
+    val < 60 ? 1 :
+    val < 80 ? 2 : 3
   );
-  if (tier === 0) return RISK_PALETTE.LOW;
-  if (tier === 1) return RISK_PALETTE.MODERATE;
-  if (tier === 2) return RISK_PALETTE.HIGH;
-  if (tier === 3) return RISK_PALETTE.SEVERE;
-  if (tier === 4) return RISK_PALETTE.DANGER;
-  return RISK_PALETTE.EXTREME;
+  if (tier === 0) return RISK_PALETTE.SAFE;
+  if (tier === 1) return RISK_PALETTE.CAUTION;
+  if (tier === 2) return RISK_PALETTE.UNSAFE;
+  return RISK_PALETTE.DANGEROUS;
 }
 
 // ---------------------------------------------------------------------------
@@ -126,7 +146,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
   useEffect(() => {
     if (!mapContainerRef.current || !hasValidCoords) return;
     if (!mapInstanceRef.current) {
-      const map = L.map(mapContainerRef.current, { center: [validLat, validLon], zoom: 9, zoomControl: false });
+      const map = L.map(mapContainerRef.current, { center: [validLat, validLon], zoom: 12, zoomControl: false });
       L.control.zoom({ position: 'bottomright' }).addTo(map);
       
       // Setup Panes for explicit layer ordering
@@ -146,9 +166,50 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
       gisGroupRef.current = L.layerGroup().addTo(map);
       dataGroupRef.current = L.layerGroup().addTo(map);
       mapInstanceRef.current = map;
+
+      // Auto-fit to points bounds on init
+      const validPts = pointsData.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon));
+      if (validPts.length > 1) {
+        const bounds = L.latLngBounds(validPts.map(p => [p.lat, p.lon]));
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+      }
       setTimeout(() => map.invalidateSize(), 200);
     }
-  }, [hasValidCoords, validLat, validLon]);
+  }, [hasValidCoords, validLat, validLon, pointsData]);
+
+  // Auto-fit to points bounds whenever points change
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const validPts = pointsData.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon));
+    if (validPts.length > 1) {
+      const bounds = L.latLngBounds(validPts.map(p => [p.lat, p.lon]));
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+    } else if (hasValidCoords) {
+      map.setView([validLat, validLon], 12);
+    }
+  }, [pointsData, hasValidCoords, validLat, validLon]);
+
+  // Re-calculate map dimensions on fullscreen toggle
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    const timer = setTimeout(() => {
+      mapInstanceRef.current?.invalidateSize();
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [isMapFullscreen]);
+
+  const handleRecenter = () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const validPts = pointsData.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon));
+    if (validPts.length > 1) {
+      const bounds = L.latLngBounds(validPts.map(p => [p.lat, p.lon]));
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+    } else if (hasValidCoords) {
+      map.setView([validLat, validLon], 12);
+    }
+  };
 
     const hybridLabelRef = useRef(null);
 
@@ -241,17 +302,25 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
     });
 
     // 2. Update Canvas Heatmap (Blobs only)
-    if (!heatmapLayerRef.current) {
-      heatmapLayerRef.current = new RiskHeatmapLayer(hmPoints, {
-        getColor: getTierColor,
-        getTier: (v) => getTierColor(v).tier
-      });
-      heatmapLayerRef.current.getPane = () => map.getPane('riskPane'); // Attach to riskPane
-      if (visibleLayers.risk) map.addLayer(heatmapLayerRef.current);
+    if (visibleLayers.risk) {
+      if (!heatmapLayerRef.current) {
+        heatmapLayerRef.current = new RiskHeatmapLayer(hmPoints, {
+          getColor: getTierColor,
+          getTier: (v) => getTierColor(v).tier,
+          pane: 'riskPane',
+        });
+        heatmapLayerRef.current.getPane = () => map.getPane('riskPane');
+        map.addLayer(heatmapLayerRef.current);
+      } else {
+        if (!map.hasLayer(heatmapLayerRef.current)) {
+          map.addLayer(heatmapLayerRef.current);
+        }
+        heatmapLayerRef.current.updatePoints(hmPoints);
+      }
     } else {
-      heatmapLayerRef.current.updatePoints(hmPoints);
-      if (visibleLayers.risk && !map.hasLayer(heatmapLayerRef.current)) map.addLayer(heatmapLayerRef.current);
-      if (!visibleLayers.risk && map.hasLayer(heatmapLayerRef.current)) map.removeLayer(heatmapLayerRef.current);
+      if (heatmapLayerRef.current && map.hasLayer(heatmapLayerRef.current)) {
+        map.removeLayer(heatmapLayerRef.current);
+      }
     }
 
     group.clearLayers();
@@ -260,15 +329,22 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
     hmPoints.forEach(p => {
       if (!visibleLayers.grid) return;
       const isClicked = clickedZoneId === p.id;
-      const palette = getTierColor(p.value);
-      const roundedScore = Math.round(p.value);
-      const iconHtml = `<div class="flex items-center space-x-1" style="transform: translate(-5px, -5px);">
-         <div style="width: 12px; height: 12px; border-radius: 50%; background: ${palette.border}; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.5);"></div>
-         <div style="background: rgba(0,0,0,0.75); color: #fff; padding: 2px 4px; border-radius: 4px; font-size: 9px; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;">${p.id} • ${roundedScore}</div>
+      const pointRiskLevel = p.orig?.risk?.risk_level;
+      const palette = getLevelPalette(pointRiskLevel);
+      const roundedScore = p.orig?.risk?.final_score != null ? Math.round(p.orig.risk.final_score) : Math.round(p.value);
+      const glyphSvg = getShapeSvg(pointRiskLevel, palette.border);
+      
+      const iconHtml = `<div class="flex items-center space-x-1.5" style="transform: translate(-10px, -10px); cursor: pointer;">
+         <div style="width: 20px; height: 20px; border-radius: 50%; background: #111814; border: 2px solid ${palette.border}; box-shadow: 0 2px 6px rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; ${isClicked ? 'transform: scale(1.2); box-shadow: 0 0 10px ' + palette.border + ';' : ''}">
+           ${glyphSvg}
+         </div>
+         <div style="background: rgba(17, 24, 20, 0.90); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; border: 1px solid ${palette.border}88; box-shadow: 0 2px 4px rgba(0,0,0,0.6); white-space: nowrap; font-family: monospace;">
+           ${p.id} <span style="color: ${palette.border}; font-weight: 800;">${roundedScore}</span>
+         </div>
       </div>`;
       
       const m = L.marker([p.lat, p.lon], {
-        pane: 'routePane', icon: L.divIcon({ className: '', html: iconHtml, iconAnchor: [0, 0] })
+        pane: 'routePane', icon: L.divIcon({ className: '', html: iconHtml, iconAnchor: [10, 10] })
       }).addTo(group);
       
       m.on('click', () => {
@@ -346,7 +422,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
          </div>
 
          <div className="flex items-center space-x-2 pointer-events-auto">
-            <button onClick={() => { if (mapInstanceRef.current) mapInstanceRef.current.setView([validLat, validLon], 9); }} className="bg-[#111814]/95 backdrop-blur-md px-3 py-2 rounded-lg border border-[var(--border-base)] shadow-sm text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
+            <button onClick={handleRecenter} className="bg-[#111814]/95 backdrop-blur-md px-3 py-2 rounded-lg border border-[var(--border-base)] shadow-sm text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
                Recenter
             </button>
             <button onClick={() => setIsMapFullscreen(!isMapFullscreen)} className="bg-[#111814]/95 backdrop-blur-md px-3 py-2 rounded-lg border border-[var(--border-base)] shadow-sm text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
@@ -361,7 +437,14 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
          {/* Map Style Selector */}
          <div className="bg-[#111814]/95 backdrop-blur-md border border-[var(--border-base)] rounded-lg shadow-sm p-1.5 pointer-events-auto flex space-x-1">
             {Object.keys(TILE_LAYERS).map(k => (
-               <button key={k} onClick={() => setActiveBase(k)} className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition cursor-pointer \${activeBase === k ? 'bg-[#243024] text-white' : 'text-white/50 hover:text-white'}`}>
+               <button
+                   key={k}
+                   onClick={() => setActiveBase(k)}
+                   className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
+                      activeBase === k
+                         ? 'bg-[#d4850a] text-black font-extrabold shadow-sm'
+                         : 'text-white/60 hover:text-white hover:bg-[#243024]'
+                   }`}>
                   {TILE_LAYERS[k].label.split(' ')[0]}
                </button>
             ))}
@@ -372,9 +455,21 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
             <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest mb-3">MAP LAYERS</div>
             <div className="space-y-2.5">
                {Object.entries({ risk: 'Risk Layers', gis: 'GIS Zones', route: 'Route', grid: 'Grid Points' }).map(([key, label]) => (
-                  <label key={key} className="flex items-center space-x-2 cursor-pointer group">
-                     <input type="checkbox" checked={visibleLayers[key]} onChange={() => setVisibleLayers(prev => ({...prev, [key]: !prev[key]}))} className="appearance-none w-3.5 h-3.5 border border-[var(--border-base)] rounded bg-[#111814] checked:bg-[#d4850a] checked:border-[#d4850a] transition cursor-pointer" />
-                     <span className={`text-xs font-medium transition \${visibleLayers[key] ? 'text-white' : 'text-white/40 group-hover:text-white/70'}`}>{label}</span>
+                  <label key={key} className="flex items-center space-x-2.5 cursor-pointer group select-none">
+                     <input
+                        type="checkbox"
+                        checked={visibleLayers[key]}
+                        onChange={() => setVisibleLayers(prev => ({...prev, [key]: !prev[key]}))}
+                        className="sr-only"
+                     />
+                     <div className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${
+                        visibleLayers[key]
+                           ? 'bg-[#d4850a] border-[#d4850a]'
+                           : 'bg-[#0a0d0a] border-[var(--border-base)] group-hover:border-white/40'
+                     }`}>
+                        {visibleLayers[key] && <Check className="w-3 h-3 text-black stroke-[3]" />}
+                     </div>
+                     <span className={`text-xs font-medium transition-colors ${visibleLayers[key] ? 'text-white' : 'text-white/40 group-hover:text-white/70'}`}>{label}</span>
                   </label>
                ))}
             </div>
@@ -400,8 +495,16 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
             <div className="flex flex-col bg-[#111814]/95 backdrop-blur-md px-4 py-2 rounded-lg border border-[var(--border-base)] shadow-sm">
               <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1.5">RISK</span>
               <div className="flex space-x-3">
-                {Object.values(RISK_PALETTE).map(p => (
-                  <div key={p.name} className="flex items-center space-x-1.5"><div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.border }} /><span className="text-[9px] font-bold text-white/80 uppercase">{p.name}</span></div>
+                {[
+                  { level: 'SAFE', label: 'SAFE', color: '#34d399' },
+                  { level: 'CAUTION', label: 'CAUTION', color: '#fbbf24' },
+                  { level: 'UNSAFE', label: 'UNSAFE', color: '#fb923c' },
+                  { level: 'DANGEROUS', label: 'DANGEROUS', color: '#f87171' },
+                ].map(item => (
+                  <div key={item.level} className="flex items-center space-x-1.5">
+                    <span dangerouslySetInnerHTML={{ __html: getShapeSvg(item.level, item.color) }} />
+                    <span className="text-[9px] font-bold text-white/80 uppercase tracking-wider">{item.label}</span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -420,7 +523,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
             <div className="bg-[#111814]/95 backdrop-blur-md border border-[var(--border-base)] rounded-lg py-4 px-6 shadow-sm w-80">
                <div className="flex justify-between items-center mb-5">
                   <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest">TIME FORECAST</span>
-                  <span className="text-[9px] font-bold text-[#d4850a]">{selectedTimeOffset === 0 ? 'NOW' : `\${selectedTimeOffset > 0 ? '+' : ''}\${selectedTimeOffset}h`}</span>
+                  <span className="text-[9px] font-bold text-[#d4850a]">{selectedTimeOffset === 0 ? 'NOW' : `${selectedTimeOffset > 0 ? '+' : ''}${selectedTimeOffset}h`}</span>
                </div>
                <div className="relative h-1 flex items-center w-full">
                   <div className="absolute left-0 right-0 h-0.5 bg-[var(--border-base)]" />
@@ -428,9 +531,9 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
                      const isSelected = selectedTimeOffset === step.offset;
                      const isNow = step.offset === 0;
                      return (
-                       <div key={step.offset} className="absolute flex flex-col items-center transform -translate-x-1/2" style={{ left: `\${(i / (TIME_STEPS.length - 1)) * 100}%` }}>
-                          <button onClick={() => setSelectedTimeOffset(step.offset)} className={`w-2.5 h-2.5 rounded-full border transition-all cursor-pointer \${isSelected ? 'bg-[#d4850a] border-[#d4850a] scale-125' : (isNow ? 'bg-[#22d3ee] border-[#22d3ee] scale-110' : 'bg-[#111814] border-white/30 hover:border-white/70')}`} />
-                          <span className={`absolute top-3 text-[8px] font-bold tracking-wider \${isSelected ? 'text-[#d4850a]' : (isNow ? 'text-[#22d3ee]' : 'text-white/40')}`}>{step.label}</span>
+                       <div key={step.offset} className="absolute flex flex-col items-center transform -translate-x-1/2" style={{ left: `${(i / (TIME_STEPS.length - 1)) * 100}%` }}>
+                          <button onClick={() => setSelectedTimeOffset(step.offset)} className={`w-2.5 h-2.5 rounded-full border transition-all cursor-pointer ${isSelected ? 'bg-[#d4850a] border-[#d4850a] scale-125' : (isNow ? 'bg-[#22d3ee] border-[#22d3ee] scale-110' : 'bg-[#111814] border-white/30 hover:border-white/70')}`} />
+                          <span className={`absolute top-3 text-[8px] font-bold tracking-wider ${isSelected ? 'text-[#d4850a]' : (isNow ? 'text-[#22d3ee]' : 'text-white/40')}`}>{step.label}</span>
                        </div>
                      );
                   })}
