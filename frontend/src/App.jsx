@@ -222,7 +222,7 @@ export default function App() {
       />
 
       <main className="flex-1 w-full h-screen overflow-y-auto">
-        <div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto md:pt-6 pt-16">
+        <div className="p-4 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto md:pt-6 pt-16">
           {/* Error Notification Banner */}
           {errorMessage && (
             <div className="mb-6 p-4 rounded-lg bg-[var(--dangerous)]/20 border border-[var(--dangerous)] text-[var(--text-primary)] flex items-start justify-between gap-3 shadow-lg">

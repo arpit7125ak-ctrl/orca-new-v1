@@ -407,7 +407,7 @@ export default function HomeAskOrca({
       )}
 
       {/* Main "Ask ORCA" Box */}
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 sm:p-8 shadow-2xl space-y-6">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 sm:p-8 shadow-md space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Compass className="w-6 h-6 text-[var(--accent-primary)]" />

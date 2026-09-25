@@ -284,7 +284,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
 
   }, [analysis, activeRiskLayer, selectedTimeOffset, clickedZoneId, validLat, validLon]);
 
-  if (!hasValidCoords) return <div className="h-[520px] rounded-2xl bg-[#0a0d0a] border border-[#243024] flex items-center justify-center"><Compass className="animate-spin text-[#d4850a]" /></div>;
+  if (!hasValidCoords) return <div className="h-[520px] rounded-lg bg-[#0a0d0a] border border-[#243024] flex items-center justify-center"><Compass className="animate-spin text-[#d4850a]" /></div>;
 
   const activeZone = pointsData.find(p => p.point_id === clickedZoneId) || pointsData[0];
   let forecastMissing = false, activeZoneData = activeZone;
@@ -312,7 +312,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
             <ChevronDown className="w-4 h-4 text-white/50" />
           </button>
           {showRiskMenu && (
-            <div className="absolute top-12 left-0 bg-[#111814]/95 backdrop-blur-xl border border-[#243024] rounded-xl shadow-2xl w-56 overflow-hidden">
+            <div className="absolute top-12 left-0 bg-[#111814]/95 backdrop-blur-xl border border-[#243024] rounded-xl shadow-md w-56 overflow-hidden">
               {Object.entries(LAYERS).map(([k, def]) => (
                 <button key={k} onClick={() => { setActiveRiskLayer(k); setShowRiskMenu(false); }} className={`w-full text-left px-4 py-3 text-sm font-semibold transition ${activeRiskLayer === k ? 'bg-[#d4850a] text-black' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
                   {def.label}
@@ -328,7 +328,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
             <ChevronDown className="w-3 h-3" />
           </button>
           {showLayerMenu && (
-            <div className="absolute top-9 right-0 bg-[#111814]/95 border border-[#243024] rounded-lg shadow-xl w-36 overflow-hidden">
+            <div className="absolute top-9 right-0 bg-[#111814]/95 border border-[#243024] rounded-lg shadow-sm w-36 overflow-hidden">
               {Object.keys(TILE_LAYERS).map(k => (
                 <button key={k} onClick={() => { setActiveBase(k); setShowLayerMenu(false); }} className={`w-full text-left px-3 py-2 text-xs transition ${activeBase === k ? 'bg-white/10 text-white' : 'text-white/60 hover:text-white'}`}>{TILE_LAYERS[k].label}</button>
               ))}
@@ -339,7 +339,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
 
       {/* RIGHT SIDE INFO PANEL */}
       {clickedZoneId && (
-        <div className="absolute top-20 right-4 z-[500] w-64 bg-[#111814]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-4 flex flex-col text-white transform transition-all pointer-events-auto">
+        <div className="absolute top-20 right-4 z-[500] w-64 bg-[#111814]/95 backdrop-blur-xl border border-white/10 rounded-lg shadow-md p-4 flex flex-col text-white transform transition-all pointer-events-auto">
           <div className="flex justify-between items-start mb-3">
              <div>
                <div className="text-[10px] text-white/50 font-bold uppercase tracking-widest">{clickedZoneId} AREA</div>

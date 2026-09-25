@@ -48,7 +48,7 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
 
   if (rawPoints.length === 0) {
     return (
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-2xl p-6 text-center text-[var(--text-secondary)]">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-lg p-6 text-center text-[var(--text-secondary)]">
         <Compass className="w-8 h-8 text-[var(--accent-primary)] mx-auto mb-2 animate-spin-slow" />
         <p className="text-sm font-semibold">{t('grid.noMatrixLoaded')}</p>
         <p className="text-xs text-[var(--text-muted)] mt-1">{t('grid.submitQueryHint')}</p>
@@ -87,7 +87,7 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
   });
 
   return (
-    <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-2xl p-5 shadow-xl">
+    <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-lg p-5 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm sm:text-base font-bold text-[var(--text-primary)] flex items-center space-x-2">

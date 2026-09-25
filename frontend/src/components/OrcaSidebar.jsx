@@ -91,7 +91,7 @@ export default function OrcaSidebar({
         className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors mb-1
           ${isActive 
             ? 'bg-[var(--bg-surface-2)] text-[var(--accent-primary)] border-l-2 border-[var(--accent-primary)]' 
-            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'}`}
+            : 'border-l-2 border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'}`}
       >
         <Icon className="w-4 h-4" />
         <span>{t(item.labelKey, { defaultValue: item.fallback })}</span>

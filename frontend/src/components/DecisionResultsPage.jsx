@@ -83,7 +83,7 @@ export default function DecisionResultsPage({
 
   if (!analysis) {
     return (
-      <div className="text-center py-16 bg-slate-900/60 border border-slate-800 rounded-3xl p-8 space-y-4">
+      <div className="text-center py-16 bg-slate-900/60 border border-slate-800 rounded-xl p-8 space-y-4">
         <Compass className="w-10 h-10 text-cyan-400 mx-auto animate-spin-slow" />
         <h3 className="text-lg font-bold text-white">{t('results.noAnalysis')}</h3>
         <p className="text-xs text-slate-400">{t('results.startMission')}</p>
@@ -106,7 +106,7 @@ export default function DecisionResultsPage({
   if (analysis.final_stage === 'trend' || analysis.trend_result) {
     return (
       <div className="space-y-6 py-2">
-        <div className="flex items-center justify-between bg-slate-900/70 border border-slate-800 p-4 rounded-2xl backdrop-blur-md">
+        <div className="flex items-center justify-between bg-slate-900/70 border border-slate-800 p-4 rounded-lg backdrop-blur-md">
           <button
             onClick={onBackToInput}
             className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs flex items-center space-x-1.5 transition-colors cursor-pointer"
@@ -136,7 +136,7 @@ export default function DecisionResultsPage({
     const route = analysis.route_result || analysis;
     return (
       <div className="space-y-6 py-2">
-        <div className="flex items-center justify-between bg-slate-900/70 border border-slate-800 p-4 rounded-2xl backdrop-blur-md">
+        <div className="flex items-center justify-between bg-slate-900/70 border border-slate-800 p-4 rounded-lg backdrop-blur-md">
           <button
             onClick={onBackToInput}
             className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs flex items-center space-x-1.5 transition-colors cursor-pointer"
@@ -156,7 +156,7 @@ export default function DecisionResultsPage({
             <span>{t('results.openInRoutePlanner')}</span>
           </button>
         </div>
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-6 shadow-md space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-white">{t('results.nauticalPassageAnalysis')}</h3>
             <span className={`px-3 py-1 rounded-xl text-xs font-bold uppercase border ${route.max_risk_level === 'SAFE' ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : 'bg-amber-950 text-amber-300 border-amber-800'}`}>
@@ -323,7 +323,7 @@ export default function DecisionResultsPage({
 
       {/* Tab 2: Metocean Charts */}
       {activeInternalTab === 'charts' && (
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 shadow-xl space-y-6">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 shadow-md space-y-6">
           <div className="border-b border-[var(--border-base)] pb-3 flex items-center justify-between">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)] flex items-center space-x-2">
               <BarChart3 className="w-4 h-4 text-[var(--accent-primary)]" />
@@ -358,7 +358,7 @@ export default function DecisionResultsPage({
 
       {/* Tab 3: Evidence & Sources */}
       {activeInternalTab === 'evidence' && (
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 shadow-xl space-y-4">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 shadow-md space-y-4">
           <div className="border-b border-[var(--border-base)] pb-3 flex items-center justify-between">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)] flex items-center space-x-2">
               <Database className="w-4 h-4 text-[var(--accent-primary)]" />
@@ -413,7 +413,7 @@ export default function DecisionResultsPage({
 
       {/* Tab 4: Data Quality & Freshness */}
       {activeInternalTab === 'quality' && (
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 shadow-xl space-y-4">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-6 shadow-md space-y-4">
           <div className="border-b border-[var(--border-base)] pb-3 flex items-center justify-between">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-primary)] flex items-center space-x-2">
               <Layers className="w-4 h-4 text-[var(--accent-primary)]" />
