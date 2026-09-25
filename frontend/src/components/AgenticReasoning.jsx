@@ -14,7 +14,8 @@
  *    fan-out agents (Math.max(ends) - Math.min(starts)) rather than a misleading sequential sum.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { 
   CheckCircle2, 
@@ -29,6 +30,8 @@ import {
  * @param {Object|null} props.analysis - Completed analysis payload containing plan and execution_trace.
  */
 export default function AgenticReasoning({ analysis }) {
+  const [expanded, setExpanded] = useState(false);
+
   const { t } = useTranslation('ui');
   if (!analysis) return null;
 

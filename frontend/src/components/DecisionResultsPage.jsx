@@ -37,6 +37,8 @@ import {
 import DecisionHero from './DecisionHero';
 import MarineMap from './MarineMap';
 import PointGrid from './PointGrid';
+import ExpandablePanel from './ExpandablePanel';
+import { Activity, ShieldAlert, Route, Search, History } from 'lucide-react';
 import ExplainableAi from './ExplainableAi';
 import AgenticReasoning from './AgenticReasoning';
 import ReportModal from './ReportModal';
@@ -344,7 +346,7 @@ export default function DecisionResultsPage({
 
             {/* MAIN LAYOUT: MAP (66%) + SIDEBAR (33%) */}
             <div className="grid grid-cols-12 gap-5 items-start">
-              <div className="col-span-12 lg:col-span-8 flex flex-col space-y-5">
+              <div className="col-span-12 lg:col-span-7 2xl:col-span-8 flex flex-col space-y-5 min-w-0">
                  <MarineMap
                    analysis={analysis}
                    selectedPoint={selectedPoint}
@@ -357,7 +359,7 @@ export default function DecisionResultsPage({
                  </div>
               </div>
 
-              <div className="col-span-12 lg:col-span-4 flex flex-col space-y-4 max-h-[1400px] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="col-span-12 lg:col-span-5 2xl:col-span-4 flex flex-col space-y-4 max-h-[1400px] overflow-y-auto pr-2 custom-scrollbar min-w-0">
                 
                 {/* ORCA DECISION */}
                 <div className="bg-[#111814] border border-[#d4850a]/30 rounded-xl p-4 shrink-0 shadow-sm relative overflow-hidden">
@@ -422,9 +424,8 @@ export default function DecisionResultsPage({
 
                 {/* ROUTE INTELLIGENCE */}
                 {waypoints.length > 0 && (
-                <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm card-enter card-enter-4 interactive-card">
-                  <h3 className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-3">ROUTE INTELLIGENCE</h3>
-                  <div className="grid grid-cols-2 gap-3">
+                <ExpandablePanel title="ROUTE INTELLIGENCE" icon={Route}>
+<div className="grid grid-cols-2 gap-3">
                      <div className="bg-[#0a0d0a] p-2.5 rounded border border-[var(--border-base)]">
                         <div className="text-[8px] text-white/40 uppercase mb-1">Total Distance</div>
                         <div className="text-xs font-bold text-white font-mono">{distDisplay}</div>
@@ -436,9 +437,8 @@ export default function DecisionResultsPage({
                   </div>
                   <div className="mt-3 text-[10px] text-white/60">
                     Primary risk area located near: <span className="text-white font-mono">{highestRiskLatLon}</span>
-                  </div>
-                </div>
-                )}
+</div>
+</ExpandablePanel>)}
 
                 {/* DATA QUALITY & SOURCES */}
                 <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm card-enter card-enter-4 interactive-card">

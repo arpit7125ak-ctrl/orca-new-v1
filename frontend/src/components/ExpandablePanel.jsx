@@ -5,7 +5,7 @@ export default function ExpandablePanel({ title, subtitle, defaultExpanded = tru
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   return (
-    <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm card-enter interactive-card">
+    <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm card-enter interactive-card w-full box-border">
       <div 
         className="flex items-center justify-between cursor-pointer group"
         onClick={() => setExpanded(!expanded)}
@@ -21,8 +21,8 @@ export default function ExpandablePanel({ title, subtitle, defaultExpanded = tru
         </div>
         <div className="flex items-center space-x-2">
           {extraHeader}
-          <button className="text-white/30 hover:text-white/70 transition">
-            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          <button aria-expanded={expanded} className="text-[var(--text-secondary)] hover:text-white transition p-1.5 rounded-md cursor-pointer flex items-center justify-center w-8 h-8">
+            {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </button>
         </div>
       </div>

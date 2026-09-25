@@ -1,99 +1,149 @@
-/**
- * ============================================================================
- * ORCA Multi-Point Safety Matrix (src/components/PointGrid.jsx)
- * ============================================================================
- * Visual matrix of all geographical sampling points evaluated by the pipeline.
- * 
- * Capabilities (Architecture Spec §7, §8):
- * 1. 9-Point Local Grid & 25-Point Regional Grid: Displays center anchor (P0) and
- *    surrounding cardinal/intercardinal perimeter stations (P1-P8 / R0001-R0008).
- * 2. Visual Badging: Highlights the algorithmically preferred point (green ring)
- *    and highest risk/worst point (red ring).
- * 3. Quick Telemetry Snippets: Significant wave height (Hs), wind velocity, and dominant hazards.
- * 4. Interactive Selection: Clicking any point card opens the comprehensive 26-parameter
- *    PointDetailSheet inspection drawer.
- */
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Compass, Waves, Wind, MapPin, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Compass, Waves, Wind, AlertTriangle, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
-/**
- * Multi-Point Grid Matrix Component.
- * 
- * @param {Object} props
- * @param {Object|null} props.analysis - Completed analysis result object.
- * @param {Object|null} props.selectedPoint - Currently selected point for deep inspection.
- * @param {Function} props.onSelectPoint - Callback triggered when user clicks a point card.
- */
+// --------------------------------------------------------------------------
+// PointCard - extracted for local expanded state
+// --------------------------------------------------------------------------
+function PointCard({ pt, id, info, labelText, hasScore, score, isSelected, badgeColor, barColor, validLat, validLon, onSelect, forceExpand }) {
+  const { t } = useTranslation('ui');
+  const [expanded, setExpanded] = useState(false);
+  React.useEffect(() => { setExpanded(forceExpand || false); }, [forceExpand]);
+
+  // Fallbacks if not provided
+  const lat = typeof pt.lat === 'number' ? pt.lat.toFixed(4) : (validLat !== null ? validLat.toFixed(4) : '—');
+  const lon = typeof pt.lon === 'number' ? pt.lon.toFixed(4) : (validLon !== null ? validLon.toFixed(4) : '—');
+
+  return (
+    <div 
+      className={`flex flex-col min-w-0 w-full box-border overflow-hidden p-3 sm:p-4 rounded-xl cursor-pointer transition-all duration-300 interactive-card ${
+        isSelected 
+          ? 'bg-[var(--bg-surface-2)] border-[var(--accent-primary)] ring-1 ring-[var(--accent-glow)]' 
+          : 'bg-[var(--bg-base)] border-[var(--border-base)] hover:border-slate-700 hover:bg-slate-900/60'
+      }`}
+    >
+      <div className="flex justify-between items-start mb-2" onClick={() => onSelect(pt)}>
+        <div className="flex items-center space-x-2">
+          <span className="text-sm sm:text-base">{info.compass}</span>
+          <div>
+            <div className="flex items-center space-x-1.5">
+              <span className="text-xs font-bold text-[var(--text-primary)]">{id}</span>
+              <span className="text-[10px] text-[var(--text-secondary)]">({labelText})</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2 shrink-0">
+          {pt.isPreferred && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[var(--accent-dim)] text-[var(--accent-primary)] border border-[var(--accent-primary)]">
+              {t('grid.best', { defaultValue: 'BEST' })}
+            </span>
+          )}
+          {pt.isWorst && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[var(--dangerous)]/20 text-[var(--dangerous-bright)] border border-[var(--dangerous)]">
+              {t('grid.worst', { defaultValue: 'WORST' })}
+            </span>
+          )}
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeColor}`}>
+            {hasScore ? `${score}/100` : t('grid.unrated')}
+          </span>
+          <button 
+            onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition p-0.5 rounded"
+          >
+            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+
+      <div className="w-full h-1 bg-[var(--bg-surface-2)] rounded-full overflow-hidden mb-3">
+        {hasScore ? (
+          <div className={`h-full ${barColor} rounded-full`} style={{ width: `${score}%` }} />
+        ) : (
+          <div className="h-full bg-slate-700/50 w-full" />
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-[var(--text-secondary)] mb-2">
+        <div className="truncate">Lat: {lat}°N</div>
+        <div className="truncate">Lon: {lon}°E</div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <div className="min-w-0 overflow-hidden flex flex-col items-start bg-cyan-950/20 p-1.5 rounded border border-cyan-900/40">
+           <span className="text-[8px] uppercase text-cyan-500/70 mb-0.5 flex items-center space-x-1"><Waves className="w-2.5 h-2.5"/><span>Wave</span></span>
+           <span className="text-[10px] font-bold text-cyan-400 truncate w-full">{pt.waveVal || '—'}</span>
+        </div>
+        <div className="min-w-0 overflow-hidden flex flex-col items-start bg-sky-950/20 p-1.5 rounded border border-sky-900/40">
+           <span className="text-[8px] uppercase text-sky-500/70 mb-0.5 flex items-center space-x-1"><Wind className="w-2.5 h-2.5"/><span>Wind</span></span>
+           <span className="text-[10px] font-bold text-sky-400 truncate w-full">{pt.windVal || '—'}</span>
+        </div>
+      </div>
+
+      {expanded && pt.official_warning && (
+        <div className="text-[10px] font-bold text-[var(--dangerous-bright)] bg-[var(--dangerous)]/10 p-1.5 rounded border border-[var(--dangerous)]/30 mb-2 truncate">
+          ⚠️ {pt.official_warning.issuing_authority} {pt.official_warning.floor_level || 'Alert'}
+        </div>
+      )}
+
+      <div className={`text-[10px] text-[var(--text-secondary)] mt-1 border-t border-[var(--border-base)] pt-2 ${expanded ? '' : 'line-clamp-2'}`}>
+        {pt.finding || t('map.noAlerts')}
+      </div>
+    </div>
+  );
+}
+
+
 export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
   const { t } = useTranslation('ui');
   const plan = analysis?.plan || {};
+  
+  const validLat = plan.location?.validated?.lat != null ? Number(plan.location.validated.lat) : Number(plan.location?.original?.lat);
+  const validLon = plan.location?.validated?.lon != null ? Number(plan.location.validated.lon) : Number(plan.location?.original?.lon);
+  
   const rawPoints = analysis?.points || [];
 
-  const validLat = plan.location?.validated?.lat ?? plan.location?.original?.lat ?? (rawPoints[0] ? rawPoints[0].lat : null);
-  const validLon = plan.location?.validated?.lon ?? plan.location?.original?.lon ?? (rawPoints[0] ? rawPoints[0].lon : null);
-
   const dirMap = {
-    P0: { labelKey: 'grid.dirP0', compass: '🎯' },
-    P1: { labelKey: 'grid.dirP1', compass: '⬆️' },
-    P2: { labelKey: 'grid.dirP2', compass: '↗️' },
-    P3: { labelKey: 'grid.dirP3', compass: '➡️' },
-    P4: { labelKey: 'grid.dirP4', compass: '↘️' },
-    P5: { labelKey: 'grid.dirP5', compass: '⬇️' },
-    P6: { labelKey: 'grid.dirP6', compass: '↙️' },
-    P7: { labelKey: 'grid.dirP7', compass: '⬅️' },
-    P8: { labelKey: 'grid.dirP8', compass: '↖️' },
+    'P1': { labelKey: 'map.sectors.nw', compass: '↖' },
+    'P2': { labelKey: 'map.sectors.n',  compass: '↑' },
+    'P3': { labelKey: 'map.sectors.ne', compass: '↗' },
+    'P4': { labelKey: 'map.sectors.w',  compass: '←' },
+    'P0': { labelKey: 'map.sectors.c',  compass: '⊙' },
+    'P5': { labelKey: 'map.sectors.e',  compass: '→' },
+    'P6': { labelKey: 'map.sectors.sw', compass: '↙' },
+    'P7': { labelKey: 'map.sectors.s',  compass: '↓' },
+    'P8': { labelKey: 'map.sectors.se', compass: '↘' }
   };
 
-  if (rawPoints.length === 0) {
-    return (
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-lg p-6 text-center text-[var(--text-secondary)] card-enter card-enter-1 interactive-card">
-        <Compass className="w-8 h-8 text-[var(--accent-primary)] mx-auto mb-2 animate-spin-slow" />
-        <p className="text-sm font-semibold">{t('grid.noMatrixLoaded')}</p>
-        <p className="text-xs text-[var(--text-muted)] mt-1">{t('grid.submitQueryHint')}</p>
-      </div>
-    );
-  }
-
-  const [sortMode, setSortMode] = React.useState('default');
-  
-  const pointsData = rawPoints.map((p, idx) => {
-    const pRisk = p.risk || {};
-    const factors = Array.isArray(pRisk.risk_factors) ? pRisk.risk_factors : [];
-    const formattedFactors = factors.map((f) => String(f).replace(/_/g, ' ')).join(', ');
-    const finding = (Array.isArray(pRisk.key_findings) ? pRisk.key_findings[0] : null) || pRisk.reasoning || t('results.evaluated');
-    const isPreferred = analysis?.decision?.preferred_point === (p.point_id || `P${idx}`);
-    const isWorst = analysis?.decision?.worst_point === (p.point_id || `P${idx}`);
-
-    const meas = p.measurements || {};
-    const waveRaw = meas.wave_height_m?.value || 0;
-    const windRaw = meas.wind_speed_ms?.value || 0;
-    const visRaw = meas.visibility_km?.value || 0;
-
-    const waveVal = meas.wave_height_m?.value != null ? `${meas.wave_height_m.value}m` : null;
-    const windVal = meas.wind_speed_ms?.value != null ? `${meas.wind_speed_ms.value}m/s` : null;
-
-    return {
-      point_id: p.point_id || `P${idx}`,
-      lat: p.lat,
-      lon: p.lon,
-      risk_score: pRisk.final_score ?? null,
-      status: pRisk.risk_level || 'UNRATED',
-      dominant_hazard: formattedFactors || t('grid.noneReported'),
-      finding,
-      isPreferred,
-      isWorst,
-      official_warning: pRisk.official_warnings?.[0] || null,
-      point_status: p.point_status || null,
-      waveVal,
-      windVal,
-      waveRaw,
-      windRaw,
-      visRaw,
-      rawPoint: p,
-    };
+  const pointsData = rawPoints.map(p => {
+    let waveRaw = 0, windRaw = 0, visRaw = 100;
+    
+    if (p.waveVal) {
+      const match = String(p.waveVal).match(/([0-9.]+)/);
+      if (match) waveRaw = parseFloat(match[1]);
+    }
+    if (p.windVal) {
+      const match = String(p.windVal).match(/([0-9.]+)/);
+      if (match) windRaw = parseFloat(match[1]);
+    }
+    
+    const factors = p.risk?.environmental_factors;
+    if (factors) {
+      const v = factors.find(f => (f.factor || '').toLowerCase().includes('visib'));
+      if (v) {
+        const m = String(v.value).match(/([0-9.]+)/);
+        if (m) visRaw = parseFloat(m[1]);
+      }
+    }
+    return { ...p, waveRaw, windRaw, visRaw };
   });
+
+  const [sortMode, setSortMode] = useState('default');
+  const [filterMode, setFilterMode] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [gridExpanded, setGridExpanded] = useState(true);
+  const [allExpanded, setAllExpanded] = useState(false);
 
   const pointsSorted = [...pointsData].sort((a, b) => {
     if (sortMode === 'risk') return (b.risk_score || 0) - (a.risk_score || 0);
@@ -103,18 +153,13 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
     return 0; // default order
   });
 
-  const [filterMode, setFilterMode] = React.useState('all');
-  const [searchQuery, setSearchQuery] = React.useState('');
-  
   const points = pointsSorted.filter(p => {
-    // Search match
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
       const searchableText = `${p.point_id} ${p.status} ${p.dominant_hazard} ${p.finding} ${p.waveVal} ${p.windVal} ${p.lat} ${p.lon}`.toLowerCase();
       if (!searchableText.includes(q)) return false;
     }
 
-    // Risk match
     if (filterMode === 'all') return true;
     const r = p.risk_score || 0;
     if (filterMode === 'safe') return r < 35;
@@ -125,31 +170,36 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
   });
 
   return (
-    <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-lg p-5 shadow-sm card-enter card-enter-2 interactive-card">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+    <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 sm:p-6 shadow-sm w-full box-border">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-5 gap-4">
         <div>
-          <h3 className="text-sm sm:text-base font-bold text-[var(--text-primary)] flex items-center space-x-2">
-            <Compass className="w-4 h-4 text-[var(--accent-primary)]" />
-            <span>{t('grid.title')}</span>
-          </h3>
-          <p className="text-xs text-[var(--text-secondary)]">
-            {t('grid.subtitle')}
+          <div className="flex items-center space-x-2 cursor-pointer group" onClick={() => setGridExpanded(!gridExpanded)}>
+            <h3 className="text-sm sm:text-base font-black text-[var(--text-primary)] flex items-center space-x-2">
+              <Compass className="w-4 h-4 text-[var(--accent-primary)]" />
+              <span>{t('grid.title', { defaultValue: '9-POINT SPATIAL GRID' })}</span>
+            </h3>
+            <button onClick={(e) => { e.stopPropagation(); setAllExpanded(!allExpanded); }} className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-secondary)] hover:text-white mr-3 px-2 py-1 rounded bg-[var(--bg-base)] border border-[var(--border-base)] hidden sm:block">{allExpanded ? 'Collapse All' : 'Expand All'}</button><button aria-expanded={gridExpanded} className="w-6 h-6 flex items-center justify-center text-[var(--text-secondary)] group-hover:text-white transition rounded">
+              {gridExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            </button>
+          </div>
+          <p className="text-[11px] text-[var(--text-secondary)] mt-1">
+            {t('grid.subtitle', { defaultValue: 'Localized conditions around your coordinate.' })}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           <input
             type="text"
-            placeholder="Search points..."
+            placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-[var(--bg-base)] text-[var(--text-primary)] border border-[var(--border-base)] rounded-lg px-2.5 py-1 text-[10px] uppercase tracking-wider outline-none placeholder:text-white/20 w-32 focus:border-[#E59A24]"
+            className="bg-[var(--bg-base)] text-[var(--text-primary)] border border-[var(--border-base)] rounded-lg px-2.5 py-1.5 text-[10px] uppercase tracking-wider outline-none placeholder:text-white/20 w-28 focus:border-[var(--accent-primary)] transition"
           />
           <select 
             value={filterMode}
             onChange={(e) => setFilterMode(e.target.value)}
-            className="bg-[var(--bg-base)] text-[var(--text-secondary)] border border-[var(--border-base)] rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider outline-none cursor-pointer hover:border-white/20 transition hidden sm:block"
+            className="bg-[var(--bg-base)] text-[var(--text-secondary)] border border-[var(--border-base)] rounded-lg px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider outline-none cursor-pointer hover:border-white/20 transition"
           >
-             <option value="all">All Risk</option>
+             <option value="all">All</option>
              <option value="safe">Safe</option>
              <option value="caution">Caution</option>
              <option value="high">High</option>
@@ -158,22 +208,19 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
           <select 
             value={sortMode}
             onChange={(e) => setSortMode(e.target.value)}
-            className="bg-[var(--bg-base)] text-[var(--text-secondary)] border border-[var(--border-base)] rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider outline-none cursor-pointer hover:border-white/20 transition"
+            className="bg-[var(--bg-base)] text-[var(--text-secondary)] border border-[var(--border-base)] rounded-lg px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider outline-none cursor-pointer hover:border-white/20 transition"
           >
-             <option value="default">Default Sort</option>
-             <option value="risk">Sort by Risk</option>
-             <option value="wave">Sort by Wave</option>
-             <option value="wind">Sort by Wind</option>
-             <option value="visibility">Sort by Vis</option>
+             <option value="default">Default</option>
+             <option value="risk">Risk</option>
+             <option value="wave">Wave</option>
+             <option value="wind">Wind</option>
+             <option value="visibility">Vis</option>
           </select>
-          <span className="text-[10px] font-mono font-bold text-[var(--accent-primary)] bg-[var(--accent-dim)] px-2.5 py-1 rounded-lg border border-[var(--accent-primary)] hidden md:block">
-            {points.length} pts
-          </span>
         </div>
       </div>
 
-      {/* 3x3 Responsive Grid Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      {gridExpanded && (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[16px] w-full box-border animate-in fade-in slide-in-from-top-2 duration-300">
         {points.map((pt) => {
           const id = pt.point_id || 'P0';
           const info = dirMap[id] || { labelKey: null, compass: '📍' };
@@ -182,107 +229,44 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
           const score = hasScore ? Math.round(pt.risk_score) : null;
           const isSelected = selectedPoint?.point_id === id || selectedPoint?.id === id;
 
-          // Color scale
           let badgeColor = 'bg-slate-800/40 text-[var(--text-secondary)] border-[var(--border-base)]';
           let barColor = 'bg-[var(--bg-surface-2)]';
           if (hasScore) {
             if (score > 80 || pt.status === 'DANGEROUS') {
               badgeColor = 'bg-rose-500/20 text-[var(--dangerous-bright)] border-rose-500/40';
-              barColor = 'bg-[var(--dangerous)]';
-            } else if (score > 60 || pt.status === 'UNSAFE') {
-              badgeColor = 'bg-orange-500/20 text-[var(--unsafe-bright)] border-orange-500/40';
-              barColor = 'bg-[var(--unsafe)]';
+              barColor = 'bg-gradient-to-r from-orange-600 to-rose-600';
+            } else if (score > 50 || pt.status === 'UNSAFE') {
+              badgeColor = 'bg-orange-500/20 text-orange-400 border-orange-500/40';
+              barColor = 'bg-gradient-to-r from-amber-500 to-orange-500';
             } else if (score > 30 || pt.status === 'CAUTION') {
-              badgeColor = 'bg-amber-500/20 text-[var(--caution-bright)] border-amber-500/40';
-              barColor = 'bg-[var(--caution)]';
+              badgeColor = 'bg-amber-500/20 text-amber-400 border-amber-500/40';
+              barColor = 'bg-gradient-to-r from-emerald-500 to-amber-500';
             } else {
-              badgeColor = 'bg-emerald-500/10 text-[var(--safe-bright)] border-emerald-500/30';
-              barColor = 'bg-[var(--safe)]';
+              badgeColor = 'bg-emerald-500/20 text-[var(--safe-bright)] border-emerald-500/40';
+              barColor = 'bg-gradient-to-r from-teal-500 to-emerald-500';
             }
           }
 
           return (
-            <div
+            <PointCard forceExpand={allExpanded} 
               key={id}
-              onClick={() => onSelectPoint && onSelectPoint(pt.rawPoint || pt)}
-              className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
-                isSelected
-                  ? 'bg-cyan-950/40 border-cyan-500 ring-2 ring-cyan-500/40 shadow-lg'
-                  : 'bg-[var(--bg-base)] border-[var(--border-base)] hover:border-slate-700 hover:bg-slate-900/60'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-1.5">
-                  <span className="text-base">{info.compass}</span>
-                  <div>
-                    <span className="text-xs font-bold text-[var(--text-primary)]">{id}</span>
-                    <span className="text-[10px] text-[var(--text-secondary)] ml-1.5">({labelText})</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-1">
-                  {pt.isPreferred && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[var(--accent-dim)] text-[var(--accent-primary)] border border-[var(--accent-primary)]">
-                      {t('grid.best')}
-                    </span>
-                  )}
-                  {pt.isWorst && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[var(--dangerous)]/20 text-[var(--dangerous-bright)] border border-[var(--dangerous)]">
-                      {t('grid.worst')}
-                    </span>
-                  )}
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeColor}`}>
-                    {hasScore ? `${score}/100` : t('grid.unrated')}
-                  </span>
-                </div>
-              </div>
-
-              {/* Score bar */}
-              <div className="w-full h-1.5 bg-[var(--bg-surface-2)] rounded-full overflow-hidden mb-2">
-                {hasScore ? (
-                  <div className={`h-full ${barColor} rounded-full`} style={{ width: `${score}%` }} />
-                ) : (
-                  <div className="h-full bg-slate-700/50 w-full" />
-                )}
-              </div>
-
-              {/* Coordinates and Hazard Factors */}
-              <div className="text-[11px] text-[var(--text-secondary)] space-y-1">
-                <div className="flex justify-between text-[var(--text-secondary)] text-[10px]">
-                  <span>{t('map.latLabel')}: {typeof pt.lat === 'number' ? pt.lat.toFixed(3) : (validLat !== null ? validLat.toFixed(3) : '—')}°N</span>
-                  <span>{t('map.lonLabel')}: {typeof pt.lon === 'number' ? pt.lon.toFixed(3) : (validLon !== null ? validLon.toFixed(3) : '—')}°E</span>
-                </div>
-
-                {/* Key quick telemetry tags */}
-                {(pt.waveVal || pt.windVal) && (
-                  <div className="flex items-center space-x-2 text-[10px] py-0.5 font-mono">
-                    {pt.waveVal && (
-                      <span className="text-[var(--accent-primary)] bg-cyan-950/50 px-1.5 py-0.5 rounded border border-cyan-800/60">
-                        🌊 {pt.waveVal}
-                      </span>
-                    )}
-                    {pt.windVal && (
-                      <span className="text-sky-300 bg-sky-950/50 px-1.5 py-0.5 rounded border border-sky-800/60">
-                        💨 {pt.windVal}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {pt.official_warning && (
-                  <div className="text-[10px] font-bold text-[var(--dangerous-bright)] truncate">
-                    ⚠️ {pt.official_warning.issuing_authority} {pt.official_warning.floor_level || 'Alert'}
-                  </div>
-                )}
-
-                <div className="text-[10px] text-[var(--text-secondary)] line-clamp-2 pt-1 border-t border-[var(--border-base)]">
-                  {pt.finding}
-                </div>
-              </div>
-            </div>
+              pt={pt}
+              id={id}
+              info={info}
+              labelText={labelText}
+              hasScore={hasScore}
+              score={score}
+              isSelected={isSelected}
+              badgeColor={badgeColor}
+              barColor={barColor}
+              validLat={validLat}
+              validLon={validLon}
+              onSelect={onSelectPoint}
+            />
           );
         })}
       </div>
+      )}
     </div>
   );
 }

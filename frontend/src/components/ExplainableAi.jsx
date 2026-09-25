@@ -13,7 +13,8 @@
  * 4. Data Quality & Source Provenance: Shows latency, freshness, and authority per measurement.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { 
   Scale, 
@@ -32,6 +33,8 @@ import {
  * @param {Object|null} props.analysis - Completed analysis result containing explainability and risk models.
  */
 export default function ExplainableAi({ analysis }) {
+  const [expanded, setExpanded] = useState(false);
+
   const { t } = useTranslation('ui');
   if (!analysis) return null;
 
