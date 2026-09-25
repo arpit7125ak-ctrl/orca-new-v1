@@ -329,7 +329,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
   const tierInfo = getTierColor(v);
 
   return (
-    <div className={`orca-map-container relative w-full overflow-hidden bg-[#0a0d0a] flex flex-col font-sans border border-[var(--border-base)] rounded-xl shadow-sm \${isMapFullscreen ? 'fixed inset-0 z-[9999] h-screen' : 'h-[700px]'}`}>
+    <div className={`orca-map-container relative w-full overflow-hidden bg-[#0a0d0a] flex flex-col font-sans border border-[var(--border-base)] rounded-xl shadow-sm ${isMapFullscreen ? 'fixed inset-0 z-[9999] h-screen' : 'h-[700px]'}`}>
       
       {/* MAP CANVAS */}
       <div ref={mapContainerRef} className="flex-1 w-full bg-[#0a0d0a] z-[1]" />
