@@ -104,8 +104,17 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
   });
 
   const [filterMode, setFilterMode] = React.useState('all');
+  const [searchQuery, setSearchQuery] = React.useState('');
   
   const points = pointsSorted.filter(p => {
+    // Search match
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      const searchableText = `${p.point_id} ${p.status} ${p.dominant_hazard} ${p.finding} ${p.waveVal} ${p.windVal} ${p.lat} ${p.lon}`.toLowerCase();
+      if (!searchableText.includes(q)) return false;
+    }
+
+    // Risk match
     if (filterMode === 'all') return true;
     const r = p.risk_score || 0;
     if (filterMode === 'safe') return r < 35;
@@ -117,7 +126,7 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
 
   return (
     <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-lg p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
         <div>
           <h3 className="text-sm sm:text-base font-bold text-[var(--text-primary)] flex items-center space-x-2">
             <Compass className="w-4 h-4 text-[var(--accent-primary)]" />
@@ -127,7 +136,14 @@ export default function PointGrid({ analysis, selectedPoint, onSelectPoint }) {
             {t('grid.subtitle')}
           </p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="text"
+            placeholder="Search points..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-[var(--bg-base)] text-[var(--text-primary)] border border-[var(--border-base)] rounded-lg px-2.5 py-1 text-[10px] uppercase tracking-wider outline-none placeholder:text-white/20 w-32 focus:border-[#E59A24]"
+          />
           <select 
             value={filterMode}
             onChange={(e) => setFilterMode(e.target.value)}
