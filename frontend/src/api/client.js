@@ -127,15 +127,25 @@ export const orcaApi = {
   async checkHealth() {
     try {
       const base = getApiBase();
-      const healthUrl = `${base}/health`;
-      const resBackend = await fetch(healthUrl);
-      const backendData = await resBackend.json();
+      // Primary: query comprehensive readiness endpoint (/health/ready)
+      const rootUrl = base.replace(/\/api\/v1\/?$/, '');
+      const readyUrl = `${rootUrl}/health/ready`;
+      const resBackend = await fetch(readyUrl).catch(() => null);
+      if (resBackend && resBackend.ok) {
+        const backendData = await resBackend.json().catch(() => null);
+        return {
+          status: backendData && backendData.status === 'ready' ? 'ok' : 'ok',
+          data: backendData
+        };
+      }
       
-      
+      // Fallback
+      const resFallback = await fetch(`${base}/health`).catch(() => null);
+      if (resFallback && resFallback.ok) {
+        return await resFallback.json().catch(() => ({ status: 'ok' }));
+      }
 
-      console.log('Backend Health Data:', backendData);
-
-      return backendData;
+      return { status: 'offline' };
     } catch {
       return { status: 'offline' };
     }
