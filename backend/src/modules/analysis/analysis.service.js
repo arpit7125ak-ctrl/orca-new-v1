@@ -522,6 +522,30 @@ async function applyResult(analysisId, payload) {
   await analysis.save();
   log.info({ status: analysis.status, final_stage: finalStage }, '[analysis] Final result recorded');
 
+  // --- Asynchronous Audio Pre-Generation (Section 102/103) -----------------
+  // Gated: Pre-generate ONLY for user-initiated analyses, completely skipping
+  // scheduled background checks (which carry alert_subscription_id).
+  // Non-blocking: executed via setImmediate, never delaying the analysis response.
+  if (!analysis.alert_subscription_id && ['completed', 'partial'].includes(analysis.status)) {
+    setImmediate(() => {
+      try {
+        const voiceService = require('../voice/voice.service');
+        const targetLang = analysis.response_language || analysis.detected_language || 'en';
+        voiceService.preGenerateAudio(analysisId, targetLang).catch((voiceErr) => {
+          logger.warn(
+            { analysis_id: analysisId, err: voiceErr.message },
+            '[analysis] Background audio pre-generation failed'
+          );
+        });
+      } catch (err) {
+        logger.warn(
+          { analysis_id: analysisId, err: err.message },
+          '[analysis] Failed to trigger background audio pre-generation'
+        );
+      }
+    });
+  }
+
   // If this analysis was triggered from chat, persist the assistant's reply into the conversation thread
   if (analysis.conversation_id) {
     try {

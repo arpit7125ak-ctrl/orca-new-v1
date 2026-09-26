@@ -2,7 +2,7 @@
   "name": "orca-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "ORCA (SIH26176) backend \u2014 receives, validates, persists, and tracks marine analysis requests; the only layer allowed to talk to the AI Service or MongoDB.",
+  "description": "ORCA (SIH26176) backend — receives, validates, persists, and tracks marine analysis requests; the only layer allowed to talk to the AI Service or MongoDB.",
   "main": "src/server.js",
   "engines": {
     "node": ">=18.0.0"
@@ -30,6 +30,7 @@
     "test:decision": "node scripts/test-decision.js"
   },
   "dependencies": {
+    "@breezystack/lamejs": "^1.2.7",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "axios": "^1.7.4",

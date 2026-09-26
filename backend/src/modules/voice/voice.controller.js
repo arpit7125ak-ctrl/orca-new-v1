@@ -93,14 +93,15 @@ const postVoiceQuery = asyncHandler(async (req, res) => {
 
 /** POST /api/v1/voice/speak - synthesise a completed answer. */
 const postSpeak = asyncHandler(async (req, res) => {
-  const { analysis_id: analysisId, language_override: languageOverride } = req.body;
+  const { analysis_id: analysisId, language_override: languageOverride, language } = req.body;
 
   if (!analysisId) {
     throw new AppError('analysis_id is required.', ERROR_CATEGORIES.VALIDATION_FAILURE);
   }
 
+  const requestedLang = languageOverride || language;
   const resolvedLanguage =
-    languageOverride && registry.isValidLanguage(languageOverride) ? languageOverride : 'en';
+    requestedLang && registry.isValidLanguage(requestedLang) ? requestedLang : 'en';
   const result = await voiceService.speakResult(analysisId, resolvedLanguage);
 
   // Same VoiceQueryResponse shape. When synthesis is unavailable the TEXT is

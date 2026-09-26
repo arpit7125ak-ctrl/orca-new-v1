@@ -1,58 +1,177 @@
 /**
  * @fileoverview Voice Service
- * Integrates with Bhashini for speech-to-text (ASR) and text-to-speech (TTS).
- * Routes transcripts through the standard chat/analysis pipeline.
- *
  * @module voice.service
+ * @description
+ * Integrates with Bhashini for speech-to-text (ASR) and text-to-speech (TTS).
+ * Manages asynchronous pre-generation, binary MP3 audio caching, and in-flight request deduplication.
+ *
+ * Architecture Principles (Section 102 & 103):
+ * - Direct Client Isolation: Frontend NEVER calls Bhashini directly.
+ * - Audio Pre-Generation: Gated on user-initiated analyses; pre-generates TTS in background upon
+ *   analysis completion so playback is an instant (<20ms) database cache read.
+ * - High-Efficiency Storage: Audio is stored as raw BSON BinData Buffer in MongoDB `voice_cache`
+ *   with a 24-hour TTL and compound unique index `{ analysis_id: 1, language: 1 }`.
+ * - Never-Fabricate Mandate: If synthesis fails or service is unconfigured, returns `{ audio: null, audio_available: false }`
+ *   and logs warnings—never writes empty silent audio blobs to cache or returns fake successes.
  */
-
-// src/modules/voice/voice.service.js
-// ---------------------------------------------------------------------------
-// Section 103: POST /api/v1/voice/query - audio in, audio + text out
-// (proxies Bhashini).
-//
-// Section 102 is the reason this module exists at all: the Frontend must NEVER
-// call Bhashini directly, because that would put the API key in the browser.
-// Everything routes Frontend -> Backend -> Bhashini.
-//
-// PIPELINE:
-//   1. ASR: audio -> text (Bhashini)
-//   2. Analysis: text -> full ORCA pipeline (asynchronous, like any query)
-//   3. TTS happens LATER, when the result is fetched - not here.
-//
-// WHY TTS IS NOT DONE IN STEP 3 HERE:
-// The analysis is asynchronous (Section 103: 202 Accepted). There is no answer
-// yet to synthesise. Blocking this request until the whole multi-agent pipeline
-// finished would hold an audio upload open for tens of seconds. Instead we
-// return the transcript plus an analysis_id, and the client requests TTS once
-// the result is ready.
-// ---------------------------------------------------------------------------
 
 const bhashini = require('../../clients/bhashini.client');
 const analysisService = require('../analysis/analysis.service');
 const chatService = require('../chat/chat.service');
+const VoiceCache = require('../../db/models/voiceCache.model');
+const audioEncoder = require('../../utils/audioEncoder');
 const { AppError, ERROR_CATEGORIES } = require('../../errors/errorCategories');
 const { logger } = require('../../observability/logger');
 
 /**
- * Handle a voice query.
+ * In-flight promise map for deduplicating concurrent synthesis calls
+ * Key: `${analysisId}:${language}` -> Promise
+ */
+const inFlightGenerations = new Map();
+
+/**
+ * Synthesizes audio via Bhashini, compresses to 16kHz mono MP3, and caches in MongoDB.
+ * Thread-safe with in-flight deduplication.
  *
- * @param {object} params
- * @param {string} params.audioBase64
- * @param {string} [params.language]        caller's declared language
- * @param {string} [params.conversationId]  continue an existing conversation
- * @param {object} [params.locationHint]    { lat, lon }
+ * @param {string} analysisId
+ * @param {string} language
+ * @param {string} text
+ * @returns {Promise<{ audio: string|null, audio_available: boolean, mime_type?: string, duration_sec?: number, text: string, language: string, reason?: string, cached?: boolean }>}
+ */
+async function synthesizeAndCacheAudio(analysisId, language, text) {
+  const cacheKey = `${analysisId}:${language}`;
+  if (inFlightGenerations.has(cacheKey)) {
+    return inFlightGenerations.get(cacheKey);
+  }
+
+  const promise = (async () => {
+    try {
+      const tts = await bhashini.textToSpeech(text, language);
+      if (!tts.available || !tts.audio) {
+        return {
+          audio: null,
+          audio_available: false,
+          reason: tts.reason || 'tts_unavailable',
+          text,
+          language,
+        };
+      }
+
+      const rawWavBuffer = Buffer.from(tts.audio, 'base64');
+      let outputBuffer;
+      let durationSec;
+      let mimeType = 'audio/mp3';
+
+      try {
+        const encoded = await audioEncoder.encodeWavToMp3(rawWavBuffer, 32);
+        outputBuffer = encoded.mp3Buffer;
+        durationSec = encoded.durationSec;
+      } catch (encErr) {
+        logger.warn(
+          { err: encErr.message, analysis_id: analysisId, language },
+          '[voice] MP3 compression failed; falling back to raw WAV'
+        );
+        outputBuffer = rawWavBuffer;
+        durationSec = Math.round((rawWavBuffer.length / 64000) * 1000) / 1000;
+        mimeType = 'audio/wav';
+      }
+
+      // Never cache empty buffers (anti-fabrication mandate)
+      if (!outputBuffer || outputBuffer.length === 0) {
+        return {
+          audio: null,
+          audio_available: false,
+          reason: 'empty_audio_buffer',
+          text,
+          language,
+        };
+      }
+
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24-hour TTL
+
+      await VoiceCache.updateOne(
+        { analysis_id: analysisId, language },
+        {
+          $set: {
+            analysis_id: analysisId,
+            language,
+            text,
+            mime_type: mimeType,
+            audio_data: outputBuffer,
+            duration_sec: durationSec,
+            size_bytes: outputBuffer.length,
+            expires_at: expiresAt,
+          },
+        },
+        { upsert: true }
+      );
+
+      logger.info(
+        { analysis_id: analysisId, language, size_bytes: outputBuffer.length, duration_sec: durationSec },
+        '[voice] Audio synthesized, compressed to MP3, and cached in MongoDB'
+      );
+
+      return {
+        audio: outputBuffer.toString('base64'),
+        audio_available: true,
+        mime_type: mimeType,
+        duration_sec: durationSec,
+        text,
+        language,
+        cached: false,
+      };
+    } finally {
+      inFlightGenerations.delete(cacheKey);
+    }
+  })();
+
+  inFlightGenerations.set(cacheKey, promise);
+  return promise;
+}
+
+/**
+ * Asynchronously pre-generates audio in the background for a completed user analysis.
+ * Non-blocking, safe against failures.
+ *
+ * @param {string} analysisId
+ * @param {string} [language='en']
+ */
+async function preGenerateAudio(analysisId, language = 'en') {
+  if (!bhashini.isConfigured) return;
+
+  const resolvedLang = language || 'en';
+
+  try {
+    // Check if already cached
+    const existing = await VoiceCache.findOne({ analysis_id: analysisId, language: resolvedLang }).lean();
+    if (existing) return;
+
+    const { analysis, body } = await analysisService.getFullResult(analysisId);
+    if (!['completed', 'partial'].includes(analysis.status)) return;
+
+    const text =
+      body.decision?.one_line_recommendation ||
+      body.quick_information_result?.answer_text ||
+      body.trend_result?.explanation ||
+      null;
+
+    if (!text || !text.trim()) return;
+
+    await synthesizeAndCacheAudio(analysisId, resolvedLang, text.trim());
+  } catch (err) {
+    logger.warn(
+      { analysis_id: analysisId, err: err.message },
+      '[voice] Background audio pre-generation failed'
+    );
+  }
+}
+
+/**
+ * Handle a voice query (ASR).
  */
 async function handleVoiceQuery({ audioBase64, audioMimeType, languageOverride = null, conversationId = null, parentAnalysisId = null }) {
-  // --- Step 1: ASR -------------------------------------------------------
-  // Language is passed through as a HINT only. If none was given we do not
-  // default to Hindi - that would bias recognition for a Tamil or Odia speaker.
-  // Bhashini's own detection is authoritative.
   const asr = await bhashini.speechToText(audioBase64, languageOverride, audioMimeType);
 
-  // NEVER-FABRICATE: if Bhashini is not configured we say so plainly. We do
-  // NOT invent a transcript - a wrong transcript would feed a wrong question
-  // into a SAFETY decision, which is far worse than an honest failure.
   if (!asr.available) {
     throw new AppError(
       'Voice input is not available - the speech service is not configured.',
@@ -69,9 +188,6 @@ async function handleVoiceQuery({ audioBase64, audioMimeType, languageOverride =
   }
 
   const transcript = asr.text.trim();
-
-  // Bhashini's detected language is preferred over the caller's declared one -
-  // it heard the actual audio.
   const resolvedLanguage = asr.detected_language || languageOverride || null;
 
   logger.info(
@@ -79,23 +195,17 @@ async function handleVoiceQuery({ audioBase64, audioMimeType, languageOverride =
     '[voice] Speech recognised'
   );
 
-  // --- Step 2: run it through the normal pipeline -----------------------
-  // Voice is just another input channel. It shares the chat path so a spoken
-  // follow-up inherits context exactly like a typed one.
   const chatResult = await chatService.handleMessage({
     message: transcript,
     conversationId,
     parentAnalysisId,
-    // Only pass an override if the caller actually stated one. Bhashini's
-    // detected language is a detection, not a user instruction, so it must not
-    // masquerade as an explicit override.
     languageOverride,
   });
 
   return {
     transcript,
     detected_language: asr.detected_language || null,
-    asr_confidence: asr.confidence ?? null, // null, never a fabricated 1.0
+    asr_confidence: asr.confidence ?? null,
     conversation_id: chatResult.conversation_id,
     analysis_id: chatResult.analysis_id,
     status: chatResult.status,
@@ -105,10 +215,50 @@ async function handleVoiceQuery({ audioBase64, audioMimeType, languageOverride =
 }
 
 /**
- * Synthesise the answer for a completed analysis.
- * Separate endpoint precisely because the answer does not exist at upload time.
+ * Synthesise or retrieve the answer for a completed analysis.
+ * Uses cache-first architecture: returns cached MP3 immediately (<20ms) if available,
+ * or synthesizes on-demand with concurrency deduplication.
  */
 async function speakResult(analysisId, language = 'en') {
+  const resolvedLang = language || 'en';
+
+  // 1. Cache-first lookup
+  const cached = await VoiceCache.findOne({ analysis_id: analysisId, language: resolvedLang }).lean();
+  if (cached && cached.audio_data) {
+    const audioBuffer = Buffer.isBuffer(cached.audio_data)
+      ? cached.audio_data
+      : cached.audio_data.buffer
+      ? Buffer.from(cached.audio_data.buffer)
+      : Buffer.from(cached.audio_data);
+
+    if (audioBuffer && audioBuffer.length > 0) {
+      let text = cached.text;
+      if (!text) {
+        try {
+          const { body } = await analysisService.getFullResult(analysisId);
+          text =
+            body.decision?.one_line_recommendation ||
+            body.quick_information_result?.answer_text ||
+            body.trend_result?.explanation ||
+            '';
+        } catch (_) {
+          text = '';
+        }
+      }
+
+      return {
+        audio: audioBuffer.toString('base64'),
+        audio_available: true,
+        mime_type: cached.mime_type || 'audio/mp3',
+        duration_sec: cached.duration_sec,
+        text,
+        language: resolvedLang,
+        cached: true,
+      };
+    }
+  }
+
+  // 2. Cache miss or in-flight: get full result and trigger synthesis
   const { analysis, body } = await analysisService.getFullResult(analysisId);
 
   if (!['completed', 'partial'].includes(analysis.status)) {
@@ -118,10 +268,6 @@ async function speakResult(analysisId, language = 'en') {
     );
   }
 
-  // Speak the one-line recommendation - a spoken advisory must be short enough
-  // to absorb on a moving boat.
-  // Speak the one-line recommendation - a spoken advisory must be short enough
-  // to absorb on a moving boat. Falls back through the other final artefacts.
   const text =
     body.decision?.one_line_recommendation ||
     body.quick_information_result?.answer_text ||
@@ -135,21 +281,11 @@ async function speakResult(analysisId, language = 'en') {
     );
   }
 
-  const tts = await bhashini.textToSpeech(text, language);
-
-  if (!tts.available) {
-    // Honest partial success: the TEXT is still returned so the user is not
-    // left with nothing just because audio synthesis is unavailable.
-    return { audio: null, audio_available: false, reason: tts.reason, text, language };
-  }
-
-  return {
-    audio: tts.audio,
-    audio_available: true,
-    mime_type: tts.mime_type || tts.format || 'audio/wav',
-    text,
-    language,
-  };
+  return await synthesizeAndCacheAudio(analysisId, resolvedLang, text.trim());
 }
 
-module.exports = { handleVoiceQuery, speakResult };
+module.exports = {
+  handleVoiceQuery,
+  speakResult,
+  preGenerateAudio,
+};
