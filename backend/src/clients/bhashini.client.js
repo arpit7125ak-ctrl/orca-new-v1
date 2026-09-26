@@ -249,6 +249,11 @@ async function speechToText(audioBase64, sourceLanguage = 'en', audioFormat = 'm
             sourceLanguage: resolvedLang,
           },
           serviceId: config.serviceId,
+          // ARCHITECTURAL WARNING: Empirical testing demonstrated that Bhashini's inference cluster
+          // ignores this declared audioFormat parameter and sniffs container magic bytes directly
+          // at the libsndfile/ffmpeg layer (e.g. passing MP3 bytes with audioFormat: 'wav' succeeds,
+          // while passing WebM fails with HTTP 500 regardless of this tag). We retain the canonical
+          // parameter ('mp3' or 'wav') for schema completeness, but do not rely on it to enforce or change behavior.
           audioFormat: resolvedFormat,
           samplingRate: 16000,
         },

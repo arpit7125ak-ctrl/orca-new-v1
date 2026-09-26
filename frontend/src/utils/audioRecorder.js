@@ -3,16 +3,49 @@
  * @module utils/audioRecorder
  * @description
  * Records microphone audio via Web Audio API, downsamples to 16,000 Hz mono PCM,
- * and compresses client-side to 32kbps mono MP3 using @breezystack/lamejs.
+ * and compresses client-side to 32kbps mono MP3 using dynamically imported @breezystack/lamejs.
  *
- * Guarantees:
- * - 16,000 Hz Mono: Universally resamples input to 16kHz regardless of hardware rate.
- * - Compact Payload: 5s speech ~20KB MP3 instead of ~160KB WAV.
- * - Anti-Fabrication: Throws error if microphone stream has 0 bytes or user denies permission.
- * - Mobile/Safari Support: Safely handles AudioContext state suspension and user gestures.
+ * Performance Architecture:
+ * - Lazy Loading: @breezystack/lamejs is dynamically imported ONLY when recording begins.
+ *   This prevents the ~59KB gzipped encoder code from inflating the initial app bundle
+ *   for users who do not use voice input.
+ * - Universal 16kHz Mono: Resamples hardware mic streams (44.1kHz / 48kHz) to canonical 16,000 Hz.
+ * - Low-Bandwidth: 5s query is ~20KB MP3 instead of ~160KB uncompressed WAV (~4s on 2G vs ~34s).
+ *
+ * iOS SAFARI COMPATIBILITY WARNING:
+ * 1. UNTESTED ON PHYSICAL iOS HARDWARE: This implementation has been tested in desktop
+ *    browsers and Android WebKit, but remains untested on physical iOS devices.
+ * 2. FRAGILE PATHS ON iOS:
+ *    - AudioContext Suspension: iOS requires an explicit user gesture (touchend/click)
+ *      to transition AudioContext from 'suspended' to 'running'. If this call fails or stalls,
+ *      start() throws immediately to trigger the browser Web Speech fallback.
+ *    - Hardware Sample Rate: iOS hardware microphone input defaults strictly to 44.1kHz or 48kHz.
+ *      The linear interpolation resampling path (inputSampleRate -> 16000Hz) handles this, but
+ *      must be verified on physical Apple hardware for audio artifacting.
+ *    - ScriptProcessorNode: Deprecated in favor of AudioWorklet, but retains broad iOS Safari
+ *      support; AudioWorklet loading via blob/module URLs has known CORS/sandbox restrictions on iOS PWA shells.
+ * 3. FALLBACK GUARANTEE: If getUserMedia or AudioContext throws on iOS, the calling UI
+ *    catches the error and immediately falls back to the native Web Speech API (SpeechRecognition).
  */
 
-import { Mp3Encoder } from '@breezystack/lamejs';
+let Mp3EncoderClass = null;
+
+/**
+ * Lazy loads the Mp3Encoder from @breezystack/lamejs on demand.
+ * Keeps initial bundle size light for non-voice users.
+ *
+ * @returns {Promise<typeof import('@breezystack/lamejs').Mp3Encoder>}
+ */
+async function loadMp3Encoder() {
+  if (!Mp3EncoderClass) {
+    const lameModule = await import('@breezystack/lamejs');
+    Mp3EncoderClass = lameModule.Mp3Encoder || lameModule.default?.Mp3Encoder;
+    if (!Mp3EncoderClass) {
+      throw new Error('Failed to resolve Mp3Encoder constructor from @breezystack/lamejs.');
+    }
+  }
+  return Mp3EncoderClass;
+}
 
 export class AudioRecorder {
   constructor() {
@@ -39,6 +72,8 @@ export class AudioRecorder {
 
   /**
    * Starts microphone recording.
+   * Proactively triggers dynamic import of lamejs during user speech.
+   *
    * @returns {Promise<void>}
    */
   async start() {
@@ -47,6 +82,11 @@ export class AudioRecorder {
     this.samples = [];
     this.isRecording = true;
     this.startTime = Date.now();
+
+    // Start background preloading of lamejs chunk so it is ready by stop()
+    loadMp3Encoder().catch((err) => {
+      console.warn('[AudioRecorder] Background encoder preload notice:', err);
+    });
 
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     this.audioContext = new AudioContextClass();
@@ -154,8 +194,9 @@ export class AudioRecorder {
       int16Samples[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
     }
 
-    // Encode to 32kbps mono 16kHz MP3 using lamejs
-    const encoder = new Mp3Encoder(1, targetSampleRate, 32);
+    // Ensure Mp3Encoder is loaded
+    const EncoderClass = await loadMp3Encoder();
+    const encoder = new EncoderClass(1, targetSampleRate, 32);
     const mp3Chunks = [];
     const blockSize = 1152;
 
