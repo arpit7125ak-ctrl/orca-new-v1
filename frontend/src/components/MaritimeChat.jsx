@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { orcaApi } from '../api/client';
 import { speakText, stopSpeaking, createSpeechRecognizer, localeFor } from '../utils/speech';
+import { AudioRecorder } from '../utils/audioRecorder';
 import TrendView from './TrendView';
 
 /**
@@ -207,7 +208,57 @@ export default function MaritimeChat({ selectedLang = 'auto' }) {
     }
   };
 
-  const handleVoiceRecord = () => {
+  const recorderRef = useRef(null);
+
+  const handleVoiceRecord = async () => {
+    // 1. If currently recording via AudioRecorder, stop and send MP3
+    if (recorderRef.current && recorderRef.current.isRecording) {
+      setIsRecording(false);
+      setIsLoading(true);
+      try {
+        const { audioBase64, audioMimeType } = await recorderRef.current.stop();
+        const res = await orcaApi.sendVoiceQuery({
+          audio_base64: audioBase64,
+          audio_mime_type: audioMimeType,
+          language_override: selectedLang !== 'auto' ? selectedLang : null,
+          conversation_id: conversationId || undefined,
+        });
+
+        if (res && res.transcript) {
+          setInput(res.transcript);
+          if (res.conversation_id) setConversationId(res.conversation_id);
+          if (res.response_text) {
+            setMessages((prev) => [
+              ...prev,
+              { role: 'user', text: res.transcript, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
+              { role: 'assistant', text: res.response_text, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
+            ]);
+            setInput('');
+          }
+        }
+      } catch (err) {
+        console.warn('Voice query error, falling back:', err);
+      } finally {
+        setIsLoading(false);
+        recorderRef.current = null;
+      }
+      return;
+    }
+
+    // 2. Start recording with AudioRecorder (Bhashini Option C: 16kHz mono MP3)
+    if (AudioRecorder.isSupported()) {
+      try {
+        const recorder = new AudioRecorder();
+        await recorder.start();
+        recorderRef.current = recorder;
+        setIsRecording(true);
+        return;
+      } catch (err) {
+        console.warn('AudioRecorder start failed, falling back to Web Speech API:', err);
+      }
+    }
+
+    // 3. Fallback: browser-native Web Speech API
     if (isRecording) {
       setIsRecording(false);
       return;

@@ -15,7 +15,7 @@
  * 5. Official Warning Alerts: Enforced banners when IMD/INCOIS bulletins are active.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   CheckCircle2, 
@@ -29,7 +29,8 @@ import {
   Waves, 
   Eye, 
   Compass, 
-  ShieldCheck 
+  ShieldCheck,
+  Clock 
 } from 'lucide-react';
 import { speakText, stopSpeaking } from '../utils/speech';
 import { orcaApi } from '../api/client';
@@ -220,19 +221,57 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
 
   const Icon = config.icon;
 
-  const handleAudioPlayback = () => {
+  const audioRef = useRef(null);
+
+  const handleAudioPlayback = async () => {
     if (isPlayingAudio) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
       stopSpeaking();
       setIsPlayingAudio(false);
-    } else {
-      const textToRead = `${config.title}. ${advice}. ${recommendations.slice(0, 2).join('. ')}`;
-      speakText(textToRead, language);
-      setIsPlayingAudio(true);
-      // Auto reset after rough reading time
-      const estimatedDuration = Math.max(3000, textToRead.length * 70);
-      setTimeout(() => setIsPlayingAudio(false), estimatedDuration);
+      return;
     }
+
+    setIsPlayingAudio(true);
+    const textToRead = `${config.title}. ${advice}. ${recommendations.slice(0, 2).join('. ')}`;
+
+    try {
+      if (analysis.analysis_id) {
+        const voiceRes = await orcaApi.speakAnalysis(analysis.analysis_id, language);
+        if (voiceRes && voiceRes.response_audio_base64) {
+          const mime = voiceRes.response_audio_mime_type || 'audio/mp3';
+          const audio = new Audio(`data:${mime};base64,${voiceRes.response_audio_base64}`);
+          audioRef.current = audio;
+          audio.onended = () => {
+            setIsPlayingAudio(false);
+            audioRef.current = null;
+          };
+          audio.onerror = () => {
+            console.warn('Backend audio element error, falling back to Web Speech');
+            speakText(textToRead, language);
+            const est = Math.max(3000, textToRead.length * 70);
+            setTimeout(() => setIsPlayingAudio(false), est);
+          };
+          await audio.play();
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Bhashini audio read failed, falling back to Web Speech:', err);
+    }
+
+    // Graceful fallback: Web Speech API
+    speakText(textToRead, language);
+    const estimatedDuration = Math.max(3000, textToRead.length * 70);
+    setTimeout(() => setIsPlayingAudio(false), estimatedDuration);
   };
+
+  const generatedAt = analysis.completed_at || analysis.created_at;
+  const generatedTimeStr = generatedAt
+    ? new Date(generatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : null;
 
   return (
     <div className={`rounded-xl border ${config.border} bg-gradient-to-br ${config.bg} p-5 sm:p-7 shadow-2xl`}>
@@ -290,6 +329,14 @@ export default function DecisionHero({ analysis, onOpenReport, language = 'en' }
               <FileText className="w-4 h-4 text-[var(--accent-primary)]" />
               <span>{t('results.advisoryBulletin')}</span>
             </button>
+
+            {/* Timestamp & Validity Window Guard */}
+            <div className="flex items-center space-x-1.5 px-3 py-2 rounded font-bold text-[10px] bg-[var(--bg-surface-2)] border border-[var(--border-base)] text-[var(--text-secondary)] shadow-sm">
+              <Clock className="w-3.5 h-3.5 text-[var(--accent-primary)] flex-shrink-0" />
+              <span>
+                {generatedTimeStr ? `${t('hero.generatedAt', { defaultValue: 'Generated' })} ${generatedTimeStr}` : t('hero.advisoryActive', { defaultValue: 'Advisory Active' })} • <span className="text-[var(--accent-primary)]">{t('hero.validityWindow', { defaultValue: 'Valid 6h' })}</span>
+              </span>
+            </div>
           </div>
         </div>
 

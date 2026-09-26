@@ -214,18 +214,92 @@ async function textToSpeech(text, targetLanguage) {
 }
 
 /**
- * ASR: speech -> text. (Phase B target - currently placeholder with two-phase guard)
- * @param {string} audioBase64
- * @param {string} sourceLanguage ISO 639-1, e.g. "ta"
- * @param {string} [audioMimeType]
+ * ASR: speech -> text via Bhashini Dhruva ASR Pipeline.
+ *
+ * @param {string} audioBase64 - Base64 encoded audio payload (MP3 or WAV).
+ * @param {string} [sourceLanguage='en'] - ISO 639-1 code (e.g. 'en', 'hi', 'ta').
+ * @param {string} [audioFormat='mp3'] - Container format ('mp3' or 'wav').
+ * @returns {Promise<{ available: boolean, text: string|null, detected_language?: string, confidence?: number, reason?: string }>}
  */
-async function speechToText(audioBase64, sourceLanguage, audioMimeType = null) {
+async function speechToText(audioBase64, sourceLanguage = 'en', audioFormat = 'mp3') {
   if (!isConfigured) {
     return { available: false, reason: 'bhashini_not_configured', text: null };
   }
 
-  // Phase B will implement 16kHz WAV transcoding and inference call
-  return { available: false, reason: 'asr_phase_b_pending', text: null };
+  const resolvedLang = sourceLanguage || 'en';
+  const resolvedFormat = audioFormat === 'wav' ? 'wav' : 'mp3';
+
+  let config;
+  try {
+    config = await getPipelineConfig('asr', resolvedLang);
+  } catch (err) {
+    logger.error(
+      { err: err.message, lang: resolvedLang },
+      '[bhashini] Failed to acquire ASR pipeline config'
+    );
+    return { available: false, reason: 'config_discovery_failed', text: null };
+  }
+
+  const inferencePayload = {
+    pipelineTasks: [
+      {
+        taskType: 'asr',
+        config: {
+          language: {
+            sourceLanguage: resolvedLang,
+          },
+          serviceId: config.serviceId,
+          audioFormat: resolvedFormat,
+          samplingRate: 16000,
+        },
+      },
+    ],
+    inputData: {
+      audio: [
+        {
+          audioContent: audioBase64.trim(),
+        },
+      ],
+    },
+  };
+
+  const inferenceHeaders = {
+    'Content-Type': 'application/json',
+    [config.authHeaderName]: config.authHeaderValue,
+  };
+
+  try {
+    const response = await axios.post(config.callbackUrl, inferencePayload, {
+      headers: inferenceHeaders,
+      timeout: 45000,
+    });
+
+    const output = response.data?.pipelineResponse?.[0]?.output?.[0];
+    const transcript = output?.source;
+
+    // Strict Anti-Fabrication Mandate: Never return empty or whitespace-only transcripts as successes
+    if (!transcript || typeof transcript !== 'string' || !transcript.trim()) {
+      logger.warn({ lang: resolvedLang }, '[bhashini] ASR returned empty transcript');
+      return { available: false, reason: 'no_speech_detected', text: null };
+    }
+
+    return {
+      available: true,
+      text: transcript.trim(),
+      detected_language: resolvedLang,
+      confidence: null, // Dhruva returns text directly; never fabricate a 1.0 confidence score
+    };
+  } catch (err) {
+    // If auth fails, evict cached config
+    if (err.response?.status === 401 || err.response?.status === 403) {
+      pipelineConfigCache.delete(`asr:${resolvedLang}`);
+    }
+    logger.error(
+      { err: err.message, status: err.response?.status, lang: resolvedLang },
+      '[bhashini] ASR inference failed'
+    );
+    return { available: false, reason: 'inference_failed', text: null };
+  }
 }
 
 /** Text translation between supported Indian languages. */

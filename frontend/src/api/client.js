@@ -360,4 +360,29 @@ export const orcaApi = {
     });
     return res.data || res;
   },
+
+  /**
+   * Submit audio query for Speech-to-Text and automated intent routing (§76, §103)
+   */
+  async sendVoiceQuery(payload) {
+    const res = await request('/voice/query', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data || res;
+  },
+
+  /**
+   * Retrieve or synthesise audio reading of a completed analysis (§77, §103)
+   */
+  async speakAnalysis(analysisId, languageOverride = null) {
+    const res = await request('/voice/speak', {
+      method: 'POST',
+      body: JSON.stringify({
+        analysis_id: analysisId,
+        language_override: languageOverride,
+      }),
+    });
+    return res.data || res;
+  },
 };

@@ -170,11 +170,40 @@ async function preGenerateAudio(analysisId, language = 'en') {
  * Handle a voice query (ASR).
  */
 async function handleVoiceQuery({ audioBase64, audioMimeType, languageOverride = null, conversationId = null, parentAnalysisId = null }) {
-  const asr = await bhashini.speechToText(audioBase64, languageOverride, audioMimeType);
+  if (!audioBase64 || typeof audioBase64 !== 'string') {
+    throw new AppError('audio_base64 is required.', ERROR_CATEGORIES.VALIDATION_FAILURE);
+  }
+
+  let rawBuffer;
+  try {
+    rawBuffer = Buffer.from(audioBase64, 'base64');
+  } catch (bufErr) {
+    throw new AppError('Invalid base64 audio payload.', ERROR_CATEGORIES.VALIDATION_FAILURE);
+  }
+
+  let audioInspection;
+  try {
+    audioInspection = audioEncoder.inspectAudioPayload(rawBuffer, audioMimeType);
+  } catch (inspectErr) {
+    throw new AppError(
+      inspectErr.message || 'Invalid or unsupported audio format. Expected 16kHz mono audio/mp3 or audio/wav.',
+      ERROR_CATEGORIES.VALIDATION_FAILURE
+    );
+  }
+
+  const asr = await bhashini.speechToText(audioBase64, languageOverride || 'en', audioInspection.format);
 
   if (!asr.available) {
+    if (asr.reason === 'no_speech_detected') {
+      throw new AppError(
+        "Could not detect any clear speech in the audio. Please speak clearly and try again.",
+        ERROR_CATEGORIES.VALIDATION_FAILURE,
+        { reason: asr.reason }
+      );
+    }
+
     throw new AppError(
-      'Voice input is not available - the speech service is not configured.',
+      'Voice input is temporarily unavailable. Please type your query.',
       ERROR_CATEGORIES.UPSTREAM_UNAVAILABLE,
       { reason: asr.reason }
     );

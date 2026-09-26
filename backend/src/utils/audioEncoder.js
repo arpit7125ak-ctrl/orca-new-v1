@@ -183,8 +183,150 @@ async function encodeWavToMp3(wavBuffer, targetKbps = 32) {
   };
 }
 
+/**
+ * Validates an MP3 buffer by checking its MPEG frame sync word and header fields.
+ *
+ * @param {Buffer} buffer - Raw MP3 buffer.
+ * @returns {{ mpegVersion: string, layer: number, sampleRate: number, numChannels: number, bitrateIndex: number }}
+ * @throws {Error} If the buffer is corrupted, lacks a valid sync word, or has unsupported frame properties.
+ */
+function validateMp3(buffer) {
+  if (!buffer || buffer.length < 4) {
+    throw new Error('Invalid MP3 audio: buffer is too short to contain an MPEG frame header.');
+  }
+
+  // Skip ID3v2 tag if present (starts with 'ID3')
+  let offset = 0;
+  if (buffer.length >= 10 && buffer.toString('ascii', 0, 3) === 'ID3') {
+    const tagSize =
+      ((buffer[6] & 0x7f) << 21) |
+      ((buffer[7] & 0x7f) << 14) |
+      ((buffer[8] & 0x7f) << 7) |
+      (buffer[9] & 0x7f);
+    offset = 10 + tagSize;
+  }
+
+  // Scan for the first 11-bit sync word (0xFFE)
+  let found = false;
+  let header = 0;
+  while (offset + 4 <= buffer.length) {
+    if (buffer[offset] === 0xff && (buffer[offset + 1] & 0xe0) === 0xe0) {
+      header = buffer.readUInt32BE(offset);
+      found = true;
+      break;
+    }
+    offset++;
+  }
+
+  if (!found) {
+    throw new Error('Invalid MP3 audio: missing MPEG frame sync word (0xFFE0).');
+  }
+
+  const versionBits = (header >> 19) & 0x03;
+  const layerBits = (header >> 17) & 0x03;
+  const bitrateIndex = (header >> 12) & 0x0f;
+  const sampleRateIndex = (header >> 10) & 0x03;
+  const channelMode = (header >> 6) & 0x03;
+
+  if (versionBits === 0x01) {
+    throw new Error('Corrupted MP3 header: reserved MPEG version.');
+  }
+  if (layerBits !== 0x01) {
+    throw new Error(`Unsupported MPEG audio layer (${layerBits}): expected Layer III (MP3).`);
+  }
+  if (bitrateIndex === 0x00 || bitrateIndex === 0x0f) {
+    throw new Error(`Invalid MP3 bitrate index (${bitrateIndex}).`);
+  }
+  if (sampleRateIndex === 0x03) {
+    throw new Error('Corrupted MP3 header: reserved sample rate index.');
+  }
+
+  const isMpeg1 = versionBits === 0x03;
+  const isMpeg2 = versionBits === 0x02;
+  const isMpeg25 = versionBits === 0x00;
+
+  let sampleRate = 0;
+  if (isMpeg1) {
+    const rates = [44100, 48000, 32000];
+    sampleRate = rates[sampleRateIndex];
+  } else if (isMpeg2) {
+    const rates = [22050, 24000, 16000];
+    sampleRate = rates[sampleRateIndex];
+  } else if (isMpeg25) {
+    const rates = [11025, 12000, 8000];
+    sampleRate = rates[sampleRateIndex];
+  }
+
+  const numChannels = channelMode === 0x03 ? 1 : 2;
+
+  return {
+    mpegVersion: isMpeg1 ? 'MPEG-1' : isMpeg2 ? 'MPEG-2' : 'MPEG-2.5',
+    layer: 3,
+    sampleRate,
+    numChannels,
+    bitrateIndex,
+  };
+}
+
+/**
+ * Inspects an incoming audio buffer for ASR processing, validating container integrity.
+ * Reuses parseWav and validateMp3; throws on unexpected or corrupt formats.
+ *
+ * @param {Buffer} buffer - Raw audio bytes.
+ * @param {string} [declaredMimeType] - Declared MIME type from client.
+ * @returns {{ format: 'mp3'|'wav', mimeType: string, sampleRate: number, numChannels: number }}
+ * @throws {Error} If the buffer is not a valid MP3 or WAV container.
+ */
+function inspectAudioPayload(buffer, declaredMimeType = '') {
+  if (!buffer || buffer.length === 0) {
+    throw new Error('Empty audio payload provided.');
+  }
+
+  // Check WAV RIFF signature
+  if (buffer.length >= 4 && buffer.toString('ascii', 0, 4) === 'RIFF') {
+    const { fmt } = parseWav(buffer);
+    return {
+      format: 'wav',
+      mimeType: 'audio/wav',
+      sampleRate: fmt.sampleRate,
+      numChannels: fmt.numChannels,
+    };
+  }
+
+  // Check WebM signature [0x1A, 0x45, 0xDF, 0xA3]
+  if (
+    buffer.length >= 4 &&
+    buffer[0] === 0x1a &&
+    buffer[1] === 0x45 &&
+    buffer[2] === 0xdf &&
+    buffer[3] === 0xa3
+  ) {
+    throw new Error(
+      'WebM container format is not supported by the speech recognition engine. Upload audio as 16kHz mono audio/mp3 or audio/wav.'
+    );
+  }
+
+  // Check OGG signature [0x4F, 0x67, 0x67, 0x53]
+  if (buffer.length >= 4 && buffer.toString('ascii', 0, 4) === 'OggS') {
+    throw new Error(
+      'Ogg container format is not supported for voice queries. Upload audio as 16kHz mono audio/mp3 or audio/wav.'
+    );
+  }
+
+  // Validate MP3
+  const mp3Info = validateMp3(buffer);
+  return {
+    format: 'mp3',
+    mimeType: 'audio/mp3',
+    sampleRate: mp3Info.sampleRate,
+    numChannels: mp3Info.numChannels,
+  };
+}
+
 module.exports = {
   parseWav,
   wavToInt16Array,
   encodeWavToMp3,
+  validateMp3,
+  inspectAudioPayload,
 };

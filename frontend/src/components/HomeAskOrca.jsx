@@ -44,6 +44,8 @@ import {
 } from 'lucide-react';
 import L from 'leaflet';
 import { createSpeechRecognizer } from '../utils/speech';
+import { orcaApi } from '../api/client';
+import { AudioRecorder } from '../utils/audioRecorder';
 import { getNearestCoastalPlace, resolvePlaceFromCoordinates, resolveCoordinatesFromPlace } from '../utils/geo';
 import { ACTIVITIES, VESSEL_TYPES, normalizeActivity, normalizeVesselType } from '../utils/maritimeConfig';
 
@@ -105,7 +107,50 @@ export default function HomeAskOrca({
     setSpeechRecognizer(recognizer);
   }, [selectedLang]);
 
-  const toggleMic = () => {
+  const recorderRef = useRef(null);
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+
+  const toggleMic = async () => {
+    // 1. If AudioRecorder is active, stop and send MP3 to Bhashini
+    if (recorderRef.current && recorderRef.current.isRecording) {
+      setIsRecording(false);
+      setIsProcessingVoice(true);
+      try {
+        const { audioBase64, audioMimeType } = await recorderRef.current.stop();
+        const res = await orcaApi.sendVoiceQuery({
+          audio_base64: audioBase64,
+          audio_mime_type: audioMimeType,
+          language_override: selectedLang !== 'auto' ? selectedLang : null,
+        });
+        if (res && res.transcript) {
+          setQuery(res.transcript);
+        } else {
+          alert(t('common.couldNotHear', { defaultValue: "Couldn't hear that clearly, please try again." }));
+        }
+      } catch (err) {
+        console.warn('Bhashini voice query error, falling back:', err);
+        alert(err.message || t('common.couldNotHear', { defaultValue: "Couldn't hear that clearly, please try again." }));
+      } finally {
+        setIsProcessingVoice(false);
+        recorderRef.current = null;
+      }
+      return;
+    }
+
+    // 2. Start recording with AudioRecorder (Bhashini Option C: 16kHz mono MP3)
+    if (AudioRecorder.isSupported()) {
+      try {
+        const recorder = new AudioRecorder();
+        await recorder.start();
+        recorderRef.current = recorder;
+        setIsRecording(true);
+        return;
+      } catch (err) {
+        console.warn('AudioRecorder start failed, falling back to Web Speech API:', err);
+      }
+    }
+
+    // 3. Fallback: browser-native Web Speech API
     if (!speechRecognizer) {
       alert(t('common.voiceNotSupported'));
       return;
@@ -437,13 +482,23 @@ export default function HomeAskOrca({
             <button
               type="button"
               onClick={toggleMic}
-              className={`absolute right-3 top-3 p-2.5 rounded-lg border transition-all cursor-pointer ${isRecording
+              disabled={isProcessingVoice}
+              className={`absolute right-3 top-3 p-2.5 rounded-lg border transition-all cursor-pointer ${
+                isRecording
                   ? 'bg-[var(--dangerous)] text-[var(--text-primary)] border-[var(--dangerous-bright)] animate-pulse'
+                  : isProcessingVoice
+                  ? 'bg-[var(--bg-surface-2)] text-[var(--accent-primary)] border-[var(--accent-dim)]'
                   : 'bg-[var(--bg-surface-2)] text-[var(--text-secondary)] border-[var(--border-base)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
-                }`}
+              }`}
               title={t('home.micTitle')}
             >
-              {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              {isProcessingVoice ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : isRecording ? (
+                <MicOff className="w-5 h-5" />
+              ) : (
+                <Mic className="w-5 h-5" />
+              )}
             </button>
           </div>
 
