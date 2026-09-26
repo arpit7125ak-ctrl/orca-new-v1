@@ -117,6 +117,28 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
   const hasValidCoords = Number.isFinite(validLat) && Number.isFinite(validLon);
   const pointsData = analysis?.points || [];
 
+  const fitMapToBounds = (map) => {
+    if (!map) return;
+    const ptsToBound = [];
+    if (hasValidCoords) ptsToBound.push([validLat, validLon]);
+    pointsData.forEach(p => {
+      if (Number.isFinite(p.lat) && Number.isFinite(p.lon)) ptsToBound.push([p.lat, p.lon]);
+    });
+    const waypoints = analysis?.route?.waypoints || analysis?.plan?.route?.waypoints || analysis?.route || [];
+    if (Array.isArray(waypoints)) {
+      waypoints.forEach(p => {
+        if (Number.isFinite(p.lat) && Number.isFinite(p.lon)) ptsToBound.push([p.lat, p.lon]);
+      });
+    }
+
+    if (ptsToBound.length > 1) {
+      const bounds = L.latLngBounds(ptsToBound);
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 11 });
+    } else if (hasValidCoords) {
+      map.setView([validLat, validLon], 11);
+    }
+  };
+
   // Enable CSS styling for the container border
   useEffect(() => {
     const style = document.createElement('style');
@@ -168,27 +190,15 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
       mapInstanceRef.current = map;
 
       // Auto-fit to points bounds on init
-      const validPts = pointsData.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon));
-      if (validPts.length > 1) {
-        const bounds = L.latLngBounds(validPts.map(p => [p.lat, p.lon]));
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 11 });
-      }
+      fitMapToBounds(map);
       setTimeout(() => map.invalidateSize(), 200);
     }
-  }, [hasValidCoords, validLat, validLon, pointsData]);
+  }, [hasValidCoords, validLat, validLon, pointsData, analysis?.route, analysis?.plan?.route]);
 
   // Auto-fit to points bounds whenever points change
   useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-    const validPts = pointsData.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon));
-    if (validPts.length > 1) {
-      const bounds = L.latLngBounds(validPts.map(p => [p.lat, p.lon]));
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 11 });
-    } else if (hasValidCoords) {
-      map.setView([validLat, validLon], 11);
-    }
-  }, [pointsData, hasValidCoords, validLat, validLon]);
+    fitMapToBounds(mapInstanceRef.current);
+  }, [pointsData, hasValidCoords, validLat, validLon, analysis?.route, analysis?.plan?.route]);
 
   // Re-calculate map dimensions on fullscreen toggle
   useEffect(() => {
@@ -200,15 +210,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
   }, [isMapFullscreen]);
 
   const handleRecenter = () => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-    const validPts = pointsData.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon));
-    if (validPts.length > 1) {
-      const bounds = L.latLngBounds(validPts.map(p => [p.lat, p.lon]));
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 11 });
-    } else if (hasValidCoords) {
-      map.setView([validLat, validLon], 11);
-    }
+    fitMapToBounds(mapInstanceRef.current);
   };
 
   const handleZoomIn = () => {
