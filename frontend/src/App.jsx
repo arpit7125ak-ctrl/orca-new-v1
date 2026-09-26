@@ -43,6 +43,7 @@ import { orcaApi } from './api/client';
 import * as history from './utils/history';
 import { AlertCircle, Compass, Radio } from 'lucide-react';
 import OceanBackground from './components/OceanBackground';
+import SosManager from './components/SosManager';
 
 /**
  * Root Application Component.
@@ -267,6 +268,8 @@ export default function App() {
               </div>
             </div>
           )}
+
+          <SosManager analysis={analysis} activeTab={activeTab} />
 
           {/* Page 1: Home / Ask ORCA (§5) */}
           {activeTab === 'landing' && (

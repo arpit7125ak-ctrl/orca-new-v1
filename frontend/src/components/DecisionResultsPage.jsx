@@ -371,10 +371,10 @@ export default function DecisionResultsPage({
             {/* ========================================================= */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
               {/* ORCA DECISION */}
-              <div className="bg-[#111814] border border-[#d4850a]/30 rounded-xl p-4 shrink-0 shadow-sm relative overflow-hidden card-enter interactive-card">
-                <div className="absolute top-0 left-0 w-1 h-full bg-[#d4850a]" />
+              <div className="bg-[var(--bg-surface)] border border-[var(--accent-primary)]/30 rounded-xl p-4 shrink-0 shadow-sm relative overflow-hidden card-enter interactive-card">
+                <div className="absolute top-0 left-0 w-1 h-full bg-[var(--accent-primary)]" />
                 <div className="flex items-center justify-between mb-3 ml-2">
-                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-[#d4850a]">ORCA DECISION</h3>
+                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-[var(--accent-primary)]">ORCA DECISION</h3>
                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${analysis?.decision?.risk_level === 'SAFE' ? 'bg-emerald-950/40 text-[#2FAE72] border-emerald-900' : 'bg-amber-950/40 text-[#E59A24] border-amber-900'}`}>
                      {analysis?.decision?.risk_level || 'N/A'}
                    </span>
@@ -410,7 +410,7 @@ export default function DecisionResultsPage({
                 </h3>
                 <div className="space-y-3">
                    {pts.filter(p => p.risk?.official_warnings?.length > 0).slice(0,3).map((p, idx) => (
-                      <div key={idx} className="bg-[#111814] border border-[#D63838]/30 rounded p-3">
+                      <div key={idx} className="bg-[var(--bg-surface)] border border-[#D63838]/30 rounded p-3">
                         <div className="flex justify-between items-start mb-2">
                            <div className="text-xs font-bold text-white/90">Warning Detected</div>
                            <span className="text-[9px] font-bold uppercase text-[#D63838] bg-[#D63838]/10 px-1.5 py-0.5 rounded">HIGH</span>
@@ -435,11 +435,11 @@ export default function DecisionResultsPage({
               {waypoints.length > 0 && (
               <ExpandablePanel title="ROUTE INTELLIGENCE" icon={Route}>
                 <div className="grid grid-cols-2 gap-3">
-                   <div className="bg-[#0a0d0a] p-2.5 rounded border border-[var(--border-base)]">
+                   <div className="bg-[var(--bg-base)] p-2.5 rounded border border-[var(--border-base)]">
                       <div className="text-[8px] text-white/40 uppercase mb-1">Total Distance</div>
                       <div className="text-xs font-bold text-white font-mono">{distDisplay}</div>
                    </div>
-                   <div className="bg-[#0a0d0a] p-2.5 rounded border border-[var(--border-base)]">
+                   <div className="bg-[var(--bg-base)] p-2.5 rounded border border-[var(--border-base)]">
                       <div className="text-[8px] text-white/40 uppercase mb-1">Peak Risk Seg</div>
                       <div className="text-xs font-bold text-[#E59A24] font-mono">{Math.round(highestRouteRisk)} / 100</div>
                    </div>
@@ -467,19 +467,19 @@ export default function DecisionResultsPage({
               <div className="bg-[var(--bg-surface)] border border-[var(--border-base)] rounded-xl p-4 shrink-0 shadow-sm card-enter card-enter-4 interactive-card">
                  <h3 className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-3">ANALYSIS SOURCES</h3>
                  <div className="grid grid-cols-2 gap-2 text-[10px]">
-                    <div className="flex justify-between items-center bg-[#0a0d0a] p-2.5 rounded border border-[var(--border-base)]">
+                    <div className="flex justify-between items-center bg-[var(--bg-base)] p-2.5 rounded border border-[var(--border-base)]">
                       <span className="text-white/70">Weather (IMD / ECMWF)</span>
                       <span className="text-emerald-400 font-bold">✓ Verified</span>
                     </div>
-                    <div className="flex justify-between items-center bg-[#0a0d0a] p-2.5 rounded border border-[var(--border-base)]">
+                    <div className="flex justify-between items-center bg-[var(--bg-base)] p-2.5 rounded border border-[var(--border-base)]">
                       <span className="text-white/70">Ocean (INCOIS)</span>
                       <span className="text-emerald-400 font-bold">✓ Verified</span>
                     </div>
-                    <div className="flex justify-between items-center bg-[#0a0d0a] p-2.5 rounded border border-[var(--border-base)]">
+                    <div className="flex justify-between items-center bg-[var(--bg-base)] p-2.5 rounded border border-[var(--border-base)]">
                       <span className="text-white/70">Tidal Stream</span>
                       <span className="text-emerald-400 font-bold">✓ Verified</span>
                     </div>
-                    <div className="flex justify-between items-center bg-[#0a0d0a] p-2.5 rounded border border-[var(--border-base)]">
+                    <div className="flex justify-between items-center bg-[var(--bg-base)] p-2.5 rounded border border-[var(--border-base)]">
                       <span className="text-white/70">GIS Safety Floor</span>
                       <span className="text-emerald-400 font-bold">✓ Verified</span>
                     </div>

@@ -401,7 +401,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
 
   }, [analysis, activeRiskLayer, selectedTimeOffset, clickedZoneId, validLat, validLon, visibleLayers]);
 
-  if (!hasValidCoords) return <div className="h-[520px] rounded-lg bg-[#0a0d0a] border border-[#243024] flex items-center justify-center"><Compass className="animate-spin text-[#d4850a]" /></div>;
+  if (!hasValidCoords) return <div className="h-[520px] rounded-lg bg-[var(--bg-base)] border border-[var(--border-base)] flex items-center justify-center"><Compass className="animate-spin text-[var(--accent-primary)]" /></div>;
 
   const activeZone = pointsData.find(p => p.point_id === clickedZoneId) || pointsData[0];
   let forecastMissing = false, activeZoneData = activeZone;
@@ -415,14 +415,14 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
   const tierInfo = getTierColor(v);
 
   return (
-    <div className={`orca-map-container relative w-full overflow-hidden bg-[#0a0d0a] flex flex-col font-sans border border-[var(--border-base)] rounded-xl shadow-sm transition-all duration-500 ease-in-out ${isMapFullscreen ? 'fixed inset-4 z-[9999] h-[calc(100vh-32px)]' : 'h-[700px]'}`}>
+    <div className={`orca-map-container relative w-full overflow-hidden bg-[var(--bg-base)] flex flex-col font-sans border border-[var(--border-base)] rounded-xl shadow-sm transition-all duration-500 ease-in-out ${isMapFullscreen ? 'fixed inset-4 z-[9999] h-[calc(100vh-32px)]' : 'h-[700px]'}`}>
       
       {/* MAP CANVAS */}
-      <div ref={mapContainerRef} className="flex-1 w-full bg-[#0a0d0a] z-[1]" />
+      <div ref={mapContainerRef} className="flex-1 w-full bg-[var(--bg-base)] z-[1]" />
       
       {/* TOP HEADER */}
       <div className="absolute top-0 left-0 right-0 z-[500] pointer-events-none flex justify-between items-start p-4">
-         <div className="flex items-center space-x-3 pointer-events-auto bg-[#111814]/95 backdrop-blur-md px-4 py-2 rounded-lg border border-[var(--border-base)] shadow-sm">
+         <div className="flex items-center space-x-3 pointer-events-auto bg-[var(--bg-surface)]/95 backdrop-blur-md px-4 py-2 rounded-lg border border-[var(--border-base)] shadow-sm">
             <span className="font-bold text-xs uppercase tracking-widest text-white">MARITIME RISK MAP</span>
             <div className="h-3 w-[1px] bg-white/20" />
             <div className="flex items-center text-[9px] text-[#22d3ee] font-bold uppercase tracking-wider">
@@ -432,7 +432,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
          </div>
 
          <div className="flex items-center space-x-2 pointer-events-auto">
-                         <div className="flex items-center bg-[#111814]/95 backdrop-blur-md rounded-lg border border-[var(--border-base)] shadow-sm overflow-hidden">
+                         <div className="flex items-center bg-[var(--bg-surface)]/95 backdrop-blur-md rounded-lg border border-[var(--border-base)] shadow-sm overflow-hidden">
                 <button
                    onClick={handleZoomIn}
                    className="px-2.5 py-2 text-white/70 hover:text-white hover:bg-[#243024] transition cursor-pointer flex items-center justify-center border-r border-[var(--border-base)]"
@@ -448,10 +448,10 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
                    <Minus className="w-3.5 h-3.5" />
                 </button>
              </div>
-<button onClick={handleRecenter} className="bg-[#111814]/95 backdrop-blur-md px-3 py-2 rounded-lg border border-[var(--border-base)] shadow-sm text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
+<button onClick={handleRecenter} className="bg-[var(--bg-surface)]/95 backdrop-blur-md px-3 py-2 rounded-lg border border-[var(--border-base)] shadow-sm text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
                Recenter
             </button>
-            <button onClick={() => setIsMapFullscreen(!isMapFullscreen)} className="bg-[#111814]/95 backdrop-blur-md px-3 py-2 rounded-lg border border-[var(--border-base)] shadow-sm text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
+            <button onClick={() => setIsMapFullscreen(!isMapFullscreen)} className="bg-[var(--bg-surface)]/95 backdrop-blur-md px-3 py-2 rounded-lg border border-[var(--border-base)] shadow-sm text-xs font-bold text-white/70 hover:text-white transition cursor-pointer">
                {isMapFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
             </button>
          </div>
@@ -461,14 +461,14 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
       <div className="absolute top-16 right-4 z-[500] pointer-events-none flex flex-col items-end space-y-2">
          
          {/* Map Style Selector */}
-         <div className="bg-[#111814]/95 backdrop-blur-md border border-[var(--border-base)] rounded-lg shadow-sm p-1.5 pointer-events-auto flex space-x-1">
+         <div className="bg-[var(--bg-surface)]/95 backdrop-blur-md border border-[var(--border-base)] rounded-lg shadow-sm p-1.5 pointer-events-auto flex space-x-1">
             {Object.keys(TILE_LAYERS).map(k => (
                <button
                    key={k}
                    onClick={() => setActiveBase(k)}
                    className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
                       activeBase === k
-                         ? 'bg-[#d4850a] text-black font-extrabold shadow-sm'
+                         ? 'bg-[var(--accent-primary)] text-black font-extrabold shadow-sm'
                          : 'text-white/60 hover:text-white hover:bg-[#243024]'
                    }`}>
                   {TILE_LAYERS[k].label.split(' ')[0]}
@@ -477,7 +477,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
          </div>
 
          {/* Layer Controls */}
-         <div className="bg-[#111814]/95 backdrop-blur-md border border-[var(--border-base)] rounded-lg shadow-sm p-3 pointer-events-auto w-48 mt-2">
+         <div className="bg-[var(--bg-surface)]/95 backdrop-blur-md border border-[var(--border-base)] rounded-lg shadow-sm p-3 pointer-events-auto w-48 mt-2">
             <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest mb-3">MAP LAYERS</div>
             <div className="space-y-2.5">
                {Object.entries({ risk: 'Risk Layers', gis: 'GIS Zones', route: 'Route', grid: 'Grid Points' }).map(([key, label]) => (
@@ -490,8 +490,8 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
                      />
                      <div className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${
                         visibleLayers[key]
-                           ? 'bg-[#d4850a] border-[#d4850a]'
-                           : 'bg-[#0a0d0a] border-[var(--border-base)] group-hover:border-white/40'
+                           ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)]'
+                           : 'bg-[var(--bg-base)] border-[var(--border-base)] group-hover:border-white/40'
                      }`}>
                         {visibleLayers[key] && <Check className="w-3 h-3 text-black stroke-[3]" />}
                      </div>
@@ -508,7 +508,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
          {/* Legends */}
          <div className="flex space-x-3 pointer-events-auto">
             {/* GIS Legend */}
-            <div className="flex flex-col bg-[#111814]/95 backdrop-blur-md px-4 py-2 rounded-lg border border-[var(--border-base)] shadow-sm">
+            <div className="flex flex-col bg-[var(--bg-surface)]/95 backdrop-blur-md px-4 py-2 rounded-lg border border-[var(--border-base)] shadow-sm">
               <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1.5">GIS ZONES</span>
               <div className="flex space-x-4">
                 {[{c: '#22B8CF', l: '12 NM'}, {c: '#6C63FF', l: '24 NM'}, {c: '#2DD4BF', l: '50 NM'}, {c: '#D4A72C', l: '100 NM'}].map(z => (
@@ -518,7 +518,7 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
             </div>
             
             {/* Risk Legend */}
-            <div className="flex flex-col bg-[#111814]/95 backdrop-blur-md px-4 py-2 rounded-lg border border-[var(--border-base)] shadow-sm">
+            <div className="flex flex-col bg-[var(--bg-surface)]/95 backdrop-blur-md px-4 py-2 rounded-lg border border-[var(--border-base)] shadow-sm">
               <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1.5">RISK</span>
               <div className="flex space-x-3">
                 {[
@@ -540,26 +540,59 @@ export default function MarineMap({ analysis, selectedPoint, onSelectPoint }) {
          <div className="flex flex-col items-end space-y-3 pointer-events-auto">
             {/* Coordinates */}
             {cursorCoords && (
-               <div className="bg-[#111814]/95 backdrop-blur-md px-3 py-1.5 rounded-lg border border-[var(--border-base)] shadow-sm font-mono text-[10px] text-white/70">
+               <div className="bg-[var(--bg-surface)]/95 backdrop-blur-md px-3 py-1.5 rounded-lg border border-[var(--border-base)] shadow-sm font-mono text-[10px] text-white/70">
                   {Math.abs(cursorCoords.lat).toFixed(4)}° {cursorCoords.lat >= 0 ? 'N' : 'S'} &nbsp;|&nbsp; {Math.abs(cursorCoords.lng).toFixed(4)}° {cursorCoords.lng >= 0 ? 'E' : 'W'}
                </div>
             )}
             
             {/* Timeline */}
-            <div className="bg-[#111814]/95 backdrop-blur-md border border-[var(--border-base)] rounded-lg py-4 px-6 shadow-sm w-80">
+            <div className="bg-[var(--bg-surface)]/95 backdrop-blur-md border border-[var(--border-base)] rounded-lg py-4 px-6 shadow-sm w-80">
                <div className="flex justify-between items-center mb-5">
                   <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest">TIME FORECAST</span>
-                  <span className="text-[9px] font-bold text-[#d4850a]">{selectedTimeOffset === 0 ? 'NOW' : `${selectedTimeOffset > 0 ? '+' : ''}${selectedTimeOffset}h`}</span>
+                  <span className="text-[9px] font-bold text-[var(--accent-primary)]">{selectedTimeOffset === 0 ? 'NOW' : `${selectedTimeOffset > 0 ? '+' : ''}${selectedTimeOffset}h`}</span>
                </div>
                <div className="relative h-1 flex items-center w-full">
                   <div className="absolute left-0 right-0 h-0.5 bg-[var(--border-base)]" />
                   {TIME_STEPS.map((step, i) => {
                      const isSelected = selectedTimeOffset === step.offset;
                      const isNow = step.offset === 0;
-                     return (
+                   
+  // SOS Marker Sync
+  const sosMarkerRef = useRef(null);
+  useEffect(() => {
+    const handleSosChange = () => {
+      const map = mapInstanceRef.current;
+      if (!map) return;
+      
+      if (sosMarkerRef.current) {
+        map.removeLayer(sosMarkerRef.current);
+        sosMarkerRef.current = null;
+      }
+
+      if (window.ORCA_SOS_ACTIVE && window.ORCA_SOS_COORDS) {
+        const [lat, lon] = window.ORCA_SOS_COORDS;
+        const sosIcon = L.divIcon({
+          html: '<div style="width: 40px; height: 40px; background: rgba(220, 38, 38, 0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: livePulse 1s infinite;"><div style="width: 20px; height: 20px; background: #dc2626; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(220, 38, 38, 0.8);"></div></div>',
+          className: 'sos-marker',
+          iconSize: [40, 40],
+          iconAnchor: [20, 20]
+        });
+        
+        sosMarkerRef.current = L.marker([lat, lon], { icon: sosIcon, zIndexOffset: 9999 }).addTo(map);
+      }
+    };
+
+    window.addEventListener('orca-sos-changed', handleSosChange);
+    // Trigger once on mount
+    handleSosChange();
+    
+    return () => window.removeEventListener('orca-sos-changed', handleSosChange);
+  }, []);
+
+  return (
                        <div key={step.offset} className="absolute flex flex-col items-center transform -translate-x-1/2" style={{ left: `${(i / (TIME_STEPS.length - 1)) * 100}%` }}>
-                          <button onClick={() => setSelectedTimeOffset(step.offset)} className={`w-2.5 h-2.5 rounded-full border transition-all cursor-pointer ${isSelected ? 'bg-[#d4850a] border-[#d4850a] scale-125' : (isNow ? 'bg-[#22d3ee] border-[#22d3ee] scale-110' : 'bg-[#111814] border-white/30 hover:border-white/70')}`} />
-                          <span className={`absolute top-3 text-[8px] font-bold tracking-wider ${isSelected ? 'text-[#d4850a]' : (isNow ? 'text-[#22d3ee]' : 'text-white/40')}`}>{step.label}</span>
+                          <button onClick={() => setSelectedTimeOffset(step.offset)} className={`w-2.5 h-2.5 rounded-full border transition-all cursor-pointer ${isSelected ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] scale-125' : (isNow ? 'bg-[#22d3ee] border-[#22d3ee] scale-110' : 'bg-[var(--bg-surface)] border-white/30 hover:border-white/70')}`} />
+                          <span className={`absolute top-3 text-[8px] font-bold tracking-wider ${isSelected ? 'text-[var(--accent-primary)]' : (isNow ? 'text-[#22d3ee]' : 'text-white/40')}`}>{step.label}</span>
                        </div>
                      );
                   })}
