@@ -147,9 +147,11 @@ Each module = one folder = one feature area. Inside, the pattern repeats: **rout
 
 | File | What it does |
 |---|---|
-| `voice.routes.js` | `POST /voice/query`. |
-| `voice.controller.js` | HTTP handling. |
-| `voice.service.js` | Sends audio to Bhashini for speech-to-text, then runs it through the same pipeline as a normal chat message. |
+| `voice.routes.js` | `POST /voice/query`, `POST /voice/synthesize`. |
+| `voice.controller.js` | HTTP handling for ASR and TTS. |
+| `voice.service.js` | Resolves Bhashini pipeline auth and executes inference calls (speech-to-text and text-to-speech). |
+| `utils/audioEncoder.js` | Validates MP3 bytes (sniffs `0xFFE0` MPEG sync words) to block invalid WebM uploads. |
+| `../db/models/voiceCache.model.js` | Caches TTS output buffers as native `mongodb.Binary` paired with text summaries for 24h. |
 
 ### `modules/auth/` — *(not in the original spec, added because `users` needs somewhere to live)*
 

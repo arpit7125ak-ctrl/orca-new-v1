@@ -104,6 +104,13 @@ orca/backend/
   * Runs idempotent upsert (`updateOne(..., { $set: doc }, { upsert: true })`).
   * Implements 48-hour zero-downtime extension fallback.
 
+### `src/modules/voice/`
+* **`voice.controller.js` & `voice.service.js`:**
+  * Integrates with Bhashini TTS and ASR APIs.
+  * Caches synthesized audio natively in MongoDB (`voiceCache.model.js`) as `mongodb.Binary` coupled with the summary text, using a 24-hour TTL to save bandwidth/latency.
+  * Uses Two-Phase Bhashini authentication (Pipeline ID resolution -> Inference token execution).
+  * Validates inbound MP3 audio chunks via MPEG sync word (`0xFFE0`) sniffing in `audioEncoder.js`, rejecting invalid formats (like WebM) safely without FFmpeg.
+
 ### `src/modules/geofence/`
 * **`geofence.service.js`:** Evaluates vessel GPS against MongoDB `gis_layers` to detect proximity to the International Maritime Boundary Line (IMBL).
 * Returns `status: "clear"`, `"warning"`, or `"breach"` in under **100 milliseconds**.

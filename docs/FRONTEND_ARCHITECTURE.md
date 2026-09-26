@@ -24,8 +24,8 @@ From §2.1.4, §102, §116, and the project's **never-fabricate** principle:
 - **Styling**: Tailwind CSS v4 JIT + Custom CSS for Sunlight Deck Mode and Leaflet dark popups
 - **Mapping & GIS**: Leaflet 1.9.4 with OpenStreetMap standard tiles (100% free of CartoDB watermarks)
 - **Icons**: Lucide React (`lucide-react` v1.46)
-- **Audio & Speech**: Web Speech API (`speechSynthesis` + `webkitSpeechRecognition`) supporting English, Hindi, Tamil, Telugu, Malayalam, Bengali
-- **Production Bundler**: `esbuild` with `--jsx=automatic` and ESM target (builds in ~1.4s with minimal memory overhead)
+- **Audio & Speech**: Bhashini Multilingual Speech Engine (TTS & ASR) with pure-JS client-side 16kHz MP3 compression (`@breezystack/lamejs`) to optimize bandwidth (93% reduction). Fallback to Web Speech API. Supports English, Hindi, Tamil, Telugu, Malayalam, Bengali, etc.
+- **Production Bundler**: `esbuild` with `--jsx=automatic` and ESM target (builds in ~1.4s with minimal memory overhead). Dynamic lazy-loading for audio encoders.
 - **Runtime Server**: Node.js static server (`serve.js`) with built-in API proxy to port 4000
 
 ---

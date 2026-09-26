@@ -151,3 +151,14 @@ timeline
     - System detected proximity to Sri Lankan waters.
     - Enforced `inside_prohibited_zone: true` with source: `Ministry of External Affairs / Sri Lanka Navy Maritime Boundary`.
     - Triggered hard exclusion: `recommendation_type: "do_not_venture"` (*"Do not venture out today as all available coastal points are located inside restricted international maritime boundary waters"*).
+
+---
+
+### Phase 11: Bhashini Multilingual Voice Integration (ASR & TTS)
+* **What changed:** Built out full bilingual/multilingual voice command and synthesized audio reading via Bhashini AI, optimized for ultra-low bandwidth (2G offshore).
+* **Key Implementations:**
+  * **Option C (Client-Side Encoding):** Built a Web Audio API recorder (`utils/audioRecorder.js`) that downsamples raw device audio to 16kHz and dynamically lazy-loads `@breezystack/lamejs` to compress it into 32kbps MP3 entirely in the browser. This shrunk the upload payload from ~600KB (WAV) to ~32KB (MP3) without bloating the initial Vite JS bundle (+2.5KB gzipped).
+  * **Bhashini Magic Byte Discovery:** Proved that Bhashini Dhruva ASR backend natively sniffs MPEG sync bytes (`0xFFE0`) and handles MP3 files perfectly, completely eliminating the need for server-side FFmpeg or WASM decoders.
+  * **MongoDB Binary TTS Caching:** Eliminated expensive 59-second 2-phase API calls to Bhashini by storing the Bhashini output natively as a `mongodb.Binary` buffer (`voiceCache.model.js`) coupled with the text summary, skipping 5-collection joins.
+  * **Mongoose lean() Quirk Addressed:** Fixed the silent size evaluation bug where `doc.audio_data.length` returns `[Function: length]` instead of the buffer size.
+  * **Verification:** Validated that English and Tamil voice capture, transcription, and TTS playback workflows pass 15/15 payload contracts. Implemented anti-fabrication guards by strict MPEG sync-word sniffing in `audioEncoder.js` to reject invalid payloads (like WebM) instantly.

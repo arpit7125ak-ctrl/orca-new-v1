@@ -483,23 +483,25 @@ The file specifies **Bhashini** as the preferred Government of India speech plat
 Architecture:
 
 ```text
-Voice
+Voice (Mic)
+ ↓
+Client-Side pure-JS MP3 Compression (lamejs, 16kHz)
  ↓
 Frontend
  ↓
-Backend
+Backend (Validates MP3 MPEG Sync Words)
  ↓
-Bhashini
+Bhashini Dhruva ASR (Native MP3 handling)
  ↓
-Speech Recognition
+Speech Recognition (Tamil/Hindi/English -> Text)
  ↓
 ORCA Pipeline
  ↓
-Bhashini TTS
+Bhashini TTS (Text -> Base64 Audio)
  ↓
-Backend
+Backend (Caches as mongodb.Binary with 24h TTL)
  ↓
-Frontend
+Frontend (Playback & Generation Timestamp)
 ```
 
 

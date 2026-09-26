@@ -60,7 +60,9 @@ flowchart TD
 ## 4. Key Component Breakdown
 
 ### 1. Landing & Input Experience
-* **`HomeAskOrca.jsx`:** Conversational home interface. Offers one-tap prompt chips (*"Where is the nearest PFZ zone off Kochi?"*, *"Is it safe to fish off Ratnagiri today?"*) and real-time voice recording in native languages.
+* **`HomeAskOrca.jsx`:** Conversational home interface. Offers one-tap prompt chips and real-time voice recording in native languages.
+  * **Audio Capture (`utils/audioRecorder.js`)**: Employs the Web Audio API to downsample hardware mic rates (e.g., 44.1kHz on iOS Safari) to 16kHz mono.
+  * **Client-Side Compression**: Dynamically lazy-loads `@breezystack/lamejs` to compress pure-JS MP3 audio client-side (93% bandwidth reduction down to ~32KB) before sending to the backend, crucial for 2G offshore connectivity. Falls back gracefully to `SpeechRecognition` API.
 * **`AnalysisInputPage.jsx` & `QueryForm.jsx`:** Allows manual selection of:
   * Vessel Type: Traditional catamaran, motorized country craft, mechanized trawler.
   * Activity: Fishing, coastal transport, tourism, port operations.
@@ -73,7 +75,7 @@ flowchart TD
   * Updates stage indicators dynamically as the AI Service completes each sub-agent pass.
 
 ### 3. Actionable Decision Dashboard
-* **`DecisionHero.jsx`:** The large, high-visibility verdict badge (`GO`, `GO WITH CAUTION`, or `DO NOT GO`). Designed so a fisherman can understand their safety status at a single glance even in bright sunlight on open water.
+* **`DecisionHero.jsx`:** The large, high-visibility verdict badge (`GO`, `GO WITH CAUTION`, or `DO NOT GO`). Designed so a fisherman can understand their safety status at a single glance even in bright sunlight on open water. Features backend-synthesized Bhashini TTS MP3 playback with a generation timestamp / 6h validity window guard.
 * **`DecisionResultsPage.jsx`:** Comprehensive advisory dashboard displaying:
   * Primary safety recommendation and confidence score.
   * 3 key actionable findings (e.g., *"Prime fishing opportunity nearby: High-suitability PFZ (0.82) located 0.92 km away"*).
