@@ -100,9 +100,15 @@ const env = Object.freeze({
   VAPID_PRIVATE_KEY: optionalEnv('VAPID_PRIVATE_KEY', ''),
   VAPID_SUBJECT: optionalEnv('VAPID_SUBJECT', 'mailto:team@example.com'),
 
-  // Bhashini (voice proxy)
-  BHASHINI_API_URL: optionalEnv('BHASHINI_API_URL', ''),
-  BHASHINI_API_KEY: optionalEnv('BHASHINI_API_KEY', ''),
+  // Bhashini (Government of India AI Language Services - ULCA / Dhruva)
+  BHASHINI_CONFIG_URL: optionalEnv(
+    'BHASHINI_CONFIG_URL',
+    'https://meity-auth.ulcacontrib.org/ulca/apis/v0/model/getModelsPipeline'
+  ),
+  BHASHINI_PIPELINE_ID: optionalEnv('BHASHINI_PIPELINE_ID', '64392f96daac500b55c543cd'),
+  BHASHINI_UDYAT_KEY: optionalEnv('BHASHINI_UDYAT_KEY', ''),
+  BHASHINI_APP_ID: optionalEnv('BHASHINI_APP_ID', ''),
+  BHASHINI_INFERENCE_KEY: optionalEnv('BHASHINI_INFERENCE_KEY', ''),
 
   // Logging
   LOG_LEVEL: optionalEnv('LOG_LEVEL', 'info'),
