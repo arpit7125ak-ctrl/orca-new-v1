@@ -144,7 +144,7 @@ async def post_result(payload: Dict[str, Any], *, max_retries: int = 3) -> bool:
 async def health_check() -> Dict[str, Any]:
     """Is the Backend's internal API reachable? Never raises."""
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.get(f"{settings.BACKEND_INTERNAL_URL}/health")
         return {"reachable": True, "status": resp.status_code}
     except Exception as exc:  # noqa: BLE001
