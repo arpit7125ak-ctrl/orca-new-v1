@@ -54,7 +54,7 @@ async function start() {
       logger.info(`[server] Config:          http://localhost:${env.PORT}/api/v1/config`);
     });
 
-    if (env.INTERNAL_PORT && env.INTERNAL_PORT !== env.PORT) {
+    if (env.INTERNAL_PORT  !== env.PORT) {
       const { createInternalApp } = require('./internal-server');
       const internalApp = createInternalApp();
       internalServer = internalApp.listen(env.INTERNAL_PORT, () => {

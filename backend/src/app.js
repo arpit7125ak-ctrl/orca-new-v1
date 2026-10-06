@@ -99,13 +99,14 @@ function createApp() {
     console.log('Checking AI service health...'); 
     
     try {
-      const aiHealthUrl = "https://orca-ai-service-b0fx.onrender.com/health";
-      const resai = await fetch(aiHealthUrl, { signal: AbortSignal.timeout(3000) });
+      const aiHealthUrl = "https://orca-ai-service-b0fx.onrender.com/health/ready";
+      const resai = await fetch(aiHealthUrl);
       const aiData = await resai.json();
       console.log('AI Health Data:', aiData);
     } catch (e) {
       console.log('AI service health check failed:', e.message);
     }
+    console.log('Checking AI service health... COMPLETED'); 
 
     res.status(200).json({
       status: 'ok',

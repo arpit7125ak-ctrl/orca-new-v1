@@ -1,0 +1,60 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🌊 1. Start Backend (Ports 4000 & 4100)",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "presentation": {
+        "panel": "new",
+        "clear": true,
+        "focus": true
+      },
+      "isBackground": true
+    },
+    {
+      "label": "🤖 2. Start AI Service (Port 8000)",
+      "type": "shell",
+      "command": "python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+      "options": {
+        "cwd": "${workspaceFolder}/ai-service"
+      },
+      "presentation": {
+        "panel": "new",
+        "clear": true,
+        "focus": true
+      },
+      "isBackground": true
+    },
+    {
+      "label": "🟢 3. Start Frontend (Port 5173)",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "presentation": {
+        "panel": "new",
+        "clear": true,
+        "focus": true
+      },
+      "isBackground": true
+    },
+    {
+      "label": "🚀 START ALL ORCA SERVERS (Separate Terminals)",
+      "dependsOn": [
+        "🌊 1. Start Backend (Ports 4000 & 4100)",
+        "🤖 2. Start AI Service (Port 8000)",
+        "🟢 3. Start Frontend (Port 5173)"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}
