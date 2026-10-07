@@ -68,13 +68,13 @@ export default function App() {
         } else {
           if (mounted) {
             setBootAttempt(a => a + 1);
-            setTimeout(pollHealth, 4000); // Check every 4 seconds
+            setTimeout(pollHealth, 30000); // Check every 30 seconds
           }
         }
       } catch (e) {
         if (mounted) {
           setBootAttempt(a => a + 1);
-          setTimeout(pollHealth, 4000);
+          setTimeout(pollHealth, 30000);
         }
       }
     };
